@@ -23,18 +23,26 @@ addEventListener("scroll", onScroll, { passive: true });
 /* ---------- resolve which discovery to render ----------
    Priority:
      1. <meta name="celestium:slug" content="…"> baked in at build
-     2. ?id=<slug>  (legacy querystring)
-     3. #<slug>     (anchor form)
+     2. /discoveries/<slug>/ path (production pretty path AND the dev
+        server's rewritten path — see vite.config.ts)
+     3. ?id=<slug>  (legacy querystring)
+     4. #<slug>     (anchor form)
    Falls back to "black-hole-image" if nothing matches. */
 function resolveSlug(): string {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="celestium:slug"]');
-  if (meta && DISCOVERIES[meta.content]) return meta.content;
+  if (meta && meta.content && DISCOVERIES[meta.content]) return meta.content;
+
+  const pathMatch = location.pathname.match(/\/discoveries\/([^/]+)\/?$/);
+  if (pathMatch && pathMatch[1] && DISCOVERIES[pathMatch[1]]) return pathMatch[1];
+
   try {
     const u = new URLSearchParams(location.search).get("id");
     if (u && DISCOVERIES[u]) return u;
   } catch (_e) { /* swallow */ }
+
   const h = location.hash.replace(/^#/, "");
   if (h && DISCOVERIES[h]) return h;
+
   return "black-hole-image";
 }
 
