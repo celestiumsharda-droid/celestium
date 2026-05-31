@@ -1,0 +1,9 @@
+# Cloudflare Pages / Netlify redirects.
+# Preserve legacy URL shapes from the prototype.
+
+# Legacy querystring form → pretty path
+/discovery.html  id=:slug  /discoveries/:slug/  301
+/discovery.html             /discoveries/black-hole-image/  301
+
+# Old prototype filename
+/celestium.html  /  301

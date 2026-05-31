@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Celestium — This region of space is empty</title>
+<meta name="description" content="Nothing here. The page you were looking for could not be found.">
+<meta name="theme-color" content="#050609">
+<meta name="robots" content="noindex,follow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3Cpath d='M74 20 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='%23f2e6c4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css">
+<style>
+  .void-page {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+    position: relative; z-index: 2;
+  }
+  .void-page .num {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: .42em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 28px;
+  }
+  .void-page h1 {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    line-height: 1.04; letter-spacing: -.02em;
+    max-width: 18ch; margin-bottom: 22px;
+  }
+  .void-page p {
+    color: var(--mut);
+    font-family: var(--body);
+    font-size: 1.08rem; font-weight: 300;
+    max-width: 44ch; line-height: 1.7;
+    margin-bottom: 48px;
+  }
+  .void-page a {
+    font-family: var(--mono); font-size: 12px;
+    letter-spacing: .24em; text-transform: uppercase;
+    padding: 16px 30px;
+    border: 1px solid var(--line); border-radius: 2px;
+    transition: .4s; color: var(--ink);
+  }
+  .void-page a:hover { border-color: var(--accent); background: var(--accent-dim); letter-spacing: .3em; }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<div class="grain"></div>
+<main>
+  <div class="void-page">
+    <div class="num">404 · UNCHARTED</div>
+    <h1>This region of space is empty.</h1>
+    <p>The page you tried to reach is not on any of our maps. Even the cosmic microwave background has more to say.</p>
+    <a href="/">← Return to Celestium</a>
+  </div>
+</main>
+<script type="module">
+  import { mount } from "./engine/starfield.ts";
+  mount(document.getElementById("sky"), { parallax: false });
+</script>
+</body>
+</html>

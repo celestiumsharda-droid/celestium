@@ -25,277 +25,14 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --void:#050609; --deep:#0a0c12; --panel:#10131c; --panel2:#161a25;
-    --ink:#f3f5fb; --mut:#9aa2b4; --dim:#5a6273; --faint:#363c4a;
-    --line:rgba(243,245,251,.12); --line-soft:rgba(243,245,251,.06);
-    --accent:#a9bcff; --accent-dim:rgba(169,188,255,.16); --star:#f2e6c4;
-    --display:'Fraunces',Georgia,serif; --body:'Spectral',Georgia,serif;
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
-    --maxw:1240px;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-  body{
-    background:var(--void); color:var(--ink); font-family:var(--body);
-    font-weight:300; line-height:1.65; overflow-x:hidden;
-    -webkit-font-smoothing:antialiased; letter-spacing:.005em;
-  }
-  ::selection{background:var(--accent);color:#06070b}
-  a{color:inherit;text-decoration:none}
-  canvas#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;mix-blend-mode:screen;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.55'/></svg>")}
-  main{position:relative;z-index:2}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
-  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--accent);font-weight:500}
-  .mono{font-family:var(--mono)}
-  h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.04;letter-spacing:-.02em;font-optical-sizing:auto}
-
-  /* ---- progress + nav ---- */
-  #prog{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--accent),var(--star));z-index:60;box-shadow:0 0 14px var(--accent)}
-  nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
-    padding:20px 32px;transition:.5s;backdrop-filter:blur(0px)}
-  nav.solid{background:rgba(5,6,9,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft);padding:14px 32px}
-  .brand{display:flex;align-items:center;gap:13px;font-family:var(--display);font-size:19px;letter-spacing:.16em;font-weight:600}
-  .mark{width:30px;height:30px}
-  .navlinks{display:flex;gap:34px;font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--mut)}
-  .navlinks a{transition:.3s;position:relative}
-  .navlinks a:hover{color:var(--ink)}
-  .navlinks a::after{content:"";position:absolute;left:0;bottom:-6px;height:1px;width:0;background:var(--accent);transition:.35s}
-  .navlinks a:hover::after{width:100%}
-  @media(max-width:860px){.navlinks{display:none}}
-  #burger{display:none;width:34px;height:34px;background:none;border:none;cursor:pointer;flex-direction:column;gap:7px;align-items:flex-end;z-index:55}
-  #burger span{display:block;height:1.5px;background:var(--ink);transition:.4s}
-  #burger span:first-child{width:26px}#burger span:last-child{width:18px}
-  #burger.x span{width:26px}
-  #burger.x span:first-child{transform:translateY(4px) rotate(45deg)}
-  #burger.x span:last-child{transform:translateY(-4px) rotate(-45deg)}
-  @media(max-width:860px){#burger{display:flex}}
-  #menu{position:fixed;inset:0;z-index:48;background:rgba(5,6,9,.97);backdrop-filter:blur(20px);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    opacity:0;pointer-events:none;transition:.5s}
-  #menu.open{opacity:1;pointer-events:all}
-  #menu a{font-family:var(--display);font-size:8vw;color:var(--mut);transition:.35s;padding:8px}
-  #menu a:last-child{font-family:var(--mono);font-size:13px;letter-spacing:.24em;color:var(--accent);margin-top:24px}
-  #menu a:hover,#menu a:active{color:var(--ink)}
-
-  /* ---- hero ---- */
-  .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;padding:120px 24px 80px}
-  .orbit{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);width:min(82vw,720px);height:min(82vw,720px);opacity:.5;pointer-events:none}
-  .orbit svg{width:100%;height:100%;animation:spin 90s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .hero .eyebrow{opacity:0;transform:translateY(16px);animation:rise .9s .2s forwards cubic-bezier(.2,.7,.2,1)}
-  .hero h1{font-size:clamp(3.6rem,15vw,12.5rem);font-weight:300;letter-spacing:.02em;margin:.18em 0 .12em;position:relative}
-  .hero h1 span{display:inline-block;opacity:0;transform:translateY(40px) rotateX(-40deg);transform-origin:bottom}
-  .hero h1.go span{animation:letter .95s forwards cubic-bezier(.2,.7,.2,1)}
-  @keyframes letter{to{opacity:1;transform:none}}
-  @keyframes rise{to{opacity:1;transform:none}}
-  .lede{max-width:620px;font-size:clamp(1.05rem,1.7vw,1.35rem);color:var(--mut);font-weight:300;line-height:1.7;
-    opacity:0;transform:translateY(20px);animation:rise 1s 1.05s forwards cubic-bezier(.2,.7,.2,1)}
-  .lede em{color:var(--ink);font-style:italic}
-  .herocta{margin-top:42px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
-    opacity:0;transform:translateY(20px);animation:rise 1s 1.25s forwards cubic-bezier(.2,.7,.2,1)}
-  .btn{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;padding:16px 30px;
-    border:1px solid var(--line);border-radius:2px;transition:.4s;cursor:pointer;background:none;color:var(--ink)}
-  .btn:hover{border-color:var(--accent);background:var(--accent-dim);letter-spacing:.3em}
-  .btn.fill{background:var(--ink);color:#06070b;border-color:var(--ink)}
-  .btn.fill:hover{background:var(--accent);border-color:var(--accent)}
-  .scrollcue{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;
-    letter-spacing:.4em;text-transform:uppercase;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:14px;
-    opacity:0;animation:rise 1s 1.6s forwards}
-  .scrollcue .ln{width:1px;height:46px;background:linear-gradient(var(--dim),transparent);position:relative;overflow:hidden}
-  .scrollcue .ln::after{content:"";position:absolute;top:-50%;left:0;width:1px;height:50%;background:var(--accent);animation:drop 2.2s infinite}
-  @keyframes drop{0%{top:-50%}60%,100%{top:100%}}
-
-  /* ---- section frame ---- */
-  section{position:relative;padding:140px 0}
-  .shead{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:64px;flex-wrap:wrap}
-  .shead h2{font-size:clamp(2.2rem,5vw,4.4rem);max-width:14ch}
-  .shead p{color:var(--mut);max-width:42ch;font-size:1.02rem}
-  .reveal{opacity:0;transform:translateY(34px);transition:1s cubic-bezier(.2,.7,.2,1)}
-  .reveal.in{opacity:1;transform:none}
-  .num{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.34em}
-
-  /* ---- scale zoomer ---- */
-  #scale{border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(10,12,18,.5),transparent)}
-  .scalewrap{display:grid;grid-template-columns:1.05fr 1fr;gap:70px;align-items:center}
-  @media(max-width:900px){.scalewrap{grid-template-columns:1fr;gap:44px}}
-  .stage{aspect-ratio:1;border:1px solid var(--line-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(169,188,255,.06),transparent 62%)}
-  .stage::before,.stage::after{content:"";position:absolute;border:1px solid var(--line-soft);border-radius:50%}
-  .stage::before{inset:14%}.stage::after{inset:30%}
-  .glyph{font-size:clamp(3.4rem,11vw,7rem);transition:.7s cubic-bezier(.4,1.4,.4,1);filter:drop-shadow(0 0 30px rgba(169,188,255,.3))}
-  .scaledot{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent);bottom:18%;left:50%;transform:translateX(-50%);animation:pulse 2s infinite}
-  @keyframes pulse{50%{transform:translateX(-50%) scale(1.7);opacity:.5}}
-  .scaleinfo .lvl{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.3em;text-transform:uppercase}
-  .scaleinfo h3{font-size:clamp(2rem,4.4vw,3.4rem);margin:.18em 0 .25em}
-  .scaleinfo .size{font-family:var(--mono);font-size:13px;color:var(--mut);margin-bottom:18px}
-  .scaleinfo p{color:var(--mut);max-width:46ch;min-height:5.4em}
-  .slider{margin-top:34px}
-  .slider input{-webkit-appearance:none;width:100%;height:2px;background:var(--faint);outline:none;border-radius:2px}
-  .slider input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ink);
-    box-shadow:0 0 0 6px rgba(169,188,255,.14),0 0 22px var(--accent);cursor:grab;transition:.2s}
-  .slider input::-moz-range-thumb{width:18px;height:18px;border:none;border-radius:50%;background:var(--ink);box-shadow:0 0 18px var(--accent);cursor:grab}
-  .ticks{display:flex;justify-content:space-between;margin-top:16px;font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
-  .ticks span{cursor:pointer;transition:.3s}.ticks span:hover{color:var(--ink)}.ticks span.on{color:var(--accent)}
-
-  /* ---- timeline ---- */
-  #timeline{border-top:1px solid var(--line-soft)}
-  .tlrail{position:relative;margin-top:30px}
-  .tlrail::before{content:"";position:absolute;left:200px;top:0;bottom:0;width:1px;background:linear-gradient(var(--line),var(--line-soft));}
-  @media(max-width:760px){.tlrail::before{left:14px}}
-  .tlrow{position:relative;padding:34px 0 34px 260px;cursor:pointer}
-  @media(max-width:760px){.tlrow{padding-left:46px}}
-  .tlrow .when{position:absolute;left:0;top:38px;width:200px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.06em;overflow:visible;padding-right:12px}
-  @media(max-width:760px){.tlrow .when{position:relative;left:0;top:0;width:auto;text-align:left;margin-bottom:8px}}
-  .tlrow .knot{position:absolute;left:195px;top:42px;width:11px;height:11px;border-radius:50%;background:var(--void);border:1px solid var(--dim);transition:.4s}
-  @media(max-width:760px){.tlrow .knot{left:9px}}
-  .tlrow:hover .knot,.tlrow.act .knot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 18px var(--accent);transform:scale(1.25)}
-  .tlrow h3{font-size:clamp(1.5rem,3.2vw,2.4rem);transition:.4s;color:var(--mut)}
-  .tlrow:hover h3,.tlrow.act h3{color:var(--ink)}
-  .tlrow .body{max-height:0;overflow:hidden;transition:.7s cubic-bezier(.2,.7,.2,1);opacity:0}
-  .tlrow.act .body{max-height:480px;opacity:1;margin-top:14px}
-  .tlrow .body p{color:var(--mut);max-width:62ch;font-size:1.02rem}
-  .discov{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:16px;display:inline-block;border-top:1px solid var(--line-soft);padding-top:14px}
-  .discov b{color:var(--star);font-weight:500}
-
-  /* ---- scrollytelling ---- */
-  #story{padding:0;border-top:1px solid var(--line-soft)}
-  .scrolly{display:grid;grid-template-columns:1fr 1fr}
-  @media(max-width:900px){.scrolly{grid-template-columns:1fr}}
-
-  .sticky{position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
-  @media(max-width:900px){.sticky{height:60vh;top:0}}
-
-  .bh{width:min(62%,420px);aspect-ratio:1;border-radius:50%;position:relative;transition:.9s cubic-bezier(.3,.8,.3,1)}
-
-  /* Homepage black hole (scrollytelling) — background treatment on tablet/mobile */
-  @media (max-width: 1024px) {
-    .scrolly {
-      position: relative;
-    }
-
-    /* Turn the black hole into a centered decorative background element */
-    .sticky {
-      position: absolute !important;
-      top: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      height: auto !important;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1;
-      opacity: 0.55;
-      pointer-events: none;
-    }
-
-    .bh {
-      width: clamp(160px, 38vw, 250px) !important;
-    }
-
-    /* Ensure steps text sits above the black hole */
-    .steps {
-      position: relative;
-      z-index: 2;
-      padding-top: 160px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .sticky {
-      top: 15px;
-      opacity: 0.45;
-    }
-
-    .bh {
-      width: clamp(130px, 44vw, 200px) !important;
-    }
-
-    .steps {
-      padding-top: 130px;
-    }
-  }
-  .bh .disk{position:absolute;inset:-30%;border-radius:50%;
-    background:conic-gradient(from 0deg,transparent,rgba(242,230,196,.0),var(--star),rgba(169,188,255,.4),transparent 70%);
-    filter:blur(14px);animation:spin 14s linear infinite;opacity:.0;transition:1s}
-  .bh .core{position:absolute;inset:0;border-radius:50%;background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.08),inset 0 0 60px rgba(0,0,0,1),0 0 90px rgba(169,188,255,.18)}
-  .steps{padding:8vh 0}
-  .step{min-height:88vh;display:flex;flex-direction:column;justify-content:center;padding:0 60px;opacity:.16;transition:.6s}
-  @media(max-width:900px){.step{padding:0 28px;min-height:70vh}}
-  .step.on{opacity:1}
-  .step .k{font-family:var(--mono);font-size:11px;letter-spacing:.34em;color:var(--accent);text-transform:uppercase;margin-bottom:18px}
-  .step h3{font-size:clamp(1.8rem,3.6vw,3rem);margin-bottom:18px}
-  .step p{color:var(--mut);font-size:1.08rem;max-width:46ch}
-
-  /* ---- depth layers ---- */
-  #depth{border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(10,12,18,.55))}
-  .reader{max-width:760px;margin:0 auto;border:1px solid var(--line-soft);border-radius:4px;background:rgba(16,19,28,.5);overflow:hidden}
-  .rtop{padding:32px 44px 0}
-  .rtop .cat{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--accent);text-transform:uppercase}
-  .rtop h3{font-size:clamp(1.7rem,3.4vw,2.6rem);margin:14px 0 22px}
-  .toggle{display:flex;gap:6px;border:1px solid var(--line-soft);border-radius:3px;padding:5px;width:fit-content;margin-bottom:6px}
-  .toggle button{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);
-    background:none;border:none;padding:11px 20px;border-radius:2px;cursor:pointer;transition:.35s}
-  .toggle button.on{background:var(--ink);color:#06070b}
-  .toggle button:not(.on):hover{color:var(--ink)}
-  .rbody{padding:30px 44px 46px;min-height:230px}
-  .rbody p{font-size:1.12rem;line-height:1.8;color:#cdd3e0;font-weight:300;opacity:0;animation:fade .7s forwards}
-  .rbody p+p{margin-top:18px}
-  @keyframes fade{to{opacity:1}}
-  .rmeta{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.16em;margin-top:26px;border-top:1px solid var(--line-soft);padding-top:18px}
-
-  /* ---- living sky ---- */
-  #sky-sec{border-top:1px solid var(--line-soft)}
-  .skygrid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}
-  .card{grid-column:span 4;border:1px solid var(--line-soft);border-radius:4px;padding:30px;background:rgba(16,19,28,.4);transition:.5s;position:relative;overflow:hidden}
-  .card:hover{border-color:var(--line);background:rgba(22,26,37,.6);transform:translateY(-4px)}
-  .card.wide{grid-column:span 8}
-  @media(max-width:900px){.card,.card.wide{grid-column:span 12}}
-  .card .lab{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
-  .card .big{font-family:var(--display);font-size:clamp(2rem,4vw,3.2rem);font-weight:300;margin:14px 0 6px;line-height:1}
-  .card .sub{color:var(--mut);font-size:.95rem}
-  .clock{font-family:var(--mono);font-variant-numeric:tabular-nums}
-  .feed{list-style:none;display:flex;flex-direction:column;gap:18px;margin-top:18px}
-  .feed li{display:flex;gap:16px;align-items:baseline;padding-bottom:18px;border-bottom:1px solid var(--line-soft)}
-  .feed li:last-child{border:none;padding-bottom:0}
-  .feed .t{font-family:var(--mono);font-size:11px;color:var(--accent);min-width:64px}
-  .feed .d{color:var(--mut);font-size:.98rem}.feed .d b{color:var(--ink);font-weight:500;font-family:var(--body)}
-  .beat{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse 1.8s infinite;margin-right:10px}
-
-  /* ---- discoveries grid ---- */
-  #explore{border-top:1px solid var(--line-soft)}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line-soft);border:1px solid var(--line-soft)}
-  @media(max-width:900px){.grid{grid-template-columns:1fr}}
-  .cell{background:var(--void);padding:42px 36px;min-height:280px;display:flex;flex-direction:column;justify-content:space-between;transition:.5s;cursor:pointer;position:relative;overflow:hidden}
-  .cell::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 0%,rgba(169,188,255,.1),transparent 55%);opacity:0;transition:.6s}
-  .cell:hover{background:var(--deep)}.cell:hover::before{opacity:1}
-  .cell .field{font-family:var(--mono);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
-  .cell h3{font-size:1.55rem;margin:20px 0;color:var(--mut);transition:.4s;line-height:1.2}
-  .cell:hover h3{color:var(--ink)}
-  .cell .read{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:10px;transition:.4s}
-  .cell:hover .read{color:var(--ink);gap:18px}
-
-  /* ---- footer ---- */
-  footer{border-top:1px solid var(--line-soft);padding:90px 0 50px;position:relative}
-  .foot{display:flex;justify-content:space-between;gap:50px;flex-wrap:wrap;align-items:flex-start}
-  .foot .big{font-family:var(--display);font-size:clamp(2.4rem,7vw,5.5rem);font-weight:300;letter-spacing:.04em;line-height:1}
-  .foot .big .em{font-style:italic;color:var(--mut)}
-  .fcol h4{font-family:var(--mono);font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim);margin-bottom:20px}
-  .fcol a{display:block;color:var(--mut);font-size:.98rem;margin-bottom:12px;transition:.3s}
-  .fcol a:hover{color:var(--ink)}
-  .legal{display:flex;justify-content:space-between;margin-top:70px;padding-top:30px;border-top:1px solid var(--line-soft);
-    font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em;flex-wrap:wrap;gap:14px}
-  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,600;9..144,1,400;9..144,1,500&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/home.css">
 </head>
 <body>
-<canvas id="sky"></canvas>
-<div class="grain"></div>
-<div id="prog"></div>
+<a class="skip" href="#top">Skip to content</a>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div id="prog" aria-hidden="true"></div>
 
 <nav id="nav">
   <a class="brand" href="#top">
@@ -323,7 +60,7 @@
   <a href="#story">Discoveries</a>
   <a href="#sky-sec">Tonight</a>
   <a href="#explore">Explore</a>
-  <a href="discovery.html">Read a discovery →</a>
+  <a href="/discoveries/black-hole-image/">Read a discovery →</a>
 </div>
 
 <main id="top">
@@ -412,7 +149,7 @@
           </div>
         </div>
         <div class="rbody" id="rbody"></div>
-        <a href="discovery.html?id=weighing-the-universe" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 44px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);transition:.35s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--mut)'">This is a preview · open the full immersive piece<span>→</span></a>
+        <a href="/discoveries/weighing-the-universe/" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 44px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);transition:.35s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--mut)'">This is a preview · open the full immersive piece<span>→</span></a>
       </div>
     </div>
   </section>
@@ -432,27 +169,23 @@
         </div>
         <div class="card">
           <div class="lab">Earth, this instant</div>
-          <div class="big" id="spin">29.78</div>
+          <div class="big">29.78</div>
           <div class="sub">km travelled around the Sun, every second you exist</div>
+        </div>
+        <div class="card" id="planets-card">
+          <div class="lab">Tonight, naked-eye</div>
+          <div class="big" style="font-size:1.8rem">Calculating…</div>
+          <div class="sub">Your sky, this evening, from low-precision orbital elements.</div>
+        </div>
+        <div class="card wide apod" id="apod-card">
+          <div class="lab">Astronomy picture of the day · NASA</div>
+          <div class="big" style="font-size:1.5rem">Loading from NASA…</div>
+          <div class="sub">The image the agency is showing the world today.</div>
         </div>
         <div class="card">
           <div class="lab">Observable reach</div>
           <div class="big">93<span style="font-size:1.3rem"> Gly</span></div>
           <div class="sub">diameter of everything light has let us see</div>
-        </div>
-        <div class="card wide">
-          <div class="lab">Watch list · the instruments are looking</div>
-          <ul class="feed">
-            <li><span class="t" id="f1">live</span><span class="d"><b>JWST</b> — peering into galaxies whose light left them over 13 billion years ago</span></li>
-            <li><span class="t">tonight</span><span class="d"><b>Your sky</b> — Jupiter and Saturn ride the southern arc after dusk</span></li>
-            <li><span class="t">ongoing</span><span class="d"><b>Vera C. Rubin</b> — beginning a ten-year time-lapse of the entire visible sky</span></li>
-            <li><span class="t">listening</span><span class="d"><b>Pulsar arrays</b> — timing dead stars to feel gravitational waves wash through the galaxy</span></li>
-          </ul>
-        </div>
-        <div class="card">
-          <div class="lab">Nearest star, sunlight age</div>
-          <div class="big" id="sun">8</div>
-          <div class="sub">minutes old — the light hitting Earth right now left the Sun before you opened this page</div>
         </div>
       </div>
     </div>
@@ -484,7 +217,7 @@
         <div class="fcol">
           <h4>Fields</h4>
           <a href="#explore">Cosmology</a><a href="#explore">Quantum Reality</a>
-          <a href="#explore">Life & Origins</a><a href="#explore">Human History</a>
+          <a href="#explore">Life &amp; Origins</a><a href="#explore">Human History</a>
         </div>
         <div class="fcol">
           <h4>Celestium</h4>
@@ -500,157 +233,6 @@
   </footer>
 </main>
 
-<script>
-(function(){
-  /* ---------- starfield ---------- */
-  var c=document.getElementById('sky'),x=c.getContext('2d'),stars=[],W,H,sc=0;
-  function size(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];
-    var n=Math.min(420,(W*H)/3400);
-    for(var i=0;i<n;i++)stars.push({x:Math.random()*W,y:Math.random()*H*2,z:Math.random(),r:Math.random()*1.3+.2,t:Math.random()*6.28});}
-  size();addEventListener('resize',size);
-  (function loop(){x.clearRect(0,0,W,H);var t=Date.now()/1000;
-    for(var i=0;i<stars.length;i++){var s=stars[i],y=s.y-sc*s.z*.35;y=((y%(H*2))+H*2)%(H*2);
-      var tw=.55+.45*Math.sin(t*1.4+s.t),a=(.18+s.z*.7)*tw;
-      x.beginPath();x.arc(s.x,y,s.r*(.6+s.z),0,6.29);x.fillStyle='rgba(220,228,255,'+a+')';x.fill();
-      if(s.z>.93){x.beginPath();x.arc(s.x,y,s.r*2.4,0,6.29);x.fillStyle='rgba(169,188,255,'+a*.12+')';x.fill();}}
-    requestAnimationFrame(loop);})();
-
-  /* ---------- nav + progress + reveals ---------- */
-  var nav=document.getElementById('nav'),prog=document.getElementById('prog');
-  function onScroll(){sc=scrollY;
-    nav.classList.toggle('solid',sc>80);
-    var h=document.documentElement.scrollHeight-innerHeight;
-    prog.style.width=(sc/h*100)+'%';}
-  addEventListener('scroll',onScroll,{passive:true});onScroll();
-
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('in');});},{threshold:.15});
-  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
-
-  /* hero letters */
-  var ttl=document.getElementById('title'),txt=ttl.textContent;ttl.textContent='';
-  txt.split('').forEach(function(ch,i){var sp=document.createElement('span');sp.textContent=ch;sp.style.animationDelay=(.45+i*.07)+'s';ttl.appendChild(sp);});
-  setTimeout(function(){ttl.classList.add('go');},100);
-
-  /* ---------- scale zoomer ---------- */
-  var SC=[
-    {g:'🧍',l:'Human',n:'A person',s:'≈ 1.7 metres',d:'The only scale evolution prepared you to grasp. Everything past this, your species had to reason toward.'},
-    {g:'🌍',l:'Planet',n:'Earth',s:'12,742 km across',d:'A single pale stone. Every war, ocean and idea you know of has happened on this one dot.'},
-    {g:'☀️',l:'System',n:'The Solar System',s:'≈ 9 billion km wide',d:'Eight planets around an ordinary star. Light from the Sun takes 8 minutes to reach you here.'},
-    {g:'✨',l:'Cluster',n:'Local Stellar Neighbourhood',s:'≈ 30 light-years',d:'The handful of stars near enough to name. The fastest probe we have built would need 70,000 years to cross to the closest.'},
-    {g:'🌌',l:'Galaxy',n:'The Milky Way',s:'≈ 100,000 light-years',d:'Up to 400 billion suns in a slow spiral. Our Sun is one anonymous spark, two-thirds of the way out.'},
-    {g:'🪐',l:'Group',n:'The Local Group',s:'≈ 10 million ly',d:'Roughly 80 galaxies bound by gravity, with Andromeda and the Milky Way drifting toward an eventual merger.'},
-    {g:'🕸️',l:'Web',n:'The Cosmic Web',s:'≈ hundreds of Mly',d:'Galaxies are not scattered — they string along vast filaments around emptier voids, like foam in the dark.'},
-    {g:'⚪',l:'All',n:'The Observable Universe',s:'93 billion ly across',d:'Everything light has had time to bring us. Beyond its edge, almost certainly more — forever out of reach.'}
-  ];
-  var zoom=document.getElementById('zoom'),tk=document.getElementById('ticks');
-  ['Body','Planet','System','Stars','Galaxy','Group','Web','All'].forEach(function(t,i){
-    var s=document.createElement('span');s.textContent=t;s.onclick=function(){zoom.value=i;paint(i);};tk.appendChild(s);});
-  function paint(i){var o=SC[i];
-    document.getElementById('glyph').textContent=o.g;
-    document.getElementById('s-lvl').textContent='Level 0'+(i+1)+' — '+o.l;
-    document.getElementById('s-name').textContent=o.n;
-    document.getElementById('s-size').textContent=o.s;
-    document.getElementById('s-desc').textContent=o.d;
-    tk.querySelectorAll('span').forEach(function(sp,j){sp.classList.toggle('on',j===i);});}
-  zoom.addEventListener('input',function(){paint(+zoom.value);});paint(0);
-
-  /* ---------- timeline ---------- */
-  var TL=[
-    {w:'13.8 Bya',t:'The Big Bang',b:'Space, time, energy and the rules themselves begin from a state we still cannot fully describe. There is no "before" we can point to.',d:'Inferred from cosmic expansion (Lemaître, 1927) and confirmed by the leftover heat — the cosmic microwave background, found by accident in <b>1964</b>.'},
-    {w:'13.6 Bya',t:'First light',b:'After 380,000 years of opaque fog, the universe cools enough for atoms to form and light to fly free for the first time.',d:'That ancient flash is the oldest thing we can ever see — mapped in exquisite detail by <b>COBE, WMAP and Planck</b>.'},
-    {w:'13.5 Bya',t:'The first stars ignite',b:'Gravity pulls hydrogen into the first suns. They burn ferociously, die young, and forge the first heavier elements.',d:'JWST was built largely to catch these earliest galaxies — and in <b>2022–2024</b> it found them brighter and earlier than expected.'},
-    {w:'4.6 Bya',t:'The Solar System forms',b:'A collapsing cloud spins into a disk; the Sun lights up and the planets sweep their orbits clear.',d:'Pieced together from meteorites — the oldest rocks we can hold, dated radiometrically since the <b>1950s</b>.'},
-    {w:'3.7 Bya',t:'Life begins on Earth',b:'Somewhere in the young oceans, chemistry crosses a line into biology. Self-copying begins and never stops.',d:'Read from the oldest microbial traces in rock; the deep tree of life resolved only with <b>DNA sequencing</b>.'},
-    {w:'66 Mya',t:'An asteroid resets the world',b:'A city-sized rock ends the dinosaurs in an afternoon, and the survivors inherit the planet.',d:'The smoking gun: a global iridium layer (Alvarez, <b>1980</b>) and the buried Chicxulub crater.'},
-    {w:'300,000 ya',t:'Homo sapiens',b:'A primate on one continent develops symbolic thought — and eventually starts asking what all of this is.',d:'Dated by fossils and the molecular clock written in our own genomes.'},
-    {w:'1610 CE',t:'Galileo turns a lens upward',b:'Moons circle Jupiter; Venus shows phases. Earth is demoted from the centre of everything.',d:'The discovery moment itself — the night observation becomes a tool of cosmic measurement.'},
-    {w:'1915 CE',t:'Gravity becomes geometry',b:'Einstein reframes gravity as curved spacetime, predicting black holes, an expanding cosmos, and bending starlight.',d:'Tested almost immediately by the <b>1919</b> eclipse, and still passing every test a century on.',id:'black-hole-image'},
-    {w:'2015 CE',t:'We hear spacetime ring',b:'Two black holes merge a billion light-years away and physically stretch our detectors by less than a proton\u2019s width.',d:'<b>LIGO</b> — the discovery that opened an entirely new sense for observing the universe.',id:'gravitational-waves'},
-    {w:'Now',t:'You, reading this',b:'A configuration of stardust complex enough to model its own 13.8-billion-year origin. That is the strangest fact on this page.',d:'The discovery is ongoing. Every instrument above is adding to it while you sit here.'}
-  ];
-  var rail=document.querySelector('.tlrail');
-  TL.forEach(function(e,i){
-    var r=document.createElement('div');r.className='tlrow';if(i===0)r.classList.add('act');
-    var link=e.id?'<a href="discovery.html?id='+e.id+'" class="discov" style="display:block;width:fit-content;margin-top:18px;color:var(--accent);border-color:var(--accent-dim)" onclick="event.stopPropagation()">Read the full discovery &nbsp;→</a>':'';
-    r.innerHTML='<div class="when">'+e.w+'</div><div class="knot"></div>'+
-      '<h3>'+e.t+'</h3><div class="body"><p>'+e.b+'</p><span class="discov">How we know — '+e.d+'</span>'+link+'</div>';
-    r.onclick=function(){var was=r.classList.contains('act');
-      rail.querySelectorAll('.tlrow').forEach(function(o){o.classList.remove('act');});
-      if(!was)r.classList.add('act');};
-    rail.appendChild(r);
-  });
-
-  /* ---------- scrollytelling ---------- */
-  var ST=[
-    {k:'2019 · The impossible photograph',h:'You cannot photograph the unseeable.',p:'A black hole emits no light by definition. For decades, "imaging" one sounded like a contradiction in terms.'},
-    {k:'The method',h:'So we built a telescope the size of Earth.',p:'Eight radio observatories across the planet were linked into one virtual dish — the Event Horizon Telescope — using the spin of the Earth itself as the lens.'},
-    {k:'The data',h:'Five petabytes, flown on hard drives.',p:'The data was too vast for the internet. It was physically shipped, then painstakingly reassembled into a single faint ring.'},
-    {k:'2019 · First sight',h:'A shadow, exactly where theory said.',p:'The silhouette of M87\u2019s black hole appeared — a glowing ring around a void, matching Einstein\u2019s century-old equations to the pixel.'}
-  ];
-  var steps=document.getElementById('steps');
-  ST.forEach(function(s){var d=document.createElement('div');d.className='step';
-    d.innerHTML='<div class="k">'+s.k+'</div><h3>'+s.h+'</h3><p>'+s.p+'</p>';steps.appendChild(d);});
-  var cta=document.createElement('div');cta.className='step';
-  cta.innerHTML='<div class="k">The full account</div><h3>Read the whole discovery.</h3>'+
-    '<p>The Earth-sized telescope, the petabytes flown on aircraft, the ring that proved Einstein right — at the depth you choose.</p>'+
-    '<a href="discovery.html?id=black-hole-image" class="btn fill" style="margin-top:30px;display:inline-block">Open the discovery →</a>';
-  steps.appendChild(cta);
-  var stEls=steps.querySelectorAll('.step'),disk=document.getElementById('disk'),bh=document.getElementById('bh');
-  var sio=new IntersectionObserver(function(es){es.forEach(function(e){
-    if(e.isIntersecting){stEls.forEach(function(x){x.classList.remove('on');});e.target.classList.add('on');
-      var idx=[].indexOf.call(stEls,e.target);
-      disk.style.opacity=idx>=2?1:0;
-      bh.style.transform='scale('+(1+idx*.06)+')';}});},{threshold:.55});
-  stEls.forEach(function(el){sio.observe(el);});
-
-  /* ---------- depth layers ---------- */
-  var DL=[
-    ['<p>We never put the universe on a scale. We watched how galaxies move, how light bends, and how the cosmos expands — and worked the mass backwards from gravity. The unsettling result: most of it is invisible.</p>'],
-    ['<p>You cannot weigh a galaxy directly, so astronomers let gravity do the weighing. The faster stars whip around a galaxy\u2019s edge, the more mass must be tugging on them.</p>',
-     '<p>When Vera Rubin measured those speeds in the 1970s, the outer stars moved far too fast for the visible matter present. Something unseen was holding them in.</p>',
-     '<p>Add up every such clue — galaxy motion, light bent by gravity, the early-universe glow — and ordinary matter accounts for only about a twentieth of the total. The rest is dark.</p>'],
-    ['<p>The "weight" of the universe is really a budget of what bends spacetime, and it is assembled from independent lines of evidence that agree disconcertingly well.</p>',
-     '<p>Galaxy rotation curves were the first crack: orbital speed should fall with distance from the centre, as it does for planets around the Sun. In galaxies it stays flat, implying a vast unseen halo.</p>',
-     '<p>Gravitational lensing weighs mass by how much it warps passing light, mapping matter that emits nothing. Meanwhile the cosmic microwave background — the geometry of the infant cosmos — fixes the total energy budget precisely.</p>',
-     '<p>The lines converge: roughly 5% ordinary matter, 27% dark matter, 68% dark energy. We have weighed the universe with confidence, and discovered we cannot see 95% of what we weighed.</p>']
-  ];
-  var rbody=document.getElementById('rbody'),tog=document.getElementById('toggle');
-  function render(l){rbody.innerHTML=DL[l].join('')+
-    '<div class="rmeta">READING DEPTH '+(l+1)+' / 3 · SAME FACTS · YOUR ALTITUDE</div>';}
-  tog.querySelectorAll('button').forEach(function(b){b.onclick=function(){
-    tog.querySelectorAll('button').forEach(function(o){o.classList.remove('on');});
-    b.classList.add('on');render(+b.dataset.l);};});
-  render(0);
-
-  /* ---------- living sky ---------- */
-  function tick(){var d=new Date();
-    document.getElementById('clock').textContent=d.toUTCString().slice(17,25)+' UTC';
-    document.getElementById('datestr').textContent=d.toUTCString().slice(0,16);}
-  tick();setInterval(tick,1000);
-  document.getElementById('grid');
-
-  /* ---------- explore grid ---------- */
-  var GR=[
-    ['Cosmology','How we weighed the entire universe.','weighing-the-universe','Read the discovery'],
-    ['Spacetime','The night we heard two black holes collide.','gravitational-waves','Read the discovery'],
-    ['Cosmology','We photographed the unphotographable.','black-hole-image','Read the discovery'],
-    ['Quantum Reality','Does a particle exist before you look?','black-hole-image','On the horizon'],
-    ['Origins of Life','Was Earth\u2019s start a fluke or a rule?','weighing-the-universe','On the horizon'],
-    ['Deep Time','Reading four billion years out of rock.','gravitational-waves','On the horizon']
-  ];
-  var grid=document.getElementById('grid');
-  GR.forEach(function(g){var d=document.createElement('a');d.className='cell';
-    d.href='discovery.html?id='+g[2];
-    d.innerHTML='<div class="field">'+g[0]+'</div><h3>'+g[1]+'</h3>'+
-      '<div class="read">'+g[3]+' &nbsp;→</div>';grid.appendChild(d);});
-
-  /* ---------- mobile menu ---------- */
-  var bg=document.getElementById('burger'),mn=document.getElementById('menu');
-  bg.addEventListener('click',function(){var o=mn.classList.toggle('open');bg.classList.toggle('x',o);
-    document.body.style.overflow=o?'hidden':'';});
-  mn.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){
-    mn.classList.remove('open');bg.classList.remove('x');document.body.style.overflow='';});});
-})();
-</script>
+<script type="module" src="./engine/home.ts"></script>
 </body>
 </html>

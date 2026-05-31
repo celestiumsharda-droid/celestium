@@ -1,0 +1,17 @@
+# Cloudflare Pages headers.
+# Aggressive caching for hashed assets, modest for HTML.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+/og-cover.png
+  Cache-Control: public, max-age=86400
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+/robots.txt
+  Cache-Control: public, max-age=86400

@@ -1,0 +1,91 @@
+/**
+ * CELESTIUM — POST-BUILD: per-discovery HTML
+ *
+ * Runs after `vite build`. Reads dist/discovery.html (Vite's compiled
+ * template) and emits one /discoveries/<slug>/index.html per article,
+ * with per-article OG / Twitter / canonical tags baked in.
+ *
+ * Requires `tsx` (added to devDependencies).
+ */
+
+import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import SITE from "../site.config";
+import DISCOVERIES from "../src/data/discoveries";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(__dirname, "..");
+const DIST = resolve(ROOT, "dist");
+
+const TEMPLATE_PATH = join(DIST, "discovery.html");
+if (!existsSync(TEMPLATE_PATH)) {
+  console.error("✗ dist/discovery.html not found — did `vite build` run?");
+  process.exit(1);
+}
+const template = await readFile(TEMPLATE_PATH, "utf8");
+
+const flatten = (s: string) =>
+  s.replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim();
+
+const esc = (s: string) =>
+  String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+
+function swap(html: string, key: string, value: string): string {
+  const re = new RegExp(`<!--\\s*OG:${key}\\s*-->[^"<]*`, "g");
+  return html.replace(re, esc(value));
+}
+
+const slugs = Object.keys(DISCOVERIES);
+
+for (const slug of slugs) {
+  const d = DISCOVERIES[slug]!;
+  const flatTitle = flatten(d.title);
+  const url = `${SITE.origin}/discoveries/${slug}/`;
+  const pageTitle = `${flatTitle} — Celestium`;
+  // Per-article OG card is emitted by build-og-images.ts. SVG is the
+  // canonical output; PNG is produced as a bonus if `sharp` is present.
+  // We point crawlers at PNG when one exists, SVG otherwise. The post-
+  // build runs in this order so by the time this script ran (first),
+  // build-og-images.ts has not yet emitted them — so we always emit
+  // the SVG path. Update this if you reorder the build steps.
+  const ogImg = SITE.origin + (d.ogImage || `/og/${slug}.svg`);
+  const fallbackOgImg = SITE.origin + SITE.ogImage;
+
+  let html = template;
+  html = swap(html, "TITLE", pageTitle);
+  html = swap(html, "DESC", d.dek);
+  html = swap(html, "URL", url);
+  html = swap(html, "OGTITLE", flatTitle);
+  html = swap(html, "OGDESC", d.dek);
+  html = swap(html, "OGURL", url);
+  html = swap(html, "OGIMG", ogImg);   // build-og-images.ts produces these
+  html = swap(html, "OGALT", `${flatTitle} — Celestium`);
+  html = swap(html, "TWTITLE", flatTitle);
+  html = swap(html, "TWDESC", d.dek);
+  html = swap(html, "TWIMG", ogImg);
+  html = swap(html, "SLUG", slug);
+
+  // Inject a fallback <link rel="preload"> for the OG image so social
+  // crawlers that DO fetch it pre-warm the asset:
+  html = html.replace(
+    "</head>",
+    `<link rel="preload" as="image" href="${fallbackOgImg}"></head>`
+  );
+
+  const outDir = join(DIST, "discoveries", slug);
+  await mkdir(outDir, { recursive: true });
+  await writeFile(join(outDir, "index.html"), html, "utf8");
+  console.log(`  ✓ /discoveries/${slug}/`);
+}
+
+// Remove the bare /dist/discovery.html — only a build template.
+await rm(TEMPLATE_PATH, { force: true });
+
+console.log(`\nGenerated ${slugs.length} discovery pages.`);

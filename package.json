@@ -1,15 +1,26 @@
 {
   "name": "celestium",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A pinnacle of science. The universe, examined.",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && tsx scripts/build-discoveries.ts && tsx scripts/build-og-images.ts && tsx scripts/build-sitemap.ts",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,js}\"",
+    "format": "prettier --write \"src/**/*.{ts,js,css,html,md}\"",
+    "test": "playwright test"
   },
   "devDependencies": {
-    "vite": "^8.0.14"
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.7.0",
+    "eslint": "^9.12.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vite-imagetools": "^7.0.4"
   }
 }

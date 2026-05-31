@@ -1,0 +1,173 @@
+import { mount as mountStarfield } from "./starfield";
+import { enableViewTransitions } from "./view-transitions";
+import DISCOVERIES from "../data/discoveries";
+import RELATED_INDEX from "./related-index";
+import { expandFragments } from "./fragments";
+import type { Discovery } from "./types";
+
+const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
+  document.getElementById(id) as T;
+
+/* ---------- view transitions + starfield ---------- */
+enableViewTransitions();
+mountStarfield($<HTMLCanvasElement>("sky"), { parallax: false });
+
+/* ---------- scroll progress ---------- */
+const prog = $("prog");
+function onScroll() {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  prog.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+}
+addEventListener("scroll", onScroll, { passive: true });
+
+/* ---------- resolve which discovery to render ----------
+   Priority:
+     1. <meta name="celestium:slug" content="…"> baked in at build
+     2. ?id=<slug>  (legacy querystring)
+     3. #<slug>     (anchor form)
+   Falls back to "black-hole-image" if nothing matches. */
+function resolveSlug(): string {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="celestium:slug"]');
+  if (meta && DISCOVERIES[meta.content]) return meta.content;
+  try {
+    const u = new URLSearchParams(location.search).get("id");
+    if (u && DISCOVERIES[u]) return u;
+  } catch (_e) { /* swallow */ }
+  const h = location.hash.replace(/^#/, "");
+  if (h && DISCOVERIES[h]) return h;
+  return "black-hole-image";
+}
+
+const id = resolveSlug();
+const D = DISCOVERIES[id] as Discovery;
+
+/* ---------- hero ---------- */
+document.title = D.title.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() + " — Celestium";
+$("kick").innerHTML = D.kick;
+$("title").innerHTML = D.title;
+$("dek").innerHTML = D.dek;
+$("byl").innerHTML =
+  `<span><b>Field</b> &nbsp;${D.field}</span>` +
+  `<span><b>Era</b> &nbsp;${D.era}</span>` +
+  `<span><b>Subject</b> &nbsp;${D.subject}</span>` +
+  (D.byline ? `<span><b>By</b> &nbsp;${D.byline}</span>` : "");
+
+const ha = $("heroart");
+switch (D.hero) {
+  case "wave":
+    ha.innerHTML = '<div class="v-wave"><i></i><i></i><i></i><i></i><b></b></div>';
+    break;
+  case "wobble":
+    ha.innerHTML =
+      '<div class="v-wobble">' +
+      '<div class="orbit-ring"></div>' +
+      '<div class="orbiter"><span class="planet"></span></div>' +
+      '<div class="sun"></div>' +
+      "</div>";
+    break;
+  case "web": {
+    const nodes: [number, number][] = [[40,60],[150,48],[168,120],[96,166],[34,140],[110,96],[72,40],[130,150]];
+    const edges: [number, number][] = [[0,5],[1,5],[2,5],[3,5],[4,5],[5,6],[5,7],[0,6],[1,2],[3,4]];
+    let g = "";
+    for (const [a, b] of edges) {
+      g += `<line class="fl" x1="${nodes[a]![0]}" y1="${nodes[a]![1]}" x2="${nodes[b]![0]}" y2="${nodes[b]![1]}"/>`;
+    }
+    nodes.forEach((q, i) => {
+      g += `<circle class="nd" cx="${q[0]}" cy="${q[1]}" r="${i === 5 ? 5 : 3.4}"/>`;
+    });
+    ha.innerHTML =
+      '<div class="v-web"><svg viewBox="0 0 200 200" role="img" aria-label="Cosmic web schematic.">' +
+      '<circle class="gl" cx="100" cy="100" r="86"/><circle class="gl" cx="100" cy="100" r="54"/>' +
+      g + "</svg></div>";
+    break;
+  }
+  case "deep-field":
+    ha.innerHTML = '<div class="v-deepfield"></div>';
+    break;
+  default:
+    ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
+}
+
+/* ---------- depth render ---------- */
+const TAGS = [
+  "The Glance — the essence in twenty seconds",
+  "The Curious Read — the story, with the mechanism",
+  "The Deep Dive — the full physics and the safeguards",
+] as const;
+
+const body = $("abody");
+const lt = $("lvltag");
+const seg = $("seg");
+body.style.transition = "opacity .35s";
+
+function renderDepth(l: number) {
+  body.style.opacity = "0";
+  setTimeout(() => {
+    body.innerHTML =
+      expandFragments(D.depths[l] ?? []) +
+      `<div class="know depthnote"><div class="kh">Same discovery · depth ${l + 1} of 3</div>` +
+      "<p>This is the identical fact set, re-told at a different altitude. Switch any time — the reader keeps your place in the idea, not the prose.</p></div>";
+    lt.textContent = TAGS[l] ?? "";
+    body.style.opacity = "1";
+    let n = 0;
+    body.querySelectorAll<HTMLParagraphElement>("p").forEach(p => {
+      if (p.closest(".know") || p.closest(".pull")) return;
+      p.style.animation = "none";
+      void p.offsetHeight; // reflow so restart fires
+      p.style.animation = `fade .8s ${(n * 0.04)}s forwards`;
+      n++;
+    });
+    onScroll();
+  }, 180);
+}
+
+seg.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
+  b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false");
+  b.addEventListener("click", () => {
+    seg.querySelectorAll<HTMLButtonElement>("button").forEach(o => {
+      o.classList.remove("on");
+      o.setAttribute("aria-pressed", "false");
+    });
+    b.classList.add("on");
+    b.setAttribute("aria-pressed", "true");
+    renderDepth(Number(b.dataset["l"]));
+    const y = document.querySelector("article")!.getBoundingClientRect().top + scrollY - 104;
+    if (scrollY > y) scrollTo({ top: y, behavior: "smooth" });
+  });
+});
+renderDepth(0);
+
+/* ---------- related cards ---------- */
+const rg = $("rgrid");
+(D.related ?? []).forEach(rid => {
+  const m = RELATED_INDEX[rid];
+  if (!m) return;
+  const href = m.href || `/discoveries/${rid}/`;
+  const a = document.createElement("a");
+  a.className = "rc";
+  a.href = href;
+  a.innerHTML =
+    `<div class="f">${m.field}</div><h3>${m.title}</h3>` +
+    `<div class="r">${m.cta || "Read"} &nbsp;→</div>`;
+  rg.appendChild(a);
+});
+
+$("legal").textContent = "© 2026 CELESTIUM — " + D.field + " · " + D.era;
+
+/* ---------- mobile menu ---------- */
+const bg = $<HTMLButtonElement>("burger");
+const mn = $("menu");
+bg.setAttribute("aria-expanded", "false");
+bg.setAttribute("aria-controls", "menu");
+bg.addEventListener("click", () => {
+  const o = mn.classList.toggle("open");
+  bg.classList.toggle("x", o);
+  bg.setAttribute("aria-expanded", o ? "true" : "false");
+  document.body.style.overflow = o ? "hidden" : "";
+});
+mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("click", () => {
+  mn.classList.remove("open");
+  bg.classList.remove("x");
+  bg.setAttribute("aria-expanded", "false");
+  document.body.style.overflow = "";
+}));
