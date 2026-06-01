@@ -63,7 +63,17 @@
   </header>
 
   <section class="catalog" aria-label="All discoveries">
+    <div class="cat-controls">
+      <div class="cat-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="cat-q" type="search" placeholder="Search by title, field or idea…" aria-label="Search discoveries" autocomplete="off" spellcheck="false">
+        <kbd class="cat-kbd" aria-hidden="true">/</kbd>
+      </div>
+      <div class="cat-filters" id="cat-filters" role="group" aria-label="Filter by discipline"></div>
+      <p class="cat-count" id="cat-count" aria-live="polite"></p>
+    </div>
     <div class="cat-grid" id="catalog"></div>
+    <p class="cat-empty" id="cat-empty" hidden>No discoveries match — try another word or clear the filters.</p>
   </section>
 
   <footer>
