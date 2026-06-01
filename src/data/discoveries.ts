@@ -24,6 +24,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">A</span> black hole traps light, so it cannot be seen directly. But the superheated gas swirling around one glows — and a black hole carves a dark, precisely-sized "shadow" out of that glow. In April 2019 the Event Horizon Telescope — eight radio dishes turned into one Earth-sized instrument — released the first image of that shadow, around the giant black hole in galaxy M87. Its size matched Einstein’s general relativity to within the error bars. In 2022 the same team imaged the one at the centre of our own galaxy.</p>',
+        '__FIG_M87__',
         '<div class="know"><div class="kh">Why it matters</div><p>It turned a mathematical prediction from 1915 into a photograph. Nothing about the result had to come out right — and it did, exactly.</p></div>'
       ],
       [
@@ -79,6 +80,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">E</span>instein predicted that violent events should send ripples through spacetime — gravitational waves — stretching and squeezing space as they pass. They are so faint he doubted they could ever be detected. On 14 September 2015 two detectors in the United States caught one: the merger of two black holes about 1.3 billion light-years away. The wave changed each detector’s 4-kilometre arms by about a ten-thousandth the width of a proton. It opened an entirely new way to observe the universe — by listening instead of looking.</p>',
+        '__FIG_LIGO__',
         '<div class="know"><div class="kh">Why it matters</div><p>Every telescope in history collected light. This was the first time humanity sensed the universe through gravity itself — and confirmed a 1916 prediction in the same instant.</p></div>'
       ],
       [
@@ -103,6 +105,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<h2>The interferometer</h2>',
         '<p>Each LIGO observatory is a Michelson interferometer with two perpendicular 4-km arms. A laser is split into both; it reflects between suspended mirrors many times, effectively lengthening the path, then recombines at a detector. With no wave present the arms are tuned so the recombined light nearly cancels. A gravitational wave stretches one arm and shrinks the other in alternation, unbalancing that cancellation in a pattern that traces the wave itself.</p>',
         '<p>The mirrors hang on multi-stage pendulums isolating them from ground tremor; the beam travels in one of the largest vacuum systems on Earth; the laser is stabilised to extraordinary precision. Even so, the instrument is swamped by seismic, thermal and quantum noise. The signal is not so much "seen" as statistically extracted.</p>',
+        '__FIG_LIGO__',
         '__STATS_LIGO__',
         '<h2>Pulling a signal out of noise</h2>',
         '<p>The recovery technique is matched filtering: vast banks of theoretical waveforms — computed from general relativity for every plausible pair of masses and spins — are slid against the data, hunting for a match buried in the noise. A real astrophysical event must also appear in both widely separated detectors, with a time offset no larger than the light-travel time between them.</p>',
@@ -127,6 +130,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">Y</span>ou cannot weigh a galaxy directly, so astronomers let gravity do it: the faster things orbit, the more mass must be pulling on them. Do this carefully and the visible stars and gas fall far short — galaxies behave as if wrapped in vast halos of unseen matter. Add the way light bends around clusters and the geometry of the infant universe, and the books only balance if ordinary matter is about 5% of the total, with roughly 27% "dark matter" and 68% "dark energy." We have weighed the universe with confidence — and found we cannot see almost any of it.</p>',
+        '__FIG_BULLET__',
         '<div class="know"><div class="kh">Why it matters</div><p>Independent methods, using completely different physics, all demand the same invisible 95%. That agreement is why dark matter and dark energy are taken seriously rather than dismissed.</p></div>'
       ],
       [
@@ -150,6 +154,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">A galaxy’s visible disc turned out to be the small bright core of something far larger and entirely dark.<cite>The halo</cite></div>',
         '<h2>Independent confirmations</h2>',
         '<p>A single technique invites a single error, so the case rests on methods sharing no common assumptions. Gravitational lensing weighs a cluster by how strongly it warps the light of background galaxies, mapping mass that emits nothing — and in colliding clusters the mass is seen separated from the visible hot gas, hard to explain without dark matter. The cosmic microwave background, the relic glow from about 380,000 years after the Big Bang, carries acoustic ripples whose sizes pin down the densities of ordinary and dark matter to percent-level precision. And the present-day web of galaxies could not have grown from the early universe’s tiny fluctuations in the available time without dark matter’s extra gravity.</p>',
+        '__FIG_BULLET__',
         '__STATS_COSMO__',
         '<div class="know"><div class="kh">How we know it is real</div><p>Rotation curves, cluster lensing, the microwave background, structure formation, and primordial-element abundances are independent probes resting on different physics. They do not merely permit the same answer — each separately demands it. That convergence, not any one measurement, is the foundation.</p></div>',
         '<h2>The acceleration nobody ordered</h2>',
@@ -173,6 +178,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">A</span> planet beside a star is like a firefly beside a lighthouse — a billion times fainter, swallowed in the glare. For most of history that ended the discussion. The way around it: a planet tugs on its star as much as the star tugs on it, and a heavy enough planet makes its star wobble by a few metres per second. In October 1995, Michel Mayor and Didier Queloz measured that wobble in a sun-like star fifty light-years away. The world they had found, 51 Pegasi b, was a gas giant whipping around its sun every four days — a configuration nobody had predicted. The count of known worlds has not stopped growing since.</p>',
+        '__FIG_HOTJUP__',
         '<div class="know"><div class="kh">Why it matters</div><p>It answered a question philosophers had asked for two thousand years — and answered it with a planet so unlike our own that the textbook story of how solar systems form had to be rewritten.</p></div>'
       ],
       [
@@ -206,6 +212,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<h2>October 1995, and the impossible planet</h2>',
         '<p>The wobble Mayor and Queloz announced corresponded to a planet of roughly half a Jupiter mass orbiting 51 Pegasi every 4.23 days at about 0.05 astronomical units — one-twentieth of Earth’s distance from the Sun. At that range the planet sits in a furnace of stellar radiation; its day side reaches temperatures above a thousand degrees Celsius.</p>',
         '<p>Nothing in the standard model of planet formation, built around the Solar System, had predicted such an object. Gas giants were supposed to form beyond the snow line, where volatile ices can survive and accrete onto a rocky core. A Jupiter at four days seemed physically impossible — until it was sitting in the data. The resolution, worked out over the following years, was migration: gas giants form far out, then exchange angular momentum with the protoplanetary disk and spiral inward, sometimes catastrophically close.</p>',
+        '__FIG_HOTJUP__',
         '<div class="pull">A single signal rewrote how solar systems are allowed to look.<cite>The theoretical aftermath</cite></div>',
         '<h2>The flood</h2>',
         '<p>Radial-velocity surveys produced steady detections through the late 1990s. The decisive jump came with transit photometry — watching for the small periodic dimming when a planet crosses in front of its star. NASA’s Kepler mission, staring at a single patch of sky from 2009 to 2018, alone confirmed thousands of worlds. Microlensing, direct imaging, and timing methods added more. The catalogue today exceeds five thousand confirmed exoplanets across more than three thousand systems, with statistical estimates suggesting most stars in the galaxy host at least one planet.</p>',
@@ -228,6 +235,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">S</span>hine light through two narrow slits and it makes a striped interference pattern — the signature of a wave. The strange part: fire the light one particle at a time, and each lands as a single dot, yet over thousands of shots the same stripes appear. Each particle behaves as if it went through both slits and interfered with itself. Place a detector to see which slit it really took, and the stripes disappear — it goes back to behaving like a plain particle. Before you measure it, a quantum object does not seem to have a single definite path at all.</p>',
+        '__FIG_DSLIT__',
         '<div class="know"><div class="kh">Why it matters</div><p>It is the cleanest demonstration that the quantum world is not just small — it is built on different rules, where "where is it?" has no answer until you ask.</p></div>'
       ],
       [
@@ -252,6 +260,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<h2>The mathematics of maybe</h2>',
         '<p>Quantum mechanics describes the particle with a wavefunction that assigns a complex amplitude to every possible path. The amplitudes for the two slits add — and because they can be out of step, they can reinforce or cancel, producing the bands. Max Born’s 1926 rule supplies the link to experience: the probability of detecting the particle somewhere is the square of the amplitude there. The wave is real enough to interfere, but what it carries is possibility, not substance.</p>',
         '<p>Crucially, the interference only survives while the two paths remain genuinely indistinguishable. The instant any record exists — anywhere in the universe — of which slit was taken, the amplitudes can no longer interfere, and the pattern collapses to two bands.</p>',
+        '__FIG_DSLIT__',
         '<div class="stats"><div><div class="v">1927</div><div class="l">Electrons shown to diffract — matter is wavelike</div></div><div><div class="v">10&#8315;&#185;&#8309; m</div><div class="l">Wavelength of a moving electron — tiny, but real</div></div><div><div class="v">2,000+</div><div class="l">Atoms in molecules that still interfere</div></div></div>',
         '<h2>Why looking matters</h2>',
         '<p>The popular phrase is that "observation collapses the wavefunction," which invites the wrong idea that consciousness is required. It is not. What matters is whether which-path information becomes recorded in the environment — a stray photon, a vibration, a detector click. That spreading-out of information, called decoherence, is enough to wash out interference even with no person watching. Measurement is a physical interaction, not a mental one.</p>',
@@ -275,6 +284,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">R</span>adioactive atoms decay at a fixed, unchangeable rate, ticking like a clock sealed inside a rock when it forms. Count how many parent atoms have turned into their decay products and you can read off how long the clock has run. In 1956 Clair Patterson applied this to meteorites — pristine leftovers from the birth of the Solar System — and measured the age of the Earth at about 4.55 billion years. Decades of independent methods have only sharpened the number: 4.54 billion years, give or take about one percent.</p>',
+        '__FIG_DECAY__',
         '<div class="know"><div class="kh">Why it matters</div><p>It replaced thousands of years of guesswork with a measurement, and gave evolution and geology the vast stretch of time they require to make sense.</p></div>'
       ],
       [
@@ -297,6 +307,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">A constant nothing can change — not heat, not pressure, not time itself — is exactly what a clock needs.<cite>Why decay rates make good timers</cite></div>',
         '<h2>The uranium-lead concordia</h2>',
         '<p>Uranium-lead dating is the gold standard because uranium offers two clocks at once: uranium-238 decays to lead-206 with a 4.47-billion-year half-life, and uranium-235 decays to lead-207 with a 704-million-year half-life. A mineral that has remained closed will give the same age on both systems — its measurements fall on a curve called the concordia. A grain that has leaked lead falls off the curve in a tell-tale way, so disturbed samples announce themselves rather than quietly lying.</p>',
+        '__FIG_DECAY__',
         '<p>The mineral of choice is zircon, which incorporates uranium when it crystallises but violently rejects lead, so essentially all the lead it now contains was made inside it by decay. Zircons are also fantastically durable. The oldest yet found, from the Jack Hills of Western Australia, date to about 4.40 billion years — direct evidence of a solid crust, and even liquid water, within the Earth’s first 150 million years.</p>',
         '<div class="stats"><div><div class="v">4.47 Gyr</div><div class="l">Half-life of uranium-238</div></div><div><div class="v">0.70 Gyr</div><div class="l">Half-life of uranium-235</div></div><div><div class="v">4.55 Gyr</div><div class="l">Patterson&#8217;s 1956 meteorite age</div></div></div>',
         '<h2>Patterson, meteorites, and clean rooms</h2>',
@@ -321,6 +332,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">D</span>NA carries the instructions for building a living thing, written along a molecule too small to see. In 1953 James Watson and Francis Crick — using a crucial X-ray image made by Rosalind Franklin — worked out its shape: two strands twisted into a double helix, their inward-facing chemical "letters" pairing up in a fixed way, A always with T and G always with C. That pairing was the punchline. Pull the two strands apart and each is a perfect template for rebuilding the other, so the molecule can copy itself. The structure did not just describe heredity; it explained it.</p>',
+        '__FIG_HELIX__',
         '<div class="know"><div class="kh">Why it matters</div><p>It united chemistry and life: heredity became something you could draw, with a mechanism you could see. Nearly all of modern biology and medicine descends from that one diagram.</p></div>'
       ],
       [
@@ -367,6 +379,7 @@ const DISCOVERIES: DiscoveryMap = {
     depths: [
       [
         '<p><span class="lead">A</span>fter death, DNA shatters into tiny fragments and is swamped by microbes and the DNA of everyone who has since handled the bone — so for decades, reading the genome of an ancient human looked impossible. Svante Pääbo and his colleagues spent years inventing the clean-room methods and controls to do it reliably. In 2010 they published the genome of a Neanderthal, and found something startling: people outside Africa carry about 1–2% Neanderthal DNA. Our ancestors interbred with them. The same year, a single finger bone yielded the genome of an entirely unknown human group — the Denisovans — identified from DNA alone.</p>',
+        '__FIG_HOMININ__',
         '<div class="know"><div class="kh">Why it matters</div><p>It turned human prehistory from a story told by a handful of bones into one we can read in the genome — and showed that <em>Homo sapiens</em> shared the planet, and children, with other kinds of human. Pääbo received the 2022 Nobel Prize.</p></div>'
       ],
       [
