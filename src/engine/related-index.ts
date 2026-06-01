@@ -7,6 +7,8 @@ const RELATED_INDEX: RelatedIndex = {
   "gravitational-waves":   { field: "Spacetime",          title: "The night we heard two black holes collide." },
   "weighing-the-universe": { field: "Cosmology",          title: "How we weighed the entire universe." },
   "first-exoplanet":       { field: "Planetary Science", title: "The night we found a world around another sun." },
+  "double-slit":           { field: "Quantum Reality",   title: "Does a particle exist before you look?" },
+  "age-of-earth":          { field: "Deep Time",         title: "Reading four billion years out of a rock." },
   "__scale":               { field: "Perspective",       title: "Find where you sit in thirteen orders of magnitude.", href: "/#scale", cta: "Open the tool" },
 };
 

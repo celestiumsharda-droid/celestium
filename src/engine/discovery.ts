@@ -89,9 +89,27 @@ switch (D.hero) {
       g + "</svg></div>";
     break;
   }
-  case "deep-field":
-    ha.innerHTML = '<div class="v-deepfield"></div>';
+  case "deep-field": {
+    // a seeded field of distant galaxies — deterministic so it never flickers
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const cols = ["#f3f5fb", "#a9bcff", "#f2e6c4", "#cdd9ff"];
+    let s = '<div class="v-deepfield"><svg viewBox="0 0 200 200" role="img" aria-label="A deep field of distant galaxies.">';
+    for (let i = 0; i < 120; i++) {
+      const x = rnd() * 200, y = rnd() * 200;
+      const dc = Math.hypot(x - 100, y - 100);
+      if (dc > 95) continue;                       // soft circular vignette
+      const r = rnd() * 1.6 + 0.4;
+      const c = cols[Math.floor(rnd() * cols.length)];
+      const o = (0.3 + rnd() * 0.7) * (1 - dc / 130);
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${c}" opacity="${o.toFixed(2)}"/>`;
+    }
+    s += '<ellipse cx="72" cy="82" rx="11" ry="4" fill="none" stroke="rgba(169,188,255,.4)" transform="rotate(24 72 82)"/>';
+    s += '<ellipse cx="130" cy="122" rx="8" ry="3" fill="none" stroke="rgba(242,230,196,.34)" transform="rotate(-16 130 122)"/>';
+    s += "</svg></div>";
+    ha.innerHTML = s;
     break;
+  }
   default:
     ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
 }

@@ -209,6 +209,97 @@ const DISCOVERIES: DiscoveryMap = {
         '<p>The original question — does any other star host any planet at all — is closed. The replacement is more pointed: do any of those planets carry life, and how would we know across the void? Atmospheric biosignatures — gas ratios that abiotic chemistry cannot explain — are the current best candidate. We may yet answer the older question, the harder one, in a single human lifetime.</p>'
       ]
     ]
+  },
+
+  "double-slit": {
+    field: "Quantum Reality",
+    era: "1801 – now",
+    subject: "The measurement problem",
+    kick: "Quantum Reality · The Discovery Series",
+    title: 'Does a particle exist<br><i>before you look?</i>',
+    dek: "Fire single particles at a pair of slits and they build a pattern that only makes sense if each one passed through both at once. Try to catch which slit, and the pattern vanishes. A century on, the experiment still refuses to let reality be ordinary.",
+    hero: "wave",
+    related: ["gravitational-waves", "weighing-the-universe", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">S</span>hine light through two narrow slits and it makes a striped interference pattern — the signature of a wave. The strange part: fire the light one particle at a time, and each lands as a single dot, yet over thousands of shots the same stripes appear. Each particle behaves as if it went through both slits and interfered with itself. Place a detector to see which slit it really took, and the stripes disappear — it goes back to behaving like a plain particle. Before you measure it, a quantum object does not seem to have a single definite path at all.</p>',
+        '<div class="know"><div class="kh">Why it matters</div><p>It is the cleanest demonstration that the quantum world is not just small — it is built on different rules, where "where is it?" has no answer until you ask.</p></div>'
+      ],
+      [
+        '<h2>A wave, settled in 1801</h2>',
+        '<p><span class="lead">I</span>n 1801 Thomas Young sent light through two close slits and found alternating bright and dark bands on a screen beyond. Only waves do that: where two crests meet they reinforce, where a crest meets a trough they cancel. The experiment was taken as proof that light is a wave, and for a century that was the end of it.</p>',
+        '<p>Then the twentieth century complicated the picture. Light also arrives in discrete lumps — photons — and matter that everyone called particles, like electrons, turns out to make the very same interference bands. Whatever these things are, they are not simply waves or simply particles.</p>',
+        '<div class="pull">Each particle arrives as one dot. Thousands of dots, one at a time, quietly assemble into stripes.<cite>The single-particle result</cite></div>',
+        '<h2>One at a time</h2>',
+        '<p>The decisive version fires the particles individually, so slow that only one is ever in the apparatus at once. Each makes a single point of impact — unmistakably a particle. But let the points accumulate and the interference pattern emerges from them. With nothing else present to interfere with, each particle must somehow interfere with itself, exploring both slits as a spread-out wave of possibility before landing as a point.</p>',
+        '<div class="stats"><div><div class="v">1 at a time</div><div class="l">Single particles still build the pattern</div></div><div><div class="v">2 slits</div><div class="l">Each takes both paths at once</div></div><div><div class="v">|&psi;|&#178;</div><div class="l">The wave gives only the odds of landing</div></div></div>',
+        '<div class="know"><div class="kh">How we know it is real</div><p>It has been done with photons, electrons, neutrons, whole atoms, and even large molecules of hundreds of atoms. The heavier and more complex the object, the harder it is to keep it isolated — but when isolation holds, the stripes always come.</p></div>',
+        '<h2>Try to catch it, and it stops</h2>',
+        '<p>Add a detector that records which slit each particle goes through, and the stripes vanish — you get two plain bands, as if the particles were ordinary marbles. You cannot have both the which-path knowledge and the interference. Gaining information about the path destroys the wave behaviour. The act of measurement is not a passive look; it changes what happens.</p>',
+        '<p>Before measurement, the particle is described by a wavefunction spread across both routes. The wave does not tell you where the particle is — only the probability of finding it at each spot. Reality, at this level, deals in odds until the moment something is recorded.</p>'
+      ],
+      [
+        '<h2>The duality nobody could remove</h2>',
+        '<p><span class="lead">Y</span>oung’s 1801 fringes established the wave nature of light, and for a hundred years the matter seemed closed. The crack opened in 1905, when Einstein explained the photoelectric effect by treating light as discrete quanta — photons. Light was somehow both. Worse, in 1927 Davisson and Germer found that electrons, the very emblem of a particle, diffract like waves. Wave-particle duality was not a quirk of light; it was a property of everything.</p>',
+        '<p>The double slit distils the paradox to its sharpest point. A single quantum object, sent through two openings, produces a pattern that requires both openings to have been used — yet arrives at the screen as one indivisible dot, in one place.</p>',
+        '<div class="pull">The wavefunction is not a thing moving through space. It is a catalogue of what could happen, and how likely each outcome is.<cite>What is actually spread across the slits</cite></div>',
+        '<h2>The mathematics of maybe</h2>',
+        '<p>Quantum mechanics describes the particle with a wavefunction that assigns a complex amplitude to every possible path. The amplitudes for the two slits add — and because they can be out of step, they can reinforce or cancel, producing the bands. Max Born’s 1926 rule supplies the link to experience: the probability of detecting the particle somewhere is the square of the amplitude there. The wave is real enough to interfere, but what it carries is possibility, not substance.</p>',
+        '<p>Crucially, the interference only survives while the two paths remain genuinely indistinguishable. The instant any record exists — anywhere in the universe — of which slit was taken, the amplitudes can no longer interfere, and the pattern collapses to two bands.</p>',
+        '<div class="stats"><div><div class="v">1927</div><div class="l">Electrons shown to diffract — matter is wavelike</div></div><div><div class="v">10&#8315;&#185;&#8309; m</div><div class="l">Wavelength of a moving electron — tiny, but real</div></div><div><div class="v">2,000+</div><div class="l">Atoms in molecules that still interfere</div></div></div>',
+        '<h2>Why looking matters</h2>',
+        '<p>The popular phrase is that "observation collapses the wavefunction," which invites the wrong idea that consciousness is required. It is not. What matters is whether which-path information becomes recorded in the environment — a stray photon, a vibration, a detector click. That spreading-out of information, called decoherence, is enough to wash out interference even with no person watching. Measurement is a physical interaction, not a mental one.</p>',
+        '<div class="know"><div class="kh">How we know it is real</div><p>Delayed-choice and quantum-eraser experiments take this further: the decision to record or erase which-path information can be made <em>after</em> each particle has passed the slits, and the pattern still appears or vanishes accordingly. The experiments are reproducible, quantitative, and agree with quantum theory to extraordinary precision.</p></div>',
+        '<h2>What it does and does not settle</h2>',
+        '<p>The experiment proves, beyond reasonable doubt, that a quantum object has no single definite path before it is measured, and that measurement yields one outcome drawn from a weighted set of possibilities. What it does <em>not</em> do is tell us what is "really" happening underneath. The Copenhagen view says the wavefunction simply collapses. The many-worlds view says every outcome occurs, in branching realities. The pilot-wave view restores definite particles guided by a real wave. All three reproduce the same fringes; experiment has not yet separated them.</p>',
+        '<div class="pull">Two centuries on, we can predict the pattern to any precision we like — and still cannot agree on what it means.<cite>The standing puzzle</cite></div>'
+      ]
+    ]
+  },
+
+  "age-of-earth": {
+    field: "Deep Time",
+    era: "1956 CE",
+    subject: "4.54 billion years",
+    kick: "Deep Time · The Discovery Series",
+    title: 'Reading four billion years<br><i>out of a rock.</i>',
+    dek: "For most of history the Earth had no knowable age. Then radioactivity handed us a clock buried inside the rocks themselves — and a young chemist used it to weigh deep time to within one percent.",
+    hero: "deep-field",
+    related: ["first-exoplanet", "weighing-the-universe", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">R</span>adioactive atoms decay at a fixed, unchangeable rate, ticking like a clock sealed inside a rock when it forms. Count how many parent atoms have turned into their decay products and you can read off how long the clock has run. In 1956 Clair Patterson applied this to meteorites — pristine leftovers from the birth of the Solar System — and measured the age of the Earth at about 4.55 billion years. Decades of independent methods have only sharpened the number: 4.54 billion years, give or take about one percent.</p>',
+        '<div class="know"><div class="kh">Why it matters</div><p>It replaced thousands of years of guesswork with a measurement, and gave evolution and geology the vast stretch of time they require to make sense.</p></div>'
+      ],
+      [
+        '<h2>An age nobody could read</h2>',
+        '<p><span class="lead">F</span>or most of history the Earth’s age was a matter of scripture or guesswork — a few thousand years, or simply unknowable. Nineteenth-century attempts using ocean salt or the planet’s cooling gave wildly different answers and could not be trusted. The clock was missing.</p>',
+        '<p>Radioactivity supplied it. Discovered at the turn of the twentieth century, radioactive decay turns one element into another at a rate set by a fixed half-life — the time for half the atoms to decay. That rate is immune to heat, pressure or chemistry. Lock some radioactive atoms into a crystal as it forms, and the steadily growing pile of decay products becomes a timer counting from that moment.</p>',
+        '<div class="pull">The rock carries its own clock. You only have to learn to read it.<cite>The principle of radiometric dating</cite></div>',
+        '<h2>Two clocks in one crystal</h2>',
+        '<p>The most powerful timer uses uranium, which comes in two kinds that decay to two kinds of lead at very different rates — one with a half-life of about 4.5 billion years, the other about 700 million. Because a single mineral grain traps both, it contains two independent clocks that must agree on the same age. When they do, the result is trustworthy; when they disagree, the sample has been disturbed and is discarded.</p>',
+        '<div class="stats"><div><div class="v">4.54 Gyr</div><div class="l">Age of the Earth</div></div><div><div class="v">&plusmn;1%</div><div class="l">Modern uncertainty</div></div><div><div class="v">4.40 Gyr</div><div class="l">Oldest known Earth crystal (a zircon)</div></div></div>',
+        '<div class="know"><div class="kh">How we know it is real</div><p>Completely different decay systems — uranium-lead, rubidium-strontium, samarium-neodymium — date the same meteorites to the same age. Independent clocks built on different physics agreeing to within a percent is what turns a measurement into a fact.</p></div>',
+        '<h2>Why a meteorite, not the ground</h2>',
+        '<p>The Earth itself is a poor witness to its own birth. Its surface is endlessly recycled — melted, buried, eroded — so its oldest surviving rocks are younger than the planet. Meteorites are different: most are unchanged debris from the Solar System’s formation, frozen at the moment everything began. Date them and you date the Earth’s birth by proxy. In 1956 Clair Patterson did exactly that, and got 4.55 billion years.</p>'
+      ],
+      [
+        '<h2>From curiosity to clock</h2>',
+        '<p><span class="lead">W</span>hen Henri Becquerel and the Curies uncovered radioactivity at the close of the nineteenth century, no one saw a calendar in it. Ernest Rutherford did. He realised that because each radioactive isotope decays at a rate nothing can alter, the ratio of leftover parent atoms to accumulated daughter atoms in a mineral measures the time since that mineral crystallised. By 1907 the first crude radiometric dates already ran to more than a billion years — far beyond anything physics had allowed before, and the opening of deep time.</p>',
+        '<p>The method rests on a single clean equation of exponential decay. Know the half-life, measure the surviving parent and the accumulated daughter, and the elapsed time follows. The art is in trusting the sample: the clock is only honest if the crystal has stayed closed since it formed, neither gaining nor losing atoms.</p>',
+        '<div class="pull">A constant nothing can change — not heat, not pressure, not time itself — is exactly what a clock needs.<cite>Why decay rates make good timers</cite></div>',
+        '<h2>The uranium-lead concordia</h2>',
+        '<p>Uranium-lead dating is the gold standard because uranium offers two clocks at once: uranium-238 decays to lead-206 with a 4.47-billion-year half-life, and uranium-235 decays to lead-207 with a 704-million-year half-life. A mineral that has remained closed will give the same age on both systems — its measurements fall on a curve called the concordia. A grain that has leaked lead falls off the curve in a tell-tale way, so disturbed samples announce themselves rather than quietly lying.</p>',
+        '<p>The mineral of choice is zircon, which incorporates uranium when it crystallises but violently rejects lead, so essentially all the lead it now contains was made inside it by decay. Zircons are also fantastically durable. The oldest yet found, from the Jack Hills of Western Australia, date to about 4.40 billion years — direct evidence of a solid crust, and even liquid water, within the Earth’s first 150 million years.</p>',
+        '<div class="stats"><div><div class="v">4.47 Gyr</div><div class="l">Half-life of uranium-238</div></div><div><div class="v">0.70 Gyr</div><div class="l">Half-life of uranium-235</div></div><div><div class="v">4.55 Gyr</div><div class="l">Patterson&#8217;s 1956 meteorite age</div></div></div>',
+        '<h2>Patterson, meteorites, and clean rooms</h2>',
+        '<p>To date the planet rather than a single rock, Clair Patterson reasoned that the Earth and the meteorites condensed from the same cloud at the same time. Using the lead isotopes in iron and stony meteorites — including the Canyon Diablo meteorite for the Solar System’s primordial lead — he constructed an isochron that pinned the age at 4.55 &plusmn; 0.07 billion years in 1956. The figure has barely moved since.</p>',
+        '<div class="know"><div class="kh">How we know it is real</div><p>Patterson’s greatest enemy was contamination: lead was everywhere — in dust, in solder, in the air — and a trace would ruin a measurement. Building some of the first ultra-clean laboratories to exclude it, he noticed modern samples were saturated with industrial lead. That accidental discovery launched his decades-long campaign that ended leaded petrol. The same obsessive cleanliness is why the meteorite age is believed.</p></div>',
+        '<h2>The number that holds</h2>',
+        '<p>Today the Earth and Solar System are dated to 4.54 billion years with an uncertainty near one percent — one of the best-determined numbers in all of science, cross-checked by half a dozen independent isotope systems and by the dating of the oldest meteorites and Moon rocks. The planet that once had no knowable age is now timed more precisely than almost anything else about it.</p>',
+        '<div class="pull">We learned to read a clock that had been running, untouched, since before there was anyone to wind it.<cite>The standing result</cite></div>'
+      ]
+    ]
   }
 };
 
