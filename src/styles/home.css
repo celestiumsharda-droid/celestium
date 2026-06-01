@@ -381,20 +381,56 @@ section { position: relative; padding: 140px 0; }
   width: clamp(240px, 30vw, 420px);
   aspect-ratio: 1; border-radius: 50%;
   position: relative;
-  transition: .9s cubic-bezier(.3,.8,.3,1);
+  transition: transform .9s cubic-bezier(.3,.8,.3,1);
 }
-.bh .disk {
-  position: absolute; inset: -30%;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent, rgba(242,230,196,.0), var(--star), rgba(169,188,255,.4), transparent 70%);
-  filter: blur(14px);
-  animation: spin 14s linear infinite;
-  opacity: 0; transition: 1s;
+/* ambient bloom behind the whole object */
+.bh-glow {
+  position: absolute; inset: -28%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(169,188,255,.12), rgba(242,230,196,.05) 36%, transparent 62%);
+  filter: blur(6px);
 }
-.bh .core {
-  position: absolute; inset: 0;
+/* the shadow + crisp photon ring */
+.bh-core {
+  position: absolute; inset: 33%;
   border-radius: 50%; background: #000;
-  box-shadow: 0 0 0 1px rgba(255,255,255,.08), inset 0 0 60px rgba(0,0,0,1), 0 0 90px rgba(169,188,255,.18);
+  box-shadow:
+    0 0 0 2px rgba(255,248,230,.98),
+    0 0 12px 1px rgba(255,240,210,.6),
+    0 0 40px 5px rgba(169,188,255,.28),
+    inset 0 0 24px #000;
+  z-index: 4;
+}
+/* the lensed halo — light from the far side bent up and over the top,
+   the Interstellar signature. A near-circular ring, bright top & bottom. */
+.bh-lens {
+  position: absolute; inset: 16%;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg,
+    transparent 0deg, rgba(242,230,196,.85) 22deg, rgba(255,246,216,.95) 40deg, rgba(169,188,255,.5) 60deg, transparent 96deg,
+    transparent 264deg, rgba(169,188,255,.5) 300deg, rgba(255,246,216,.95) 320deg, rgba(242,230,196,.85) 338deg, transparent 360deg);
+  -webkit-mask: radial-gradient(circle, transparent 49%, #000 52%, #000 62%, transparent 67%);
+  mask: radial-gradient(circle, transparent 49%, #000 52%, #000 62%, transparent 67%);
+  filter: blur(1.5px);
+  z-index: 3;
+}
+/* the main accretion disk — a flattened, rotating ring with a hot inner
+   edge and a doppler-bright side. Ignites as the story progresses. */
+.bh-disk {
+  position: absolute; left: -42%; right: -42%; top: 50%; height: 184%;
+  transform: translateY(-50%) scaleY(.34);
+  border-radius: 50%;
+  background: conic-gradient(from 200deg,
+    transparent 0deg, rgba(242,230,196,0) 28deg,
+    rgba(255,246,216,.98) 80deg, rgba(242,230,196,.4) 122deg,
+    transparent 162deg, transparent 206deg,
+    rgba(169,188,255,.6) 250deg, rgba(169,188,255,.13) 298deg,
+    transparent 332deg);
+  -webkit-mask: radial-gradient(circle, transparent 25%, #000 31%, #000 74%, transparent 88%);
+  mask: radial-gradient(circle, transparent 25%, #000 31%, #000 74%, transparent 88%);
+  filter: blur(1.6px) saturate(1.15);
+  animation: spin 18s linear infinite;
+  opacity: 0; transition: opacity 1.1s;
+  z-index: 5;
 }
 .steps { padding: 8vh 0; position: relative; z-index: 2; }
 .step {
@@ -426,10 +462,7 @@ section { position: relative; padding: 140px 0; }
   }
   .bh {
     width: clamp(220px, 52vw, 360px);
-    opacity: .5;                   /* recede behind the words */
-  }
-  .bh .core {
-    box-shadow: 0 0 0 1px rgba(255,255,255,.06), inset 0 0 50px #000, 0 0 70px rgba(169,188,255,.12);
+    opacity: .6;                   /* recede behind the words */
   }
   .step { padding: 0 32px; min-height: 82vh; }
   .step p { max-width: 38ch; }
@@ -584,6 +617,12 @@ section { position: relative; padding: 140px 0; }
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
 }
 .cell:hover::before { opacity: 1; }
+.cell-art { position: absolute; inset: 0; z-index: 0; opacity: .6; transition: opacity .5s; }
+.cell-art svg { width: 100%; height: 100%; display: block; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.cell-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(163deg, rgba(10,12,18,.48) 0%, rgba(10,12,18,.86) 72%); }
+.cell:hover .cell-art { opacity: .8; }
+.cell:hover .cell-art svg { transform: scale(1.05); }
+.cell-in { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
 .cell .field { font-family: var(--mono); font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
 .cell h3 { font-size: 1.55rem; margin: 20px 0; color: var(--mut); transition: .4s; line-height: 1.2; }
 .cell:hover h3 { color: var(--ink); }

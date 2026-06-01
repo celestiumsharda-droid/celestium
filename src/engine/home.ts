@@ -3,6 +3,7 @@ import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
 import { initSound, playClick } from "./sound";
 import { initCommandPalette } from "./command-palette";
+import { cardVisual } from "./card-visual";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -217,8 +218,11 @@ EXPLORE.forEach(g => {
   a.className = "cell";
   a.href = `/discoveries/${g.slug}/`;
   a.innerHTML =
+    `<div class="cell-art">${cardVisual(g.slug, g.field)}</div>` +
+    `<div class="cell-in">` +
     `<div class="field">${g.field}</div><h3>${g.title}</h3>` +
-    `<div class="read">${g.cta} &nbsp;→</div>`;
+    `<div class="read">${g.cta} &nbsp;→</div>` +
+    `</div>`;
   grid.appendChild(a);
 });
 
