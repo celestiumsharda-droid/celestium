@@ -1,9 +1,7 @@
-# Cloudflare Pages / Netlify redirects.
-# Preserve legacy URL shapes from the prototype.
+# Cloudflare static-asset redirects (max 3 tokens: from  to  [status]).
+#
+# Legacy ?id=<slug> URLs need no rule: /discovery.html is served and its
+# client router resolves ?id= and #slug on its own.
 
-# Legacy querystring form → pretty path
-/discovery.html  id=:slug  /discoveries/:slug/  301
-/discovery.html             /discoveries/black-hole-image/  301
-
-# Old prototype filename
-/celestium.html  /  301
+# Old prototype filename → home
+/celestium.html   /   301
