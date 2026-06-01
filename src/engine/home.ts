@@ -165,15 +165,14 @@ cta.innerHTML =
 steps.appendChild(cta);
 
 const stEls = steps.querySelectorAll<HTMLElement>(".step");
-const disk = $("disk");
 const bh = $("bh");
 const sio = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) {
     stEls.forEach(x => x.classList.remove("on"));
     e.target.classList.add("on");
     const idx = Array.prototype.indexOf.call(stEls, e.target);
-    disk.style.opacity = idx >= 2 ? "1" : "0";
-    bh.style.transform = `scale(${1 + idx * 0.06})`;
+    bh.classList.toggle("lit", idx >= 2);
+    bh.style.transform = `scale(${1 + idx * 0.05})`;
   }
 }), { threshold: 0.55 });
 stEls.forEach(el => sio.observe(el));
