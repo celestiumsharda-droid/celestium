@@ -51,6 +51,18 @@ export interface Discovery {
 
 export type DiscoveryMap = Record<string, Discovery>;
 
+/** A primary-source citation shown in an article's reference list. */
+export interface Source {
+  /** Author(s) or institution, e.g. "M. Mayor & D. Queloz". */
+  by: string;
+  /** Work title. */
+  title: string;
+  /** Venue and year, e.g. "Nature, 1995". */
+  where: string;
+}
+
+export type SourceMap = Record<string, ReadonlyArray<Source>>;
+
 /** Light metadata used by the related-cards rail. Includes pseudo-slugs
  *  like "__scale" that point at non-article destinations. */
 export interface RelatedCard {

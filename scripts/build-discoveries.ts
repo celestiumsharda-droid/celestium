@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import SITE from "../site.config";
 import DISCOVERIES from "../src/data/discoveries";
 import { expandFragments } from "../src/engine/fragments";
+import { sourcesHTML } from "../src/engine/sources";
 
 // Must match TAGS[0] and the depth-note markup in src/engine/discovery.ts
 const GLANCE_TAG = "The Glance — the essence in twenty seconds";
@@ -96,6 +97,15 @@ for (const slug of slugs) {
     .replace('<div class="byl" id="byl"></div>', `<div class="byl" id="byl">${byline}</div>`)
     .replace('<div class="lvltag" id="lvltag">The Glance</div>', `<div class="lvltag" id="lvltag">${GLANCE_TAG}</div>`)
     .replace('<div class="body" id="abody"></div>', `<div class="body" id="abody">${glanceBody}</div>`);
+
+  // Server-render the reference list (crawler-visible, no-JS).
+  const srcHTML = sourcesHTML(slug);
+  if (srcHTML) {
+    html = html.replace(
+      '<section class="sources" id="sources" aria-label="Sources and further reading" hidden></section>',
+      `<section class="sources" id="sources" aria-label="Sources and further reading">${srcHTML}</section>`,
+    );
+  }
 
   // ---- Structured data (Schema.org Article) ----
   const jsonld = {

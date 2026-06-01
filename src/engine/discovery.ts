@@ -3,6 +3,7 @@ import { enableViewTransitions } from "./view-transitions";
 import DISCOVERIES from "../data/discoveries";
 import RELATED_INDEX from "./related-index";
 import { expandFragments } from "./fragments";
+import { sourcesHTML } from "./sources";
 import { initSound, playClick } from "./sound";
 import type { Discovery } from "./types";
 
@@ -264,6 +265,17 @@ if (body.innerHTML.trim()) {
   renderDepth(0);
 }
 
+// Keyboard shortcuts: press 1 / 2 / 3 to jump to a reading depth.
+addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target as HTMLElement | null;
+  if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+  if (e.key === "1" || e.key === "2" || e.key === "3") {
+    const btn = seg.querySelector<HTMLButtonElement>(`button[data-l="${Number(e.key) - 1}"]`);
+    if (btn && !btn.classList.contains("on")) { btn.click(); btn.focus(); }
+  }
+});
+
 /* ---------- related cards ---------- */
 const rg = $("rgrid");
 (D.related ?? []).forEach(rid => {
@@ -278,6 +290,15 @@ const rg = $("rgrid");
     `<div class="r">${m.cta || "Read"} &nbsp;→</div>`;
   rg.appendChild(a);
 });
+
+/* ---------- sources & further reading ----------
+   The build pre-renders this for crawlers; if it's already populated we
+   leave it. Otherwise (dev server) we render it client-side. */
+const srcEl = $("sources");
+if (srcEl) {
+  if (!srcEl.innerHTML.trim()) srcEl.innerHTML = sourcesHTML(id);
+  if (srcEl.innerHTML.trim()) srcEl.hidden = false;
+}
 
 $("legal").textContent = "© 2026 CELESTIUM — " + D.field + " · " + D.era;
 
