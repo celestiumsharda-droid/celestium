@@ -150,6 +150,69 @@ main { position: relative; z-index: 2; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+/* nav search button (opens the command palette) */
+.navsearch {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); transition: color .3s;
+  z-index: 55;
+}
+.navsearch svg { width: 18px; height: 18px; }
+.navsearch:hover { color: var(--ink); }
+@media (max-width: 640px) { .navsearch { width: 44px; height: 44px; } }
+
+/* ===== Command palette (⌘K) ===== */
+.cmdk { position: fixed; inset: 0; z-index: 200; display: flex; justify-content: center; align-items: flex-start; }
+.cmdk[hidden] { display: none; }
+.cmdk-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4, 5, 8, .55);
+  -webkit-backdrop-filter: saturate(140%) blur(8px); backdrop-filter: saturate(140%) blur(8px);
+  opacity: 0; transition: opacity .25s;
+}
+.cmdk.show .cmdk-backdrop { opacity: 1; }
+.cmdk-panel {
+  position: relative; z-index: 1;
+  width: min(640px, calc(100vw - 32px));
+  margin-top: clamp(60px, 12vh, 140px);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transform: translateY(-10px) scale(.98); opacity: 0;
+  transition: transform .28s cubic-bezier(.2,.7,.2,1), opacity .28s;
+}
+.cmdk.show .cmdk-panel { transform: none; opacity: 1; }
+.cmdk-search { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--glass-edge); }
+.cmdk-search svg { width: 19px; height: 19px; color: var(--dim); flex: none; }
+.cmdk-input { flex: 1; background: none; border: none; outline: none; color: var(--ink); font-family: var(--body); font-weight: 300; font-size: 1.1rem; }
+.cmdk-input::placeholder { color: var(--dim); }
+.cmdk-esc { font-family: var(--mono); font-size: 10px; color: var(--dim); border: 1px solid var(--line); border-radius: 6px; padding: 3px 7px; text-transform: uppercase; letter-spacing: .1em; }
+.cmdk-list { list-style: none; margin: 0; padding: 8px; max-height: min(52vh, 440px); overflow-y: auto; overscroll-behavior: contain; }
+.cmdk-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: 10px; cursor: pointer;
+}
+.cmdk-item.on { background: rgba(255,255,255,.07); }
+.cmdk-kind {
+  flex: none; width: 64px;
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--dim); border: 1px solid var(--line); border-radius: 5px;
+  padding: 4px 0; text-align: center;
+}
+.cmdk-item.on .cmdk-article { color: var(--accent); border-color: var(--accent-dim); }
+.cmdk-item.on .cmdk-page { color: var(--star); border-color: rgba(242,230,196,.24); }
+.cmdk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cmdk-t { font-family: var(--display); font-size: 1.02rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmdk-sub { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.cmdk-arrow { flex: none; color: var(--dim); opacity: 0; transition: opacity .2s, transform .2s; }
+.cmdk-item.on .cmdk-arrow { opacity: 1; transform: translateX(3px); color: var(--accent); }
+.cmdk-empty { padding: 28px 20px 32px; font-family: var(--body); color: var(--mut); }
+.cmdk-empty[hidden] { display: none; }
+@media (max-width: 560px) {
+  .cmdk-panel { margin-top: 70px; }
+  .cmdk-kind { width: 52px; }
+}
+
 /* ambient-sound toggle (nav) */
 .soundtoggle {
   width: 34px; height: 34px;

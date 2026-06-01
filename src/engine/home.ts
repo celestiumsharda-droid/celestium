@@ -2,6 +2,7 @@ import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
 import { initSound, playClick } from "./sound";
+import { initCommandPalette } from "./command-palette";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -238,3 +239,6 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
   bg.setAttribute("aria-expanded", "false");
   document.body.style.overflow = "";
 }));
+
+/* ---------- ⌘K command palette ---------- */
+initCommandPalette();

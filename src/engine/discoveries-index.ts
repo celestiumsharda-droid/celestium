@@ -9,6 +9,7 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
+import { initCommandPalette } from "./command-palette";
 import DISCOVERIES from "../data/discoveries";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -171,3 +172,6 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 
 /* ambient sound (opt-in) */
 initSound($("sound"), { pad: true });
+
+/* ⌘K command palette */
+initCommandPalette();
