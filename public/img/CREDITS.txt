@@ -1,5 +1,11 @@
-m87-*.{avif,webp,jpg} — The Event Horizon Telescope image of the
-supermassive black hole in M87 (M87*), released 2019-04-10.
-Credit: Event Horizon Telescope Collaboration. Licensed CC BY 4.0
-(https://creativecommons.org/licenses/by/4.0/). Via Wikimedia Commons.
-Resized to 720w / 1280w in AVIF, WebP and JPEG.
+Article imagery — sources & licences:
+
+  m87-*        — EHT image of M87*. EHT Collaboration, CC BY 4.0.
+  bullet-*     — Bullet Cluster (1E 0657-56) composite. X-ray: NASA/CXC;
+                 lensing map: NASA/STScI; ESO WFI; Magellan. Public domain.
+  ligo-*       — LIGO Hanford Observatory aerial. Caltech/MIT/LIGO Laboratory.
+  hotjupiter-* — Artist's impression of a hot-Jupiter exoplanet
+                 (51 Pegasi b class). Public domain / CC.
+
+All resized to 720w / 1280w in AVIF, WebP and JPEG. Attribution is also
+shown in each figure caption on the page.
