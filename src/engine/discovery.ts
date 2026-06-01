@@ -110,6 +110,29 @@ switch (D.hero) {
     ha.innerHTML = s;
     break;
   }
+  case "helix": {
+    const A = 42, cx = 70, k = 0.05, gap = 22, yMax = 384;
+    let back1 = "", back2 = "", rungs = "";
+    for (let y = 0; y <= yMax; y += 4) {
+      const ph = y * k;
+      back1 += (y === 0 ? "M" : "L") + (cx + A * Math.sin(ph)).toFixed(1) + " " + y + " ";
+      back2 += (y === 0 ? "M" : "L") + (cx + A * Math.sin(ph + Math.PI)).toFixed(1) + " " + y + " ";
+    }
+    const cols = ["#a9bcff", "#f2e6c4", "#9ee6c4", "#ff9ec4"];
+    for (let y = 0, n = 0; y <= yMax; y += gap, n++) {
+      const ph = y * k;
+      const x1 = cx + A * Math.sin(ph), x2 = cx + A * Math.sin(ph + Math.PI);
+      const front = Math.cos(ph) >= 0;
+      const c = cols[n % cols.length];
+      rungs += `<line x1="${x1.toFixed(1)}" y1="${y}" x2="${x2.toFixed(1)}" y2="${y}" stroke="${c}" stroke-width="${front ? 3 : 2}" opacity="${front ? 0.85 : 0.3}" stroke-linecap="round"/>`;
+    }
+    ha.innerHTML =
+      '<div class="v-helix"><svg viewBox="0 0 140 256" role="img" aria-label="A rotating DNA double helix."><g class="helix-flow">' +
+      `<path d="${back1}" fill="none" stroke="#dfe6ff" stroke-width="2.4" opacity=".8"/>` +
+      `<path d="${back2}" fill="none" stroke="#dfe6ff" stroke-width="2.4" opacity=".5"/>` +
+      rungs + "</g></svg></div>";
+    break;
+  }
   default:
     ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
 }

@@ -9,6 +9,7 @@ const RELATED_INDEX: RelatedIndex = {
   "first-exoplanet":       { field: "Planetary Science", title: "The night we found a world around another sun." },
   "double-slit":           { field: "Quantum Reality",   title: "Does a particle exist before you look?" },
   "age-of-earth":          { field: "Deep Time",         title: "Reading four billion years out of a rock." },
+  "double-helix":          { field: "Life & Origins",    title: "The shape that copies itself." },
   "__scale":               { field: "Perspective",       title: "Find where you sit in thirteen orders of magnitude.", href: "/#scale", cta: "Open the tool" },
 };
 

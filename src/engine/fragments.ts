@@ -72,6 +72,34 @@ function dslitFigure(): string {
   return s;
 }
 
+/** DNA base-pairing ladder: complementary A–T and G–C rungs. */
+function helixFigure(): string {
+  const xL = 150, xR = 570, top = 40, gap = 34;
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DNA ladder: the two backbones joined by complementary base pairs, A with T and G with C.">';
+  // backbones
+  s += `<line x1="${xL}" y1="${top - 8}" x2="${xL}" y2="${top + gap * 6 + 8}" stroke="#dfe6ff" stroke-width="3" opacity=".7"/>`;
+  s += `<line x1="${xR}" y1="${top - 8}" x2="${xR}" y2="${top + gap * 6 + 8}" stroke="#dfe6ff" stroke-width="3" opacity=".7"/>`;
+  // rungs, alternating pairings
+  const pairs: [string, string, number, number][] = [
+    ["A", "T", 0xa9bcff, 0xf2e6c4], ["G", "C", 0x9ee6c4, 0xff9ec4],
+    ["T", "A", 0xf2e6c4, 0xa9bcff], ["C", "G", 0xff9ec4, 0x9ee6c4],
+    ["A", "T", 0xa9bcff, 0xf2e6c4], ["G", "C", 0x9ee6c4, 0xff9ec4],
+    ["T", "A", 0xf2e6c4, 0xa9bcff],
+  ];
+  const hex = (n: number) => "#" + n.toString(16).padStart(6, "0");
+  const mid = (xL + xR) / 2;
+  pairs.forEach(([l, r, cl, cr], i) => {
+    const y = top + i * gap;
+    s += `<line x1="${xL}" y1="${y}" x2="${mid}" y2="${y}" stroke="${hex(cl)}" stroke-width="6" stroke-linecap="round"/>`;
+    s += `<line x1="${mid}" y1="${y}" x2="${xR}" y2="${y}" stroke="${hex(cr)}" stroke-width="6" stroke-linecap="round"/>`;
+    s += `<text x="${xL - 16}" y="${y + 4}" fill="${hex(cl)}" font-family="IBM Plex Mono,monospace" font-size="13" text-anchor="end">${l}</text>`;
+    s += `<text x="${xR + 16}" y="${y + 4}" fill="${hex(cr)}" font-family="IBM Plex Mono,monospace" font-size="13">${r}</text>`;
+  });
+  s += `<text x="${mid}" y="288" fill="#9aa2b4" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle" letter-spacing="2">A&#8211;T &nbsp; G&#8211;C &nbsp; COMPLEMENTARY PAIRS</text>`;
+  s += '</svg><figcaption>Every rung is a fixed pair — A with T, G with C. Because the pairing is rigid, each strand carries the full recipe for its partner: split the ladder and both halves can be rebuilt.</figcaption></figure>';
+  return s;
+}
+
 /** Radioactive-decay clock: parent halves each half-life, daughter grows. */
 function decayFigure(): string {
   const X0 = 70, X1 = 660, Y0 = 250, Y1 = 50; // axes box
@@ -135,6 +163,7 @@ const FRAGMENTS: Record<FragmentToken, string> = {
   ),
   "__FIG_DSLIT__": dslitFigure(),
   "__FIG_DECAY__": decayFigure(),
+  "__FIG_HELIX__": helixFigure(),
 };
 
 export default FRAGMENTS;

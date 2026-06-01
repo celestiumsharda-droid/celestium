@@ -8,6 +8,7 @@ const EXPLORE: readonly ExploreCard[] = [
   { field: "Planetary Science",  title: "A world around another sun.",                  slug: "first-exoplanet",       cta: "Read the discovery" },
   { field: "Quantum Reality",    title: "Does a particle exist before you look?",       slug: "double-slit",          cta: "Read the discovery" },
   { field: "Deep Time",          title: "Reading four billion years out of rock.",      slug: "age-of-earth",         cta: "Read the discovery" },
+  { field: "Life & Origins",     title: "The shape that copies itself.",                slug: "double-helix",         cta: "Read the discovery" },
 ];
 
 export default EXPLORE;

@@ -307,6 +307,52 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">We learned to read a clock that had been running, untouched, since before there was anyone to wind it.<cite>The standing result</cite></div>'
       ]
     ]
+  },
+
+  "double-helix": {
+    field: "Life & Origins",
+    era: "1953 CE",
+    subject: "The structure of DNA",
+    kick: "Life & Origins · The Discovery Series",
+    title: 'The shape that<br><i>copies itself.</i>',
+    dek: "In 1953 the molecule of heredity turned out to be two strands wound into a spiral — and the instant its structure was clear, so was the secret it had been keeping: how life makes a copy of itself.",
+    hero: "helix",
+    related: ["age-of-earth", "first-exoplanet", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">D</span>NA carries the instructions for building a living thing, written along a molecule too small to see. In 1953 James Watson and Francis Crick — using a crucial X-ray image made by Rosalind Franklin — worked out its shape: two strands twisted into a double helix, their inward-facing chemical "letters" pairing up in a fixed way, A always with T and G always with C. That pairing was the punchline. Pull the two strands apart and each is a perfect template for rebuilding the other, so the molecule can copy itself. The structure did not just describe heredity; it explained it.</p>',
+        '<div class="know"><div class="kh">Why it matters</div><p>It united chemistry and life: heredity became something you could draw, with a mechanism you could see. Nearly all of modern biology and medicine descends from that one diagram.</p></div>'
+      ],
+      [
+        '<h2>The molecule nobody could read</h2>',
+        '<p><span class="lead">B</span>y the 1940s it was known that genes are made of DNA, but no one knew how a single kind of molecule could store the vast, specific instructions for an organism — let alone copy them faithfully, generation after generation. The answer had to lie in its structure, and the structure was a mystery.</p>',
+        '<p>Two clues were on the table. Erwin Chargaff had found that in any DNA the amount of adenine always equals thymine, and guanine always equals cytosine — a suspicious one-to-one pairing. And in London, Rosalind Franklin was making X-ray diffraction images of DNA fibres of extraordinary quality, including the famous "Photo 51," whose cross-shaped pattern was the fingerprint of a helix.</p>',
+        '<div class="pull">The clue was hiding in the symmetry: every A matched a T, every G a C. A molecule built of matched pairs can always rebuild its partner.<cite>Chargaff&#8217;s rule, and what it implied</cite></div>',
+        '<h2>Two strands, paired and antiparallel</h2>',
+        '<p>In 1953 Watson and Crick, at Cambridge, assembled the pieces into a physical model. DNA is two long strands running in opposite directions, each a backbone of sugar and phosphate, twisted around a common axis into a right-handed double helix. Pointing inward from each backbone are the four bases. They meet in the middle and pair by hydrogen bonds — adenine only with thymine, guanine only with cytosine — so the two strands are complementary: read one and you know the other.</p>',
+        '__FIG_HELIX__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The model had to reproduce Franklin&#8217;s measured diffraction pattern, fit the known chemistry of the bases, and obey Chargaff&#8217;s one-to-one rule — all at once. It did. Later X-ray work confirmed the helix in atomic detail, and the predicted copying mechanism was demonstrated directly in 1958.</p></div>',
+        '<h2>The mechanism falls out of the shape</h2>',
+        '<p>Watson and Crick ended their one-page paper with a famously understated line: it had not escaped their notice that the pairing immediately suggested a copying mechanism. Unzip the helix down the middle and each freed strand specifies, base by base, the partner that must be built against it. One molecule becomes two identical ones. In 1958 Matthew Meselson and Franklin Stahl showed replication works exactly this way — each new double helix keeps one old strand and one new one.</p>',
+        '<p>Rosalind Franklin, whose data was central, was not credited at the time and died in 1958; the Nobel Prize went to Watson, Crick and Wilkins in 1962, and is not awarded posthumously. Her role is now recognised as indispensable.</p>'
+      ],
+      [
+        '<h2>From "genes are DNA" to "but how?"</h2>',
+        '<p><span class="lead">T</span>he 1944 Avery–MacLeod–McCarty experiment and Hershey and Chase in 1952 had pinned heredity on DNA rather than protein. That sharpened the real problem rather than solving it: DNA has only four kinds of subunit, and it was hard to see how so simple a molecule could both encode an organism’s full complexity and be copied without error each time a cell divides. Whatever the structure was, it had to make both of those things obvious.</p>',
+        '<p>The raw material for an answer was accumulating. Chargaff’s base ratios hinted at pairing. And X-ray crystallography — bouncing X-rays off the regular atomic lattice of a fibre and reading structure from the diffraction pattern — was mature enough, in the right hands, to constrain the geometry of DNA tightly.</p>',
+        '<div class="pull">Photo 51 was not a picture of DNA. It was the diffraction shadow from which the helix could be calculated — and it was decisive.<cite>The evidence that broke it open</cite></div>',
+        '<h2>The decisive image</h2>',
+        '<p>At King’s College London, Rosalind Franklin and Maurice Wilkins produced X-ray diffraction images of unmatched clarity. Franklin’s "Photo 51," taken with her student Raymond Gosling, showed a clear X-shaped pattern — the unmistakable signature of a helix — and her careful measurements fixed key dimensions: the spacing of repeating units and the diameter of the molecule. She had also distinguished two forms of DNA and characterised the wet, biologically relevant one.</p>',
+        '<p>This image and Franklin’s unpublished measurements were shown to Watson and Crick at Cambridge, without her knowledge — a now-acknowledged ethical failure in how credit and data flowed. The information was, by Crick’s own later account, essential to the model.</p>',
+        '<h2>Building the model</h2>',
+        '<p>Watson and Crick did not run new experiments; they built scale models constrained by everyone else’s data. The breakthrough was the base pairing. Adenine bonds cleanly to thymine, and guanine to cytosine, and crucially each pair has the same width — so the two backbones stay an even distance apart all the way up, exactly as Franklin’s diffraction required. The strands run antiparallel, in opposite directions, and wind into a right-handed double helix roughly two nanometres across with one full turn about every ten base pairs.</p>',
+        '__FIG_HELIX__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The structure simultaneously explained Chargaff’s A=T, G=C ratios, matched Franklin’s diffraction geometry, and was chemically sound — three independent constraints satisfied by one model. The replication mechanism it predicted was confirmed by the 1958 Meselson–Stahl experiment, and decades of higher-resolution crystallography have since resolved the helix atom by atom.</p></div>',
+        '<h2>The sentence that started molecular biology</h2>',
+        '<p>The two-strand, complementary structure means the molecule encodes information twice over and can be copied by templating. That single insight launched the genetic code, recombinant DNA, sequencing, and ultimately the reading of entire genomes. The 1953 paper closed with the deliberately quiet remark that the pairing "immediately suggests a possible copying mechanism for the genetic material" — perhaps the most consequential understatement in the history of biology.</p>',
+        '<div class="pull">Life turned out to keep its instructions as a sequence of four letters, in a shape that carries its own way of being copied.<cite>The standing result</cite></div>'
+      ]
+    ]
   }
 };
 

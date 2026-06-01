@@ -89,6 +89,10 @@ nav {
 .v-web .gl { fill: none; stroke: rgba(243,245,251,.06); stroke-width: 1; }
 .v-deepfield { width: 90%; aspect-ratio: 1; animation: spin 200s linear infinite; }
 .v-deepfield svg { width: 100%; height: 100%; }
+.v-helix { width: 64%; aspect-ratio: 140 / 256; overflow: hidden; }
+.v-helix svg { width: 100%; height: 100%; display: block; }
+.helix-flow { animation: helixflow 7s linear infinite; }
+@keyframes helixflow { to { transform: translateY(-125.66px); } }
 
 /* "wobble" — exoplanet around a sun-like star.
    A faint orbit ring with a dark planet orbiting a warm star. */
