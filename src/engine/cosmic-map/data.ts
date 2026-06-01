@@ -77,13 +77,14 @@ export interface LocalGalaxy {
   size: number;
   color: number;
   kind: "spiral" | "blob";
+  tex?: string;       // real galaxy image (in /textures/galaxies)
   label?: boolean;
 }
 
 export const LOCAL_GROUP: LocalGalaxy[] = [
-  { name: "Milky Way",          x: 0,    y: 0,    z: 0,    size: 9,  color: 0xbcd0ff, kind: "spiral", label: true },
-  { name: "Andromeda (M31)",    x: 2.2,  y: 0.3,  z: 1.1,  size: 12, color: 0xdfe6ff, kind: "spiral", label: true },
-  { name: "Triangulum (M33)",   x: 2.0,  y: -0.5, z: 1.6,  size: 6,  color: 0xc7d4ff, kind: "spiral", label: true },
+  { name: "Milky Way",          x: 0,    y: 0,    z: 0,    size: 9,  color: 0xbcd0ff, kind: "spiral", tex: "m101.jpg", label: true },
+  { name: "Andromeda (M31)",    x: 2.2,  y: 0.3,  z: 1.1,  size: 13, color: 0xdfe6ff, kind: "spiral", tex: "m31.jpg",  label: true },
+  { name: "Triangulum (M33)",   x: 2.0,  y: -0.5, z: 1.6,  size: 7,  color: 0xc7d4ff, kind: "spiral", tex: "m33.jpg" },
   { name: "Large Magellanic",   x: -0.15, y: -0.1, z: 0.05, size: 3,  color: 0xe6dcff, kind: "blob" },
   { name: "Small Magellanic",   x: -0.2, y: -0.18, z: 0.0, size: 2,  color: 0xe6dcff, kind: "blob" },
   { name: "Leo I",              x: 0.82, y: 0.4,  z: -0.3, size: 1.4, color: 0xd8d8e8, kind: "blob" },

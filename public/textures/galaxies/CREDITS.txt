@@ -1,0 +1,9 @@
+Galaxy images (public domain), via Wikimedia Commons:
+  m31.jpg  — Andromeda Galaxy (M31). NASA/JPL-Caltech / GALEX, public domain.
+  m33.jpg  — Triangulum Galaxy (M33). Public domain.
+  m101.jpg — Pinwheel Galaxy (M101). NASA/ESA/Hubble (STScI), public domain.
+             Used here as a face-on spiral standing in for the Milky Way,
+             which cannot be photographed from outside.
+  m104.jpg — Sombrero Galaxy (M104). NASA/ESA/Hubble & Spitzer, public domain.
+
+Downscaled and background-deepened for use as additive sprites.

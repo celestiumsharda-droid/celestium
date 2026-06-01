@@ -246,110 +246,108 @@ function buildNeighborhood(): Stage {
 /* ----------------------------------------------------------------- */
 function buildGalaxy(): Stage {
   const g = new THREE.Group();
-  const R = 52;
-  const ARMS = 2;
-  const WIND = 2.4;
-  const N = 7000;
+  const R = 54;
+  const ARMS = 4;       // two main arms + two minor
+  const WIND = 2.6;
 
-  const pos = new Float32Array(N * 3);
-  const col = new Float32Array(N * 3);
-  const core = new THREE.Color(0xffe2a8);
-  const arm = new THREE.Color(0x8fb4ff);
-
-  for (let i = 0; i < N; i++) {
-    const t = Math.pow(Math.random(), 0.62);       // denser toward centre
-    const radius = t * R;
-    const armIndex = i % ARMS;
-    const spread = (1 - t) * 0.5 + 0.06;
-    const ang = armIndex * (TWO_PI / ARMS) + t * WIND * TWO_PI + (Math.random() - 0.5) * spread * 3;
-    const bulge = t < 0.16 ? (Math.random() - 0.5) * 8 * (1 - t / 0.16) : 0;
-    const x = Math.cos(ang) * radius + (Math.random() - 0.5) * 3;
-    const z = Math.sin(ang) * radius + (Math.random() - 0.5) * 3;
-    const y = (Math.random() - 0.5) * (2.2 + 6 * (1 - t)) + bulge;
-    pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
-
-    const c = core.clone().lerp(arm, Math.min(1, t * 1.25));
-    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  // helper to lay down a population of stars along the spiral
+  function population(n: number, sizeAttn: number, opacity: number, colorFn: (t: number) => THREE.Color, sz: number): THREE.Points {
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const t = Math.pow(Math.random(), 0.55);
+      const radius = t * R;
+      const arm = i % ARMS;
+      const armStrength = arm < 2 ? 1 : 0.5;                 // minor arms looser
+      const spread = ((1 - t) * 0.42 + 0.05) * (3 - armStrength);
+      const ang = arm * (TWO_PI / ARMS) + t * WIND * TWO_PI + (Math.random() - 0.5) * spread * 3;
+      const bulge = t < 0.18 ? (Math.random() - 0.5) * 9 * (1 - t / 0.18) : 0;
+      pos[i*3]   = Math.cos(ang) * radius + (Math.random() - 0.5) * 3;
+      pos[i*3+2] = Math.sin(ang) * radius + (Math.random() - 0.5) * 3;
+      pos[i*3+1] = (Math.random() - 0.5) * (1.8 + 6 * (1 - t)) + bulge;
+      const c = colorFn(t);
+      col[i*3] = c.r; col[i*3+1] = c.g; col[i*3+2] = c.b;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return new THREE.Points(geo, new THREE.PointsMaterial({
+      size: sz, map: glowTexture(), vertexColors: true, transparent: true,
+      opacity, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: sizeAttn > 0,
+    }));
   }
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  const points = new THREE.Points(
-    geo,
-    new THREE.PointsMaterial({ size: 1.5, map: glowTexture(), vertexColors: true, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }),
-  );
-  g.add(points);
+  // main disc — warm core fading to cool blue arms
+  const core = new THREE.Color(0xffe2a8), arm = new THREE.Color(0x9ab8ff);
+  const disc = population(13000, 1, 0.9, t => core.clone().lerp(arm, Math.min(1, t * 1.2)), 1.4);
+  g.add(disc);
 
-  // bright galactic core
-  g.add(glowSprite(0xffe6b0, 26, 0.85));
+  // bright young blue stars threaded through the arms
+  const blue = new THREE.Color(0xcfe0ff);
+  const young = population(1600, 1, 0.95, () => blue, 2.0);
+  g.add(young);
+
+  // pink HII star-forming regions
+  const pink = new THREE.Color(0xff9ec4);
+  const hii = population(420, 1, 0.85, () => pink, 2.6);
+  g.add(hii);
+
+  // soft disc haze + bright bulge
+  g.add(glowSprite(0x9fb6ff, R * 2.2, 0.10));
+  g.add(glowSprite(0xffe6b0, 30, 0.9));
+  g.add(glowSprite(0xffd27a, 13, 1));
 
   // The Sun's place — ~26,000 ly out, ~0.52 of the disc radius
   const sunR = R * 0.52;
   const sunMark = glowSprite(0xbfe0ff, 6, 1);
   sunMark.position.set(sunR, 0, 0);
   g.add(sunMark);
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(5, 6, 32),
-    new THREE.MeshBasicMaterial({ color: 0xa9bcff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
-  );
+  const ring = ringSprite(0xa9bcff, 11, 0.95);
   ring.position.set(sunR, 0, 0);
-  ring.rotation.x = Math.PI / 2;
   g.add(ring);
 
   recordBase(g);
   return {
     key: "galaxy",
     group: g,
-    update: (t) => { points.rotation.y = t * 0.012; },
+    update: (t) => { disc.rotation.y = t * 0.012; young.rotation.y = t * 0.012; hii.rotation.y = t * 0.012; },
   };
 }
 
 /* ----------------------------------------------------------------- */
 /* Stage 4 — The Local Group                                         */
 /* ----------------------------------------------------------------- */
-function miniSpiral(size: number, color: number): THREE.Points {
-  const N = 600, R = size;
-  const pos = new Float32Array(N * 3);
-  const base = new THREE.Color(color);
-  for (let i = 0; i < N; i++) {
-    const t = Math.pow(Math.random(), 0.7);
-    const ang = (i % 2) * Math.PI + t * 2.2 * TWO_PI + (Math.random() - 0.5);
-    const r = t * R;
-    pos[i * 3] = Math.cos(ang) * r + (Math.random() - 0.5) * 1.2;
-    pos[i * 3 + 1] = (Math.random() - 0.5) * (0.6 + R * 0.12);
-    pos[i * 3 + 2] = Math.sin(ang) * r + (Math.random() - 0.5) * 1.2;
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  return new THREE.Points(geo, new THREE.PointsMaterial({ color: base, size: 0.8, map: glowTexture(), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
-}
-
 function buildLocalGroup(): Stage {
   const g = new THREE.Group();
   const MLY = 16; // scene units per million ly
 
   for (const gal of LOCAL_GROUP) {
-    const node = new THREE.Group();
-    node.position.set(gal.x * MLY, gal.y * MLY, gal.z * MLY);
-    if (gal.kind === "spiral") {
-      node.add(miniSpiral(gal.size, gal.color));
-      node.rotation.set(Math.random() * 0.8, Math.random() * TWO_PI, Math.random() * 0.6);
+    const px = gal.x * MLY, py = gal.y * MLY, pz = gal.z * MLY;
+    if (gal.tex) {
+      // real galaxy photo as an additive sprite (black space adds nothing)
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: tex(gal.tex), transparent: true, opacity: 0.95,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      const s = gal.size * 2.7;
+      sp.scale.set(s, s, 1);
+      sp.position.set(px, py, pz);
+      g.add(sp);
+    } else {
+      // dwarf / irregular — a soft glow
+      const sp = glowSprite(gal.color, gal.size * 2.3, 0.75);
+      sp.position.set(px, py, pz);
+      g.add(sp);
     }
-    node.add(glowSprite(gal.color, gal.size * 2.4, gal.kind === "spiral" ? 0.7 : 0.85));
-    g.add(node);
+    if (gal.name === "Milky Way") {
+      const ring = ringSprite(0xa9bcff, gal.size * 3.4, 0.85);
+      ring.position.set(px, py, pz);
+      g.add(ring);
+    }
   }
 
-  // mark the Milky Way (origin)
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(11, 12.5, 40),
-    new THREE.MeshBasicMaterial({ color: 0xa9bcff, transparent: true, opacity: 0.8, side: THREE.DoubleSide }),
-  );
-  ring.rotation.x = Math.PI / 2;
-  g.add(ring);
-
   recordBase(g);
-  return { key: "localgroup", group: g, update: (t) => { g.rotation.y = t * 0.02; } };
+  return { key: "localgroup", group: g, update: (t) => { g.rotation.y = t * 0.016; } };
 }
 
 /* ----------------------------------------------------------------- */
