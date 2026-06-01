@@ -201,7 +201,14 @@ seg.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
     if (scrollY > y) scrollTo({ top: y, behavior: "smooth" });
   });
 });
-renderDepth(0);
+// The build pre-renders the Glance into #abody for crawlers / no-JS.
+// If it's already there, hydrate without re-rendering (no flash); just
+// wire up the scroll-reveal for the pre-rendered blocks.
+if (body.innerHTML.trim()) {
+  revealBlocks(body);
+} else {
+  renderDepth(0);
+}
 
 /* ---------- related cards ---------- */
 const rg = $("rgrid");
