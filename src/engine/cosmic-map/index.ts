@@ -94,7 +94,15 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
   canvas.addEventListener("pointermove", onMove);
   addEventListener("pointerup", onUp);
 
-  /* ---- zoom + crossfade ---- */
+  /* ---- zoom + crossfade ----
+     Stages must not be prominently visible at the same time, or the
+     outgoing stage (e.g. Earth, centred at the origin) appears to dive
+     into the incoming stage's central body (the Sun, also at the
+     origin). So the outgoing stage fades out IN PLACE within the first
+     `OVERLAP` of the interval, and the incoming stage only begins to
+     appear in the last `OVERLAP`. The ever-present Milky Way backdrop
+     fills the brief handoff, so it reads as flying through space. */
+  const OVERLAP = 0.6;
   let zoom = 0;
   function applyZoom(z: number) {
     zoom = Math.min(STAGES.length - 1, Math.max(0, z));
@@ -103,14 +111,13 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
       const g = stages[k]!.group;
       if (local >= 1 || local <= -1) { setStageFade(g, 0); continue; }
       let scale: number, fade: number;
-      if (local >= 0) {                 // outgoing — recede to a point
-        const f = smoothstep(local);
-        scale = lerp(1, 0.12, f);
-        fade = 1 - f;
-      } else {                          // incoming — bloom in from large
-        const f = smoothstep(local + 1);
-        scale = lerp(7, 1, f);
-        fade = f;
+      if (local >= 0) {                 // outgoing — dissolve in place
+        fade = 1 - smoothstep(local / OVERLAP);
+        scale = lerp(1, 0.55, smoothstep(local));
+      } else {                          // incoming — bloom gently in
+        const a = smoothstep((local + OVERLAP) / OVERLAP);
+        fade = a;
+        scale = lerp(2.4, 1, a);
       }
       g.scale.setScalar(scale);
       setStageFade(g, fade);
