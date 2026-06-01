@@ -72,7 +72,7 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
   for (const s of stages) { scene.add(s.group); setStageFade(s.group, 0); }
 
   /* ---- camera orbit state ---- */
-  const D = 132;
+  const D = 155;
   let az = 0.6, pol = 1.15;          // azimuth, polar (radians)
   let tAz = az, tPol = pol;          // targets (eased)
   let dragging = false, px = 0, py = 0;

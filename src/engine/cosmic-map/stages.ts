@@ -105,7 +105,7 @@ function buildEarth(): Stage {
 
 /** A radially-UV'd, textured planetary ring (Saturn). */
 function buildRing(planetSize: number, tilt: number): THREE.Mesh {
-  const inner = planetSize * 1.32, outer = planetSize * 2.3;
+  const inner = planetSize * 1.4, outer = planetSize * 1.8;
   const geo = new THREE.RingGeometry(inner, outer, 128, 1);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   const uv = geo.attributes.uv as THREE.BufferAttribute;
@@ -128,9 +128,9 @@ function buildRing(planetSize: number, tilt: number): THREE.Mesh {
 // Log-compress true heliocentric distance so Mercury and Neptune can
 // share one frame. Angle (the real-time part) is preserved exactly.
 function radialMap(auDist: number): number {
-  const rMin = 0.32, rMax = 31;
+  const rMin = 0.3, rMax = 31;
   const t = (Math.log10(Math.max(auDist, rMin)) - Math.log10(rMin)) / (Math.log10(rMax) - Math.log10(rMin));
-  return 7 + 41 * Math.min(1, Math.max(0, t));
+  return 10 + 58 * Math.min(1, Math.max(0, t));
 }
 
 function buildSolarSystem(): Stage {
