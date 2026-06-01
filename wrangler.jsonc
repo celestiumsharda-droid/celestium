@@ -1,0 +1,13 @@
+{
+  // Celestium is a static site. This tells Cloudflare to deploy the
+  // built `dist/` folder as static assets (Workers Static Assets),
+  // rather than auto-detecting a Vite framework and running the
+  // Vite/Workers integration (which would require Vite 6+).
+  "name": "celestium",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
