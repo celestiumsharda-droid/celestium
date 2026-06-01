@@ -20,6 +20,20 @@ function onScroll() {
 }
 addEventListener("scroll", onScroll, { passive: true });
 
+/* ---------- block scroll-reveal (figures, stats, pulls, know-boxes) ---------- */
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const blockReveal = new IntersectionObserver(
+  es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); blockReveal.unobserve(e.target); } }),
+  { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+);
+function revealBlocks(root: HTMLElement) {
+  if (reducedMotion) return;                          // respect the user's preference
+  root.querySelectorAll<HTMLElement>("figure, .stats, .pull, .know:not(.depthnote)").forEach(el => {
+    el.classList.add("reveal-block");
+    blockReveal.observe(el);
+  });
+}
+
 /* ---------- resolve which discovery to render ----------
    Priority:
      1. <meta name="celestium:slug" content="…"> baked in at build
@@ -166,6 +180,7 @@ function renderDepth(l: number) {
       p.style.animation = `fade .8s ${(n * 0.04)}s forwards`;
       n++;
     });
+    revealBlocks(body);
     onScroll();
   }, 180);
 }
