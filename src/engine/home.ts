@@ -50,11 +50,12 @@ setTimeout(() => ttl.classList.add("go"), 100);
    drives a single zoom scalar in [0, STAGES-1]; Three.js is lazy-loaded
    only when the section nears, so it never blocks first paint. */
 (function perspective() {
-  const track = document.getElementById("persp-track");
+  const trackEl = document.getElementById("persp-track");
   const canvas = document.getElementById("cosmic") as HTMLCanvasElement | null;
   const fallback = document.getElementById("persp-fallback");
   const chipWrap = document.getElementById("cm-stages");
-  if (!track || !canvas || !chipWrap) return;
+  if (!trackEl || !canvas || !chipWrap) return;
+  const track: HTMLElement = trackEl;   // non-null for the closures below
 
   const N = STAGES.length;
   const lastIdx = N - 1;

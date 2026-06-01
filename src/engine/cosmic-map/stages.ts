@@ -10,8 +10,9 @@
    lifetime it IS still. That stillness is the point, not a shortcut.
    ===================================================================== */
 import * as THREE from "three";
-import { glowSprite, glowTexture } from "./glow";
+import { glowSprite, glowTexture, ringSprite } from "./glow";
 import { tex } from "./textures";
+import { buildBlackHole } from "./blackhole";
 import { PLANET_STYLES, NEAR_STARS, LOCAL_GROUP, raDecToXYZ } from "./data";
 import { helio, julianCenturies, type PlanetName } from "../ephemeris";
 
@@ -154,7 +155,7 @@ function buildSolarSystem(): Stage {
     Jupiter: 5.203, Saturn: 9.537, Uranus: 19.19, Neptune: 30.07,
   };
   for (const style of PLANET_STYLES) {
-    const dR = radialMap(SEMI[style.name]);
+    const dR = radialMap(SEMI[style.name]!);
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 128; i++) {
       const a = (i / 128) * TWO_PI;
@@ -205,18 +206,33 @@ function buildSolarSystem(): Stage {
 /* ----------------------------------------------------------------- */
 function buildNeighborhood(): Stage {
   const g = new THREE.Group();
-  const LY = 1.9; // scene units per light-year
+  const LY = 1.35; // scene units per light-year
 
-  // The Sun, at the origin
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff0c4 }));
-  g.add(sun);
-  g.add(glowSprite(0xffe6a0, 9, 0.9));
+  // The Sun, at the origin, ringed so "you" are findable
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 20, 16), new THREE.MeshBasicMaterial({ color: 0xfff0c4 })));
+  g.add(glowSprite(0xffe6a0, 11, 0.95));
+  const sunRing = ringSprite(0xa9bcff, 5.5, 0.9);
+  g.add(sunRing);
 
   for (const s of NEAR_STARS) {
     const [x, y, z] = raDecToXYZ(s.ra, s.dec, s.dist);
-    const sp = glowSprite(s.color, s.label ? 7 : 4.4, s.label ? 0.95 : 0.7);
-    sp.position.set(x * LY, y * LY, z * LY);
-    g.add(sp);
+    const px = x * LY, py = y * LY, pz = z * LY;
+    // spectral-coloured star, sized by class
+    const star = glowSprite(s.color, s.size, s.label ? 0.98 : 0.84);
+    star.position.set(px, py, pz);
+    g.add(star);
+    // a crisp core for the brighter stars
+    if (s.size >= 5) {
+      const core = glowSprite(0xffffff, s.size * 0.42, 0.9);
+      core.position.set(px, py, pz);
+      g.add(core);
+    }
+    // habitable-zone host: a soft green-cyan ring
+    if (s.hab) {
+      const hz = ringSprite(0x86ffc4, s.size * 2.6, 0.85);
+      hz.position.set(px, py, pz);
+      g.add(hz);
+    }
   }
 
   recordBase(g);
@@ -394,6 +410,7 @@ export function buildStages(): Stage[] {
     buildEarth(),
     buildSolarSystem(),
     buildNeighborhood(),
+    buildBlackHole(),
     buildGalaxy(),
     buildLocalGroup(),
     buildWeb(),

@@ -29,8 +29,10 @@ export interface CosmicMap {
 }
 
 const LY = 9.4607e15, AU = 1.496e11;
-// characteristic diameter of each stage, in metres (for the live readout)
-const STAGE_METERS = [1.2742e7, 9e12, 2.84e17, 9.46e20, 9.46e22, 8.8e26];
+// characteristic diameter of each stage, in metres (for the live readout).
+// The black-hole stage uses a fixed readout override (see data.ts), so its
+// entry here only needs to keep the sequence monotonic for interpolation.
+const STAGE_METERS = [1.2742e7, 9e12, 2.84e17, 4e18, 9.46e20, 9.46e22, 8.8e26];
 
 const smoothstep = (x: number) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -133,11 +135,15 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
     hud.desc.textContent = info.desc;
     hud.live.style.opacity = info.live ? "1" : "0";
 
-    // smooth log-interpolated readout
-    const lo = Math.floor(zoom), hi = Math.min(STAGE_METERS.length - 1, lo + 1);
-    const f = zoom - lo;
-    const m = Math.pow(10, lerp(Math.log10(STAGE_METERS[lo]!), Math.log10(STAGE_METERS[hi]!), f));
-    hud.readout.textContent = formatScale(m);
+    if (info.readout) {
+      hud.readout.textContent = info.readout;   // fixed override (e.g. Sgr A*)
+    } else {
+      // smooth log-interpolated readout
+      const lo = Math.floor(zoom), hi = Math.min(STAGE_METERS.length - 1, lo + 1);
+      const f = zoom - lo;
+      const m = Math.pow(10, lerp(Math.log10(STAGE_METERS[lo]!), Math.log10(STAGE_METERS[hi]!), f));
+      hud.readout.textContent = formatScale(m);
+    }
   }
 
   /* ---- render loop (paused when offscreen) ---- */

@@ -41,3 +41,40 @@ export function glowSprite(color: number, size: number, opacity = 1): THREE.Spri
   sp.scale.set(size, size, 1);
   return sp;
 }
+
+let _ring: THREE.Texture | null = null;
+
+/** A thin hollow ring texture (transparent centre, bright band). */
+export function ringTexture(): THREE.Texture {
+  if (_ring) return _ring;
+  const s = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = s;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0.0, "rgba(255,255,255,0)");
+  g.addColorStop(0.72, "rgba(255,255,255,0)");
+  g.addColorStop(0.85, "rgba(255,255,255,1)");
+  g.addColorStop(0.94, "rgba(255,255,255,0.4)");
+  g.addColorStop(1.0, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  _ring = new THREE.CanvasTexture(c);
+  _ring.colorSpace = THREE.SRGBColorSpace;
+  return _ring;
+}
+
+/** A camera-facing ring sprite (e.g. to flag a notable star). */
+export function ringSprite(color: number, size: number, opacity = 1): THREE.Sprite {
+  const mat = new THREE.SpriteMaterial({
+    map: ringTexture(),
+    color,
+    transparent: true,
+    opacity,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(size, size, 1);
+  return sp;
+}

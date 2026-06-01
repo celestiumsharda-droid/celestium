@@ -33,33 +33,39 @@ export const PLANET_STYLES: PlanetStyle[] = [
    colour keyed to spectral class. The Sun is the implicit origin. */
 export interface NearStar {
   name: string;
-  ra: number;   // hours
-  dec: number;  // degrees
-  dist: number; // light-years
-  color: number;
+  ra: number;     // hours
+  dec: number;    // degrees
+  dist: number;   // light-years
+  color: number;  // spectral-type colour
+  size: number;   // relative display size
   label?: boolean;
+  hab?: boolean;  // hosts a planet in (or near) its habitable zone
 }
 
+// Colours by spectral class: M red, K orange, G yellow-white, F white,
+// A blue-white. Sizes scaled by rough luminosity/radius (Sirius, Vega
+// large; the many red dwarfs small). The Sun sits at the origin.
 export const NEAR_STARS: NearStar[] = [
-  { name: "Proxima Centauri", ra: 14.495, dec: -62.68, dist: 4.24, color: 0xff7a5c, label: true },
-  { name: "Alpha Centauri",   ra: 14.660, dec: -60.83, dist: 4.37, color: 0xfff1d0, label: true },
-  { name: "Barnard's Star",   ra: 17.963, dec:   4.69, dist: 5.96, color: 0xff8a5a },
-  { name: "Wolf 359",         ra: 10.564, dec:   7.01, dist: 7.86, color: 0xff6f4a },
-  { name: "Lalande 21185",    ra: 11.057, dec:  35.97, dist: 8.31, color: 0xffa066 },
-  { name: "Sirius",           ra:  6.752, dec: -16.72, dist: 8.60, color: 0xdff0ff, label: true },
-  { name: "Luyten 726-8",     ra:  1.640, dec: -17.95, dist: 8.73, color: 0xff7a5c },
-  { name: "Ross 154",         ra: 18.831, dec: -23.84, dist: 9.69, color: 0xff7a5c },
-  { name: "Ross 248",         ra: 23.689, dec:  44.18, dist: 10.30, color: 0xff7a5c },
-  { name: "Epsilon Eridani",  ra:  3.548, dec:  -9.46, dist: 10.50, color: 0xffc878, label: true },
-  { name: "Lacaille 9352",    ra: 23.090, dec: -35.85, dist: 10.74, color: 0xffa066 },
-  { name: "Ross 128",         ra: 11.793, dec:   0.80, dist: 11.01, color: 0xff7a5c },
-  { name: "Procyon",          ra:  7.655, dec:   5.22, dist: 11.46, color: 0xfff4e0, label: true },
-  { name: "61 Cygni",         ra: 21.069, dec:  38.75, dist: 11.40, color: 0xffb070 },
-  { name: "Tau Ceti",         ra:  1.734, dec: -15.94, dist: 11.91, color: 0xffe9b0, label: true },
-  { name: "Epsilon Indi",     ra: 22.057, dec: -56.79, dist: 11.87, color: 0xffc070 },
-  { name: "Vega",             ra: 18.616, dec:  38.78, dist: 25.04, color: 0xcfe0ff, label: true },
-  { name: "Fomalhaut",        ra: 22.961, dec: -29.62, dist: 25.13, color: 0xeef2ff, label: true },
-  { name: "Altair",          ra: 19.846, dec:   8.87, dist: 16.73, color: 0xf2f6ff, label: true },
+  { name: "Proxima Centauri", ra: 14.495, dec: -62.68, dist: 4.24, color: 0xff7a52, size: 3.4, label: true, hab: true },
+  { name: "Alpha Centauri",   ra: 14.660, dec: -60.83, dist: 4.37, color: 0xfff2da, size: 6.2, label: true },
+  { name: "Barnard's Star",   ra: 17.963, dec:   4.69, dist: 5.96, color: 0xff7a52, size: 3.2 },
+  { name: "Wolf 359",         ra: 10.564, dec:   7.01, dist: 7.86, color: 0xff6a44, size: 2.8 },
+  { name: "Lalande 21185",    ra: 11.057, dec:  35.97, dist: 8.31, color: 0xff9858, size: 3.4 },
+  { name: "Sirius",           ra:  6.752, dec: -16.72, dist: 8.60, color: 0xdcebff, size: 8.5, label: true },
+  { name: "Luyten 726-8",     ra:  1.640, dec: -17.95, dist: 8.73, color: 0xff6a44, size: 2.6 },
+  { name: "Ross 154",         ra: 18.831, dec: -23.84, dist: 9.69, color: 0xff7a52, size: 2.8 },
+  { name: "Teegarden's Star", ra:  2.883, dec:  16.88, dist: 12.50, color: 0xff6a44, size: 2.6, hab: true },
+  { name: "Epsilon Eridani",  ra:  3.548, dec:  -9.46, dist: 10.50, color: 0xffbe78, size: 4.4, label: true },
+  { name: "Lacaille 9352",    ra: 23.090, dec: -35.85, dist: 10.74, color: 0xff9858, size: 3.2 },
+  { name: "Ross 128",         ra: 11.793, dec:   0.80, dist: 11.01, color: 0xff7a52, size: 2.8, hab: true },
+  { name: "Procyon",          ra:  7.655, dec:   5.22, dist: 11.46, color: 0xfff6e6, size: 6.4, label: true },
+  { name: "61 Cygni",         ra: 21.069, dec:  38.75, dist: 11.40, color: 0xffaa66, size: 3.6 },
+  { name: "Tau Ceti",         ra:  1.734, dec: -15.94, dist: 11.91, color: 0xfff0c8, size: 5.0, label: true, hab: true },
+  { name: "Epsilon Indi",     ra: 22.057, dec: -56.79, dist: 11.87, color: 0xffb86a, size: 3.8 },
+  { name: "TRAPPIST-1",       ra: 23.108, dec:  -5.04, dist: 40.66, color: 0xff5a3a, size: 2.6, label: true, hab: true },
+  { name: "Altair",           ra: 19.846, dec:   8.87, dist: 16.73, color: 0xf2f6ff, size: 6.8, label: true },
+  { name: "Vega",             ra: 18.616, dec:  38.78, dist: 25.04, color: 0xcfe0ff, size: 8.2, label: true },
+  { name: "Fomalhaut",        ra: 22.961, dec: -29.62, dist: 25.13, color: 0xe8f0ff, size: 6.6, label: true },
 ];
 
 /* ---- Local Group: principal members ----
@@ -95,7 +101,8 @@ export interface StageInfo {
   name: string;
   scale: string;
   desc: string;
-  live?: boolean;     // positions are genuinely real-time at this stage
+  live?: boolean;       // positions are genuinely real-time at this stage
+  readout?: string;     // fixed readout text (overrides the interpolated scale)
 }
 
 export const STAGES: StageInfo[] = [
@@ -119,25 +126,33 @@ export const STAGES: StageInfo[] = [
     level: "Level 03 — Stellar Neighbourhood",
     name: "The nearest stars",
     scale: "≈ 30 light-years",
-    desc: "The handful of suns near enough to name, in their real three-dimensional places. The fastest probe we have built would need 70,000 years to reach the closest.",
+    desc: "The nearest suns in their real three-dimensional places, coloured by what they are — red dwarfs, white Sirius, our G-type neighbours. Green rings mark stars with a world in the habitable zone: Proxima b, the TRAPPIST-1 system, Tau Ceti. The fastest probe we have built would need 70,000 years to reach the closest.",
+  },
+  {
+    key: "blackhole",
+    level: "Level 04 — The Galactic Centre",
+    name: "Sagittarius A*",
+    scale: "4 million solar masses",
+    readout: "Sgr A* · 4 million M☉",
+    desc: "Four million Suns crushed past the point of return, ringed by gas shredded and heated white-hot as it spirals in. The supermassive black hole at the heart of the Milky Way — the still point every star in the galaxy, ours included, quietly orbits.",
   },
   {
     key: "galaxy",
-    level: "Level 04 — The Milky Way",
+    level: "Level 05 — The Milky Way",
     name: "Our galaxy",
     scale: "≈ 100,000 light-years",
     desc: "Up to 400 billion suns in a slow spiral. Our own is one anonymous spark about two-thirds of the way out — marked, if you can find it.",
   },
   {
     key: "localgroup",
-    level: "Level 05 — The Local Group",
+    level: "Level 06 — The Local Group",
     name: "Our cluster of galaxies",
     scale: "≈ 10 million light-years",
     desc: "Roughly 80 galaxies bound by gravity. The Milky Way and Andromeda drift toward an eventual merger four billion years from now.",
   },
   {
     key: "web",
-    level: "Level 06 — The Cosmic Web",
+    level: "Level 07 — The Cosmic Web",
     name: "The observable universe",
     scale: "93 billion light-years across",
     desc: "Galaxies are not scattered — they string along vast filaments around emptier voids, like foam in the dark. Everything light has had time to bring us.",

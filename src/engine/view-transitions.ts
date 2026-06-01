@@ -11,12 +11,6 @@
  * `pageswap` / `pagereveal` events (multi-page mode).
  */
 
-declare global {
-  interface Document {
-    startViewTransition?: (cb: () => void | Promise<void>) => unknown;
-  }
-}
-
 export function enableViewTransitions(): void {
   // Multi-page View Transitions need this meta to opt in. Inject if absent.
   if (!document.querySelector('meta[name="view-transition"]')) {
