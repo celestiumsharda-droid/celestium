@@ -16,7 +16,7 @@ export interface SiteConfig {
 }
 
 const config: SiteConfig = {
-  origin: "https://celestium.space",
+  origin: "https://celestium.celestium-sharda.workers.dev",
   name: "Celestium",
   tagline: "A pinnacle of science",
   defaultDescription:
