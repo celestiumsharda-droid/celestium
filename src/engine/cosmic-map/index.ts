@@ -80,21 +80,31 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
   let dragging = false, px = 0, py = 0;
   let lastInteract = performance.now();
 
+  let touchDrag = false;
   function onDown(e: PointerEvent) {
-    if (e.pointerType === "touch") return;   // touch is reserved for scroll-zoom
-    dragging = true; px = e.clientX; py = e.clientY; lastInteract = performance.now();
-    canvas.setPointerCapture(e.pointerId);
+    dragging = true;
+    touchDrag = e.pointerType === "touch";
+    px = e.clientX; py = e.clientY; lastInteract = performance.now();
+    // Capture only for mouse — capturing touch would steal the vertical
+    // scroll the page needs for zooming.
+    if (!touchDrag) canvas.setPointerCapture(e.pointerId);
   }
   function onMove(e: PointerEvent) {
     if (!dragging) return;
+    // Horizontal always orbits (azimuth). On touch, vertical is left to the
+    // browser (it scrolls = zoom, thanks to touch-action: pan-y); on mouse
+    // it tilts (polar).
     tAz -= (e.clientX - px) * 0.005;
-    tPol = Math.min(Math.PI - 0.25, Math.max(0.25, tPol - (e.clientY - py) * 0.005));
+    if (!touchDrag) {
+      tPol = Math.min(Math.PI - 0.25, Math.max(0.25, tPol - (e.clientY - py) * 0.005));
+    }
     px = e.clientX; py = e.clientY; lastInteract = performance.now();
   }
   function onUp() { dragging = false; }
   canvas.addEventListener("pointerdown", onDown);
   canvas.addEventListener("pointermove", onMove);
   addEventListener("pointerup", onUp);
+  addEventListener("pointercancel", onUp);
 
   /* ---- zoom + crossfade ----
      Stages must not be prominently visible at the same time, or the

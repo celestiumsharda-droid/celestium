@@ -66,6 +66,10 @@ nav.solid {
   font-size: clamp(3.6rem, 15vw, 12.5rem);
   font-weight: 300; letter-spacing: .02em;
   margin: .18em 0 .12em; position: relative;
+  white-space: nowrap;            /* keep CELESTIUM on one line */
+}
+@media (max-width: 560px) {
+  .hero h1 { font-size: clamp(2.6rem, 13.5vw, 4rem); letter-spacing: 0; }
 }
 .hero h1 span {
   display: inline-block;
@@ -223,8 +227,20 @@ section { position: relative; padding: 140px 0; }
 @keyframes cmbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 @media (max-width: 620px) {
   .persp-hud .persp-head { max-width: 100%; }
+  .persp-hud { padding: 18px; }
   .persp-hint { display: none; }
-  .persp-info { bottom: 110px; }
+  /* compact info that clears the chip row */
+  .persp-info { bottom: 86px; left: 18px; right: 18px; max-width: none; }
+  .persp-info p { display: none; }
+  .persp-info h3 { font-size: 2rem; margin: .15em 0 .2em; }
+  /* one horizontally-scrollable row of chips — never overlaps the text */
+  .persp-foot { left: 0; right: 0; bottom: 16px; flex-direction: column; align-items: stretch; gap: 0; }
+  .persp-stages {
+    flex-wrap: nowrap; overflow-x: auto; gap: 7px;
+    padding: 0 18px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .persp-stages::-webkit-scrollbar { display: none; }
+  .cm-chip { flex: 0 0 auto; }
 }
 
 /* Fallback (no WebGL / no JS): normal-flow content in place of the canvas. */
@@ -396,9 +412,13 @@ section { position: relative; padding: 140px 0; }
   color: var(--mut);
   background: none; border: none;
   padding: 11px 20px; border-radius: 2px;
-  cursor: pointer; transition: .35s;
+  cursor: pointer; transition: .35s; white-space: nowrap;
 }
 .toggle button.on { background: var(--ink); color: #06070b; }
+@media (max-width: 560px) {
+  .toggle { width: 100%; }
+  .toggle button { flex: 1; padding: 10px 6px; font-size: 9px; letter-spacing: .06em; }
+}
 .toggle button:not(.on):hover { color: var(--ink); }
 .rbody { padding: 30px 44px 46px; min-height: 230px; }
 .rbody p {
