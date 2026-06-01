@@ -148,6 +148,60 @@ switch (D.hero) {
       rungs + "</g></svg></div>";
     break;
   }
+  case "cmb": {
+    // a Mollweide-style microwave sky: soft, mottled temperature ripples
+    let seed = 9;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const cols = ["#5b6cae", "#a9bcff", "#7d6f8f", "#cdd9ff", "#8a93b8", "#f2e6c4"];
+    let s = '<div class="v-cmb"><svg viewBox="0 0 200 200" role="img" aria-label="A map of the cosmic microwave background — faint temperature ripples across the whole sky.">';
+    s += '<defs><clipPath id="cmbclip"><ellipse cx="100" cy="100" rx="92" ry="62"/></clipPath>' +
+         '<filter id="cmbblur"><feGaussianBlur stdDeviation="5"/></filter></defs>';
+    s += '<g clip-path="url(#cmbclip)" filter="url(#cmbblur)"><rect width="200" height="200" fill="#2c3354"/>';
+    for (let i = 0; i < 190; i++) {
+      const x = rnd() * 200, y = rnd() * 200, r = rnd() * 13 + 6;
+      const c = cols[Math.floor(rnd() * cols.length)];
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${c}" opacity="${(0.16 + rnd() * 0.22).toFixed(2)}"/>`;
+    }
+    s += '</g><ellipse cx="100" cy="100" rx="92" ry="62" fill="none" stroke="rgba(243,245,251,.18)"/></svg></div>';
+    ha.innerHTML = s;
+    break;
+  }
+  case "seafloor": {
+    let s = '<div class="v-seafloor"><svg viewBox="0 0 200 200" role="img" aria-label="Magnetic stripes spreading symmetrically from a mid-ocean ridge.">';
+    s += '<defs><clipPath id="sfclip"><circle cx="100" cy="100" r="92"/></clipPath></defs>';
+    s += '<g clip-path="url(#sfclip)"><rect width="200" height="200" fill="#0c0f18"/>';
+    const ws = [12, 9, 16, 8, 18, 11, 15, 9, 14];
+    let off = 0;
+    ws.forEach((w, i) => {
+      const col = i % 2 === 0 ? "#33406c" : "#161b2b";
+      s += `<rect x="${100 + off}" y="0" width="${w}" height="200" fill="${col}"/>`;
+      s += `<rect x="${100 - off - w}" y="0" width="${w}" height="200" fill="${col}"/>`;
+      off += w;
+    });
+    s += '<rect x="98" y="0" width="4" height="200" fill="#f2e6c4"/></g>';
+    s += '<circle cx="100" cy="100" r="92" fill="none" stroke="rgba(243,245,251,.16)"/></svg></div>';
+    ha.innerHTML = s;
+    break;
+  }
+  case "culture": {
+    let seed = 5;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const cx = 100, cy = 100, R = 88, mx = 100, my = 66, clearR = 34, mouldR = 13;
+    let s = '<div class="v-culture"><svg viewBox="0 0 200 200" role="img" aria-label="A petri dish with a clear ring around a colony of mould.">';
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#0c0e14" stroke="rgba(243,245,251,.16)" stroke-width="1.5"/>`;
+    for (let i = 0; i < 340; i++) {
+      const x = cx + (rnd() * 2 - 1) * R, y = cy + (rnd() * 2 - 1) * R;
+      if (Math.hypot(x - cx, y - cy) > R - 6) continue;
+      if (Math.hypot(x - mx, y - my) < clearR) continue;
+      const r = rnd() * 0.9 + 0.4;
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#7e879b" opacity="${(0.22 + rnd() * 0.4).toFixed(2)}"/>`;
+    }
+    s += `<circle cx="${mx}" cy="${my}" r="${clearR}" fill="none" stroke="rgba(242,230,196,.16)" stroke-dasharray="2 4"/>`;
+    s += `<circle cx="${mx}" cy="${my}" r="${mouldR}" fill="#f2e6c4" opacity=".85"/>`;
+    s += `<circle cx="${mx}" cy="${my}" r="${mouldR - 5}" fill="none" stroke="rgba(12,14,20,.4)"/></svg></div>`;
+    ha.innerHTML = s;
+    break;
+  }
   default:
     ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
 }
@@ -229,8 +283,9 @@ $("legal").textContent = "© 2026 CELESTIUM — " + D.field + " · " + D.era;
 
 /* ---------- next in the series (a guided linear path) ---------- */
 const SERIES = [
-  "black-hole-image", "gravitational-waves", "weighing-the-universe",
-  "first-exoplanet", "double-slit", "age-of-earth", "double-helix", "ancient-dna",
+  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
+  "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
+  "double-helix", "crispr", "ancient-dna", "penicillin",
 ];
 const si = SERIES.indexOf(id);
 if (si >= 0) {

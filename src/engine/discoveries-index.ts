@@ -23,8 +23,9 @@ addEventListener("scroll", () => {
 
 /* curated cosmic-to-human order */
 const ORDER = [
-  "black-hole-image", "gravitational-waves", "weighing-the-universe",
-  "first-exoplanet", "double-slit", "age-of-earth", "double-helix", "ancient-dna",
+  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
+  "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
+  "double-helix", "crispr", "ancient-dna", "penicillin",
 ];
 
 const grid = $("catalog");

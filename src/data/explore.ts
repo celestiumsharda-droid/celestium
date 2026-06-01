@@ -10,6 +10,10 @@ const EXPLORE: readonly ExploreCard[] = [
   { field: "Deep Time",          title: "Reading four billion years out of rock.",      slug: "age-of-earth",         cta: "Read the discovery" },
   { field: "Life & Origins",     title: "The shape that copies itself.",                slug: "double-helix",         cta: "Read the discovery" },
   { field: "Human History",      title: "Reading the genomes of the dead.",             slug: "ancient-dna",          cta: "Read the discovery" },
+  { field: "Origins",            title: "The static that turned out to be the Big Bang.", slug: "cosmic-background",   cta: "Read the discovery" },
+  { field: "Earth Science",      title: "The discovery that the ground is moving.",     slug: "plate-tectonics",      cta: "Read the discovery" },
+  { field: "Medicine",           title: "The mould that beat infection.",               slug: "penicillin",           cta: "Read the discovery" },
+  { field: "Biotechnology",      title: "We learned to edit the code of life.",         slug: "crispr",               cta: "Read the discovery" },
 ];
 
 export default EXPLORE;

@@ -411,6 +411,204 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">We did not just find our extinct relatives. We found them inside ourselves.<cite>The standing result</cite></div>'
       ]
     ]
+  },
+
+  "cosmic-background": {
+    field: "Origins",
+    era: "1965 CE",
+    subject: "The cosmic microwave background",
+    kick: "Origins · The Discovery Series",
+    title: 'The static that turned out to be<br><i>the Big Bang.</i>',
+    dek: "Two engineers spent a year trying to scrub a faint hiss out of their antenna. They cleaned, they checked, they evicted the pigeons. The hiss would not go — because it was the cooling afterglow of the universe&#8217;s first light.",
+    hero: "cmb",
+    related: ["weighing-the-universe", "black-hole-image", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">I</span>f the universe began hot and dense, that fire should still be glowing faintly everywhere — stretched by cosmic expansion from blinding light down into faint microwaves. In 1965 Arno Penzias and Robert Wilson, testing a radio antenna at Bell Labs, found an inexplicable hiss coming from every direction in the sky, day and night. It was exactly the predicted afterglow: the cosmic microwave background, light released about 380,000 years after the Big Bang, now cooled to 2.725 degrees above absolute zero. The Big Bang stopped being a theory and became something you could measure.</p>',
+        '__FIG_CMB__',
+        '<div class="know"><div class="kh">Why it matters</div><p>It is the single strongest piece of evidence that the universe had a hot beginning — a photograph of the cosmos as it was before the first star, found by accident in the noise of a radio antenna.</p></div>'
+      ],
+      [
+        '<h2>A prediction sitting in the noise</h2>',
+        '<p><span class="lead">I</span>n the 1940s a few physicists realised that a universe born hot and dense should leave a relic. As it expanded and cooled, there would come a moment when it was cool enough for atoms to form and light to travel freely. That first free light would still be streaming through space today — but stretched by billions of years of expansion into faint microwaves, filling the whole sky at a temperature only a few degrees above absolute zero. The prediction was made, then largely forgotten.</p>',
+        '<p>In 1964, at Bell Labs in New Jersey, Arno Penzias and Robert Wilson were preparing a sensitive horn antenna for radio astronomy. They kept running into a persistent background hiss they could not explain. It came from every part of the sky equally, never changed with the time of day or the season, and refused every attempt to remove it.</p>',
+        '<div class="pull">They even scrubbed out the pigeons nesting in the horn. The hiss stayed. It was coming from everywhere, because it filled everything.<cite>The year of elimination</cite></div>',
+        '<h2>Two groups, one phone call</h2>',
+        '<p>Forty kilometres away at Princeton, Robert Dicke&#8217;s team was deliberately building a detector to hunt for exactly this afterglow. Before they could finish, they heard about the strange noise at Bell Labs. A phone call connected the two: Penzias and Wilson had the signal; Dicke&#8217;s group had the explanation. The unremovable hiss was the cosmic microwave background.</p>',
+        '__FIG_CMB__',
+        '__STATS_CMB__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The signal is the same brightness in every direction, matches a single temperature with extraordinary precision, and has exactly the spectrum a cooling hot universe predicts. Later satellites confirmed it is the most perfect &#8220;blackbody&#8221; glow ever measured — something no ordinary collection of stars or galaxies could fake.</p></div>',
+        '<h2>The seeds in the glow</h2>',
+        '<p>The afterglow is almost perfectly smooth — but not quite. Buried in it are temperature ripples about one part in a hundred thousand, mapped from space by the COBE, WMAP and Planck satellites. Those tiny variations are the seeds from which galaxies later grew, and their pattern encodes the age, shape and composition of the universe. A hiss an engineer wanted to delete turned out to be the most information-rich photograph ever taken.</p>'
+      ],
+      [
+        '<h2>The logic of a hot beginning</h2>',
+        '<p><span class="lead">I</span>n the late 1940s George Gamow and his collaborators Ralph Alpher and Robert Herman followed the expanding universe backwards. If space is expanding now, it was denser and hotter in the past — and early enough, hot enough to be an opaque plasma of bare nuclei and free electrons, with light unable to travel far before scattering. As the universe expanded it cooled, until at about 380,000 years it reached roughly 3,000 kelvin: cool enough for electrons and nuclei to combine into neutral atoms. Suddenly light could fly freely. That released radiation has been travelling ever since, redshifting with the expansion. Alpher and Herman estimated its present temperature at a few kelvin. The work was published, admired briefly, and shelved — no one thought it could be detected.</p>',
+        '<div class="pull">Run the expansion backwards and the universe must once have been an opaque fog of fire. The moment it cleared is the oldest thing light can show us.<cite>Recombination, 380,000 years in</cite></div>',
+        '<h2>The accidental detection</h2>',
+        '<p>In 1964 Penzias and Wilson took over a 6-metre horn-reflector antenna at Holmdel, built for early satellite communications, intending to do careful radio astronomy. To do that they had to account for every source of noise. One contribution would not go away: an excess antenna temperature of about 3.5 kelvin, isotropic, unpolarised, and constant across the year — ruling out the Sun, the galaxy, the atmosphere, and any single terrestrial source.</p>',
+        '<p>They worked through the list methodically. They dismantled and cleaned the antenna; they removed a pair of nesting pigeons and the &#8220;white dielectric material&#8221; the birds had deposited inside the horn. The excess remained, identical in every direction. By elimination, the noise was neither instrumental nor local. It was a real signal arriving uniformly from the whole sky.</p>',
+        '__FIG_CMB__',
+        '<h2>The convergence</h2>',
+        '<p>Independently, Robert Dicke, Jim Peebles, Peter Roll and David Wilkinson at Princeton had reasoned their way back to the same relic radiation and were building an antenna to find it. Word of the Holmdel anomaly reached them; a phone call and a visit settled it within weeks. In 1965 the two groups published back-to-back papers in the Astrophysical Journal — Penzias and Wilson reporting the excess temperature in studiously neutral terms, Dicke&#8217;s group supplying the cosmological interpretation. Penzias and Wilson received the 1978 Nobel Prize in Physics.</p>',
+        '__STATS_CMB__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The decisive test is the spectrum. A hot early universe predicts that the background should be a near-perfect blackbody — the characteristic glow of matter and radiation in thermal equilibrium. In 1990 the COBE satellite&#8217;s FIRAS instrument measured that spectrum and found it matched a 2.725 K blackbody to within a fraction of a percent, the most precise blackbody known in nature. No assembly of discrete sources reproduces that curve; only a universe that was once hot and opaque does.</p></div>',
+        '<h2>From a hiss to a map</h2>',
+        '<p>The background is isotropic to about one part in a hundred thousand, but not perfectly. COBE first detected the minute anisotropies in 1992; WMAP and the Planck satellite later mapped them in fine detail. These temperature fluctuations are the imprint of tiny density variations in the infant universe — the gravitational seeds that grew into galaxies and clusters. Their statistical pattern, a series of acoustic peaks, pins down the geometry of space, the age of the universe at 13.8 billion years, and the relative amounts of ordinary matter, dark matter and dark energy.</p>',
+        '<p>The same radiation also fixes a direction and rate to our own motion, faintly distinguishes what the early plasma was made of, and sets the stage on which all later structure was built. Smoot and Mather shared the 2006 Nobel Prize for the COBE results.</p>',
+        '<div class="pull">An engineer&#8217;s unwanted noise became the most information-dense image ever recorded — the universe&#8217;s own baby photograph.<cite>The standing result</cite></div>'
+      ]
+    ]
+  },
+
+  "plate-tectonics": {
+    field: "Earth Science",
+    era: "1912 – 1968",
+    subject: "Continental drift",
+    kick: "Earth Science · The Discovery Series",
+    title: 'The discovery that<br><i>the ground is moving.</i>',
+    dek: "A weather scientist noticed the continents fit together like torn pieces of paper, and proposed they drift. He was ridiculed for fifty years — until the seafloor itself was found to be keeping a record that proved him right.",
+    hero: "seafloor",
+    related: ["age-of-earth", "weighing-the-universe", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">L</span>ook at a map and South America seems to slot into Africa like two torn halves of a page. In 1912 Alfred Wegener argued this was no coincidence — the continents had once been joined and had since drifted apart. He had no force that could move them, so geologists dismissed the idea for half a century. The proof came from the bottom of the ocean: new seafloor erupts along undersea ridges and spreads outward, and as it cools it records the direction of Earth&#8217;s magnetic field. Because that field flips over geological time, the floor carries a striped barcode of reversals — and the stripes are mirror-symmetric about every ridge. The continents really do move, carried on vast plates.</p>',
+        '__FIG_SEAFLOOR__',
+        '<div class="know"><div class="kh">Why it matters</div><p>It is the organising idea of all of geology. Earthquakes, volcanoes, mountain ranges and the slow rearrangement of the continents are all the visible edges of a few dozen rigid plates riding a churning interior.</p></div>'
+      ],
+      [
+        '<h2>A fit too good to be chance</h2>',
+        '<p><span class="lead">A</span>lfred Wegener was a meteorologist, not a geologist, which may be why he trusted what the map plainly showed: the coastlines of South America and Africa interlock. In 1912 he assembled the case for what he called continental drift. Identical rock formations ran off the edge of one continent and resumed on another; fossils of the same land animals and plants — creatures that could never have crossed an ocean — turned up on both sides of the Atlantic; and glacial scars showed ice sheets had once covered regions now near the equator.</p>',
+        '<p>It all made sense if the continents had once formed a single landmass — Pangaea — that later broke apart. But Wegener could not say what force could push continents through solid ocean floor. Geologists seized on that gap and rejected the whole idea, often harshly. He died in 1930 on the Greenland ice; his theory was treated as a curiosity for another generation.</p>',
+        '<div class="pull">The evidence on land was overwhelming and the objection was fatal: nothing known could move a continent. Both things were true at once.<cite>Why a good idea waited fifty years</cite></div>',
+        '<h2>The answer was underwater</h2>',
+        '<p>After the Second World War, sonar and magnetic surveys began mapping the ocean floor, and it was nothing like the featureless mud everyone assumed. A continuous mountain range — the mid-ocean ridge — wound around the planet, with a rift running down its crest. In 1962 Harry Hess proposed seafloor spreading: molten rock rises at the ridge, hardens into new crust, and pushes the older floor steadily aside, like a pair of conveyor belts running away from the crest.</p>',
+        '__FIG_SEAFLOOR__',
+        '__STATS_TECTONICS__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>As new crust cools at a ridge, iron-bearing minerals lock in the direction of Earth&#8217;s magnetic field. That field reverses every so often, so the spreading floor records alternating bands of normal and reversed magnetism — and those stripes are mirror-symmetric on either side of the ridge. Drilling later confirmed the prediction directly: the seafloor gets progressively older the farther you go from the ridge.</p></div>',
+        '<h2>One theory for the restless Earth</h2>',
+        '<p>By 1968 the pieces had assembled into plate tectonics: Earth&#8217;s rigid outer shell is broken into about seven major plates that move a few centimetres a year, driven by slow convection in the mantle below. They pull apart at ridges, grind past one another along faults, and collide where one dives beneath another — building mountains, opening oceans, and shaking the ground. Wegener had been right about the conclusion, even though he had the mechanism wrong.</p>'
+      ],
+      [
+        '<h2>Wegener&#8217;s case, and its fatal gap</h2>',
+        '<p><span class="lead">B</span>y 1915 Alfred Wegener had gathered a remarkably modern body of evidence for continental drift. The jigsaw fit of the Atlantic coastlines was only the start. Matching geological provinces — the same rock types, ages and structures — lined up across the ocean when the continents were reassembled. Fossils of <em>Mesosaurus</em>, a small freshwater reptile, and of the <em>Glossopteris</em> fern appeared on continents now separated by thousands of kilometres of saltwater. Glacial deposits of the same age were strewn across South America, Africa, India and Australia, implying these now-tropical lands had once huddled together near the South Pole.</p>',
+        '<p>Wegener proposed they had all been part of a supercontinent, Pangaea, which fragmented and dispersed. His weakness was dynamics. He suggested the continents plowed through the oceanic crust, driven by forces — tidal and rotational — that physicists quickly showed were orders of magnitude too weak. With no viable mechanism, the geological establishment, especially in North America, dismissed drift as fantasy. The objection was scientifically reasonable; it was also wrong about the conclusion.</p>',
+        '<div class="pull">He was right that the continents had moved and wrong about how. Science punished the error and missed the truth for fifty years.<cite>The shape of the mistake</cite></div>',
+        '<h2>Mapping the ocean floor</h2>',
+        '<p>The case was reopened from an unexpected direction. Wartime and post-war oceanography — echo sounding, magnetometers towed behind ships, heat-flow probes — revealed that the deep seafloor had its own dramatic geology. The mid-ocean ridge system turned out to be the longest mountain chain on Earth, circling the globe for some 60,000 kilometres, split by a central rift valley and marked by shallow earthquakes and high heat flow.</p>',
+        '<p>In 1962 Harry Hess synthesised this into seafloor spreading. Mantle material wells up beneath the ridge, solidifies into fresh oceanic crust, and is carried away symmetrically as still more rises behind it. The ocean floor is therefore young and constantly renewed, and old crust must be consumed somewhere — at the deep ocean trenches, where it bends downward and sinks back into the mantle in a process later called subduction. Hess, aware he was ahead of the evidence, called it &#8220;an essay in geopoetry.&#8221;</p>',
+        '__FIG_SEAFLOOR__',
+        '<h2>The barcode that settled it</h2>',
+        '<p>Proof came in 1963 from Fred Vine and Drummond Matthews in Cambridge, and independently Lawrence Morley. They combined three facts: that Earth&#8217;s magnetic field reverses polarity at irregular intervals, recorded in lava flows on land; that cooling basalt freezes in the field direction of its moment; and that the seafloor is continuously created at ridges. The prediction was striking — the floor should be magnetised in alternating stripes, parallel to the ridge and mirror-symmetric across it, each stripe a span of time between two reversals.</p>',
+        '<p>Magnetic surveys found exactly that pattern, and its symmetry about the ridge axis is almost impossible to explain any other way. The widths of the stripes, matched to the independently dated sequence of reversals, even gave the spreading rate: a few centimetres a year. It was the decisive confirmation.</p>',
+        '__STATS_TECTONICS__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>Independent lines converge. The magnetic stripes are symmetric across every spreading ridge. Deep-sea drilling by the <em>Glomar Challenger</em> recovered seafloor that grows steadily older with distance from the ridge, exactly as spreading requires, with none older than about 200 million years. Earthquake foci trace dipping slabs descending into the mantle at trenches. And today, satellite positioning measures the plates moving in real time, at the rates the stripes implied.</p></div>',
+        '<h2>The unifying theory</h2>',
+        '<p>Between 1965 and 1968 the synthesis was completed. J. Tuzo Wilson identified transform faults — a third kind of plate boundary where plates slide past each other — and the concept of plates as rigid spherical caps was formalised by Jason Morgan, Dan McKenzie and Xavier Le Pichon. The result is plate tectonics: the lithosphere is divided into roughly seven major and several minor plates that move over the weak, ductile asthenosphere, driven largely by the pull of cold dense slabs sinking at subduction zones, with mantle convection beneath.</p>',
+        '<p>Almost every large-scale feature of the planet falls out of this one picture. Mountain belts like the Himalaya rise where continents collide; volcanic arcs and the deepest earthquakes mark where plates dive; new oceans open along rifts; and the continents themselves are rafted slowly around the globe, assembling and breaking up supercontinents on a roughly 400-million-year rhythm. Wegener&#8217;s ridiculed intuition had become the foundation of the Earth sciences.</p>',
+        '<div class="pull">The continents are not fixed stage and we the players. The stage itself is adrift, a few centimetres a year, and always has been.<cite>The standing result</cite></div>'
+      ]
+    ]
+  },
+
+  "penicillin": {
+    field: "Medicine",
+    era: "1928 – 1945",
+    subject: "The first antibiotic",
+    kick: "Medicine · The Discovery Series",
+    title: 'The mould that<br><i>beat infection.</i>',
+    dek: "A bacteriologist came back from holiday to a contaminated, ruined culture plate. Most people would have washed it. He looked closer — and found a mould that could kill the bacteria that, until then, routinely killed us.",
+    hero: "culture",
+    related: ["double-helix", "ancient-dna", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">F</span>or all of history, a scratch or a chest infection could turn lethal, because nothing could stop bacteria once they took hold inside us. In 1928 Alexander Fleming noticed that a stray mould contaminating one of his culture plates had cleared a halo around itself where the bacteria simply would not grow. The mould, <i>Penicillium</i>, was releasing something that killed them. He called it penicillin. He could not purify it, and the discovery sat for a decade — until an Oxford team led by Howard Florey and Ernst Chain turned it into a medicine. It was the first antibiotic, and it changed what it means to be ill.</p>',
+        '__FIG_INHIBITION__',
+        '<div class="know"><div class="kh">Why it matters</div><p>Before antibiotics, ordinary infections — a cut, childbirth, pneumonia, surgery — were frequently death sentences. Penicillin opened the door to treating them, and to modern surgery, transplants and chemotherapy, which depend on holding infection at bay.</p></div>'
+      ],
+      [
+        '<h2>The world before</h2>',
+        '<p><span class="lead">U</span>ntil the twentieth century, medicine could set bones, ease pain and drain wounds, but it had almost no way to stop a bacterial infection already growing inside the body. A grazed knee could lead to fatal blood poisoning; pneumonia, meningitis and infected wounds killed routinely; childbirth carried a real risk of lethal infection. Doctors could diagnose these deaths but rarely prevent them.</p>',
+        '<p>In 1928, returning from holiday to his lab at St Mary&#8217;s in London, Alexander Fleming sorted through a stack of old culture plates of <em>Staphylococcus</em> bacteria. One was contaminated by a blue-green mould — and around the mould was a clear ring where the bacterial colonies had dissolved away. Something the mould produced was killing them.</p>',
+        '<div class="pull">A ruined plate most people would have rinsed and forgotten. Fleming kept it, and asked why the bacteria had died.<cite>The accident, and the attention</cite></div>',
+        '<h2>A discovery that stalled</h2>',
+        '<p>Fleming identified the mould as a <em>Penicillium</em> and named the active substance penicillin. He showed it killed many dangerous bacteria yet seemed harmless to animal cells. But penicillin was unstable and present only in tiny amounts, and Fleming was not a chemist; he could not concentrate or purify it. He published in 1929, and the finding languished, treated as a laboratory curiosity for nearly a decade.</p>',
+        '__FIG_INHIBITION__',
+        '__STATS_PENICILLIN__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The clear zone is reproducible and measurable: spot a sensitive bacterium and a penicillin source on the same plate and a ring of no growth always appears, its size tracking the dose. The same test, run against different microbes, shows which are susceptible — the principle still used to choose antibiotics today.</p></div>',
+        '<h2>From curiosity to cure</h2>',
+        '<p>At Oxford around 1939, Howard Florey, Ernst Chain and Norman Heatley took up the problem Fleming had left. They devised ways to purify penicillin and tested it: mice given a lethal dose of bacteria survived if treated. In 1941 they tried it on a dying patient, who improved dramatically before the tiny supply ran out. Scaling up production became a wartime priority, and by 1944 penicillin was treating Allied casualties in quantity. Fleming, Florey and Chain shared the 1945 Nobel Prize.</p>'
+      ],
+      [
+        '<h2>An accident, and a prepared mind</h2>',
+        '<p><span class="lead">T</span>he story is often told as pure luck, but the luck only mattered because of who was looking. In September 1928 Alexander Fleming, a bacteriologist at St Mary&#8217;s Hospital in London, returned from a summer break to find a Petri dish of <em>Staphylococcus aureus</em> spoiled by a mould that had blown in or drifted up from a lab below. What caught his eye was the geometry: in a ring surrounding the mould colony, the bacterial growth was not merely sparse but visibly lysed — dissolved. The mould was secreting something that destroyed the bacteria around it.</p>',
+        '<p>Fleming cultured the mould, a species of <em>Penicillium</em>, and called its active product penicillin. Crucially, he tested its reach: it killed <em>Staphylococcus</em>, <em>Streptococcus</em>, the pneumococcus, the diphtheria and meningitis organisms and more, yet it did not harm white blood cells in the dish. That hinted at the property that makes a useful drug — selective toxicity, lethal to the pathogen but gentle to the host.</p>',
+        '<div class="pull">Chance favours the prepared mind. The mould landed on thousands of plates across the world; on one, it landed in front of someone who asked the right question.<cite>Why 1928 was the turning point</cite></div>',
+        '<h2>The decade of neglect</h2>',
+        '<p>Fleming&#8217;s 1929 paper laid out the phenomenon clearly, but he hit a wall. Penicillin in his cultures was scarce, fragile and maddeningly hard to extract; it lost potency quickly and resisted the purification methods of the day. As a clinician-bacteriologist rather than a chemist, Fleming lacked the means — and arguably the conviction — to push it into a drug. He kept the mould alive and shared it with other labs, but for roughly ten years penicillin remained an interesting way to keep unwanted bacteria off culture plates, not a medicine.</p>',
+        '<h2>The Oxford rescue</h2>',
+        '<p>The transformation came at Oxford&#8217;s Sir William Dunn School of Pathology, where Howard Florey, Ernst Chain and Norman Heatley revisited antibacterial substances around 1939. Heatley&#8217;s ingenuity was decisive: he engineered methods to grow the mould at scale in improvised vessels — including hospital bedpans and ceramic culture pans — and a back-extraction technique to recover and stabilise the active compound. In May 1940 they ran the pivotal experiment: eight mice were given a lethal dose of streptococci; the four treated with penicillin lived, the four untreated died by morning.</p>',
+        '<p>The first human trial, in 1941, was a 43-year-old policeman, Albert Alexander, dying of a rampant infection. Penicillin produced a striking recovery — but the team could not make it fast enough, even recovering the drug from the patient&#8217;s urine to re-administer it, and when the supply was exhausted he relapsed and died. The lesson was unmistakable: the science worked; the bottleneck was manufacturing.</p>',
+        '__FIG_INHIBITION__',
+        '__STATS_PENICILLIN__',
+        '<div class="know"><div class="kh">How we know it is real — and why it is safe</div><p>Penicillin&#8217;s selective lethality has a clean mechanical explanation, worked out later: it blocks the enzymes that cross-link the bacterial cell wall, a structure animal cells simply do not have, so growing bacteria burst while our own cells are untouched. The effect is dose-dependent and reproducible in the zone-of-inhibition assay, and was confirmed in controlled animal experiments and then in patients before it was ever mass-produced.</p></div>',
+        '<h2>Scaling a miracle</h2>',
+        '<p>With wartime demand and British industry stretched, Florey and Heatley took the work to the United States in 1941. There, deep-tank fermentation, a high-yielding strain of <em>Penicillium</em> famously isolated from a mouldy cantaloupe in Peoria, Illinois, and the application of industrial chemistry raised output by orders of magnitude. By the Normandy landings in June 1944 penicillin was available in quantity to treat Allied wounded, saving limbs and lives that infection would otherwise have claimed. Fleming, Florey and Chain shared the 1945 Nobel Prize in Physiology or Medicine.</p>',
+        '<h2>The double edge</h2>',
+        '<p>Penicillin launched the antibiotic era — streptomycin, the tetracyclines, and dozens more followed — and with it modern surgery, intensive care, transplantation and cancer chemotherapy, all of which depend on controlling infection. But in his Nobel lecture Fleming issued a warning that has aged precisely: misuse the drug, expose bacteria to too little of it, and you will breed resistant strains. Antibiotic resistance is now one of the central challenges in medicine — the predictable evolutionary price of the most consequential drug ever found.</p>',
+        '<div class="pull">In a single human lifetime, a bacterial infection went from a common cause of death to a routine inconvenience — and the bacteria began, just as he warned, to fight back.<cite>The standing result</cite></div>'
+      ]
+    ]
+  },
+
+  "crispr": {
+    field: "Biotechnology",
+    era: "2012 CE",
+    subject: "CRISPR–Cas9 gene editing",
+    kick: "Biotechnology · The Discovery Series",
+    title: 'We learned to edit<br><i>the code of life.</i>',
+    dek: "Bacteria have fought viruses for billions of years with a molecular memory that recognises and cuts enemy DNA. In 2012 two scientists realised that system could be reprogrammed — turning an immune defence into a tool that rewrites genes to order.",
+    hero: "helix",
+    related: ["double-helix", "ancient-dna", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">B</span>acteria defend themselves against viruses with a system called CRISPR: they keep snippets of past invaders&#8217; DNA as a memory, and use a protein — Cas9 — guided by a matching strand of RNA to find that exact sequence and cut it. In 2012 Jennifer Doudna and Emmanuelle Charpentier showed the guide could be rewritten to point Cas9 at <em>any</em> chosen DNA sequence. Suddenly there was a cheap, programmable tool to cut the genome at a precise spot and edit it. Within a decade it had reached the clinic, and in 2023 the first CRISPR therapy was approved.</p>',
+        '__FIG_CAS9__',
+        '<div class="know"><div class="kh">Why it matters</div><p>For the first time, changing a specific gene in a living cell became something an ordinary lab — or eventually a hospital — could do reliably and affordably. It is transforming biology, agriculture and medicine, and forcing hard questions about where editing should stop.</p></div>'
+      ],
+      [
+        '<h2>A defence borrowed from bacteria</h2>',
+        '<p><span class="lead">B</span>acteria have been at war with viruses for billions of years, and they evolved a remarkable weapon. In their DNA are strange repeated sequences — CRISPR — interspersed with fragments captured from viruses that attacked their ancestors. It is a genetic memory of past infections. When a remembered virus returns, the bacterium transcribes the stored fragment into a short guide RNA, which leads a cutting protein straight to the matching viral DNA and slices it apart.</p>',
+        '<p>The key is how the protein knows where to cut. It does not recognise the DNA itself; it carries the guide RNA, and wherever the guide&#8217;s letters match the DNA&#8217;s letters, it cuts. Change the guide, and you change the target. That was the insight that turned a curiosity into a technology.</p>',
+        '<div class="pull">Evolution had already built a search-and-cut machine that takes its instructions from a short, swappable piece of RNA. The trick was to write the instructions ourselves.<cite>The reprogramming idea</cite></div>',
+        '<h2>2012: the tool</h2>',
+        '<p>In 2012 Jennifer Doudna and Emmanuelle Charpentier, working together, simplified the bacterial system and showed that Cas9 could be programmed with a single, custom-designed guide RNA to cut any DNA sequence they chose, in a test tube. The following year, several groups showed it worked inside living human cells. A method that had taken months and serious expertise now took days and was within reach of almost any molecular-biology lab.</p>',
+        '__FIG_CAS9__',
+        '__STATS_CRISPR__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The cut site is exactly where the guide RNA matches, and changing a few letters of the guide moves the cut to a new, predicted location. The edits are confirmed by sequencing the DNA afterwards. Thousands of independent labs now use the technique routinely, on organisms from bacteria to plants to human cells — reproducibility on an industrial scale.</p></div>',
+        '<h2>From bench to bedside</h2>',
+        '<p>Once you can cut DNA at a chosen spot, the cell&#8217;s own repair machinery does the rest — disabling a gene, or, with a supplied template, rewriting it. CRISPR is now used to engineer disease-resistant crops, to build models of illness, and to treat patients. In late 2023 regulators approved the first CRISPR-based therapy, for sickle-cell disease and a related blood disorder. Doudna and Charpentier shared the 2020 Nobel Prize in Chemistry.</p>'
+      ],
+      [
+        '<h2>The repeats nobody could explain</h2>',
+        '<p><span class="lead">I</span>n 1987 Japanese researchers noticed an odd structure in bacterial DNA: a set of short, identical repeated sequences separated by unique &#8220;spacer&#8221; segments. Over the next two decades these clustered regularly interspaced short palindromic repeats — CRISPR — turned up across many bacteria and archaea. Francisco Mojica, who coined the name, made the pivotal observation around 2005 that the spacers matched fragments of viral DNA. The implication was startling: the repeats were an adaptive immune system, a heritable record of the viruses a microbial lineage had survived.</p>',
+        '<p>In 2007 Rodolphe Barrangou and Philippe Horvath proved it experimentally in the bacteria used to make yogurt: expose the microbes to a virus, and the survivors had added that virus&#8217;s DNA as a new spacer, gaining resistance they passed to their descendants. The associated <em>cas</em> genes encoded the machinery. CRISPR was a genuine immune memory, written in DNA.</p>',
+        '<div class="pull">A microbe that survives a virus files a copy of the enemy&#8217;s DNA into its own genome — and its children are born immune. Heredity and immunity, in the same molecule.<cite>What CRISPR is, in nature</cite></div>',
+        '<h2>How the machine works</h2>',
+        '<p>The system used as a tool, from <em>Streptococcus pyogenes</em>, centres on the Cas9 protein. In the bacterium, a stored spacer is transcribed into a short CRISPR RNA, which together with a second small RNA directs Cas9 to a matching 20-letter stretch of DNA. Cas9 first checks for a tiny adjacent signature called the PAM — a short motif that marks foreign DNA and protects the cell&#8217;s own CRISPR array from self-attack — then unwinds the double helix, lets the guide RNA test for a match, and if the letters pair, cuts both strands cleanly at that site.</p>',
+        '<p>In 2012 Doudna and Charpentier&#8217;s team made the decisive engineering move. They fused the two natural RNAs into a single &#8220;single-guide RNA,&#8221; reducing the system to two components: Cas9 plus one programmable guide. By writing the guide&#8217;s 20 letters to match any sequence of interest, they could direct the cut anywhere they wanted — and demonstrated exactly that on purified DNA. They explicitly noted the potential for genome editing.</p>',
+        '__FIG_CAS9__',
+        '<h2>Into living cells</h2>',
+        '<p>A cut is only useful because of what follows. The cell rushes to repair a double-strand break, and it does so in two main ways. Quick, error-prone rejoining tends to scramble a few letters at the break, reliably knocking out the targeted gene. Alternatively, if researchers supply a DNA template spanning the cut, the cell can copy it in during repair, allowing a precise, intended sequence to be written in — correcting a mutation, or inserting new code.</p>',
+        '<p>In January 2013 several groups — including those of Feng Zhang and George Church — showed CRISPR-Cas9 editing working efficiently in mammalian and human cells. The barrier to entry collapsed. Where older gene-editing tools had to be laboriously re-engineered as a new protein for each target, CRISPR needed only a new strand of guide RNA, cheap to order and quick to make.</p>',
+        '__STATS_CRISPR__',
+        '<div class="know"><div class="kh">How we know it is real — and how careful we must be</div><p>Edits are verified by sequencing the DNA at and around the target, and the cut relocates predictably when the guide is changed. But the same tools reveal the technology&#8217;s main risk: off-target cuts at sites that resemble the intended one. A great deal of the field&#8217;s work goes into measuring and minimising these errors — higher-fidelity Cas9 variants, better guide design, and whole-genome checks — before any clinical use.</p></div>',
+        '<h2>Promise, and a hard line</h2>',
+        '<p>The applications arrived quickly: crops edited for disease resistance and better yield, livestock and lab models, and human therapies. The first approved CRISPR medicine, authorised in late 2023, treats sickle-cell disease and beta-thalassaemia by editing a patient&#8217;s own blood stem cells outside the body to switch on protective fetal haemoglobin, then returning them. Newer refinements — base editing and prime editing — can change single letters without cutting both strands, widening what can be corrected.</p>',
+        '<p>The power forced an ethical reckoning. Editing a patient&#8217;s body cells affects only that person; editing eggs, sperm or embryos — the germ line — would change every future descendant. In 2018 a Chinese scientist, He Jiankui, announced he had edited the genomes of twin girls as embryos, drawing near-universal condemnation, a prison sentence, and a broad consensus that heritable human editing is not safe or justified with present knowledge. The science had outrun the wisdom to use it, and the field drew a line.</p>',
+        '<div class="pull">In barely a decade, rewriting a chosen gene went from impossible to routine. The remaining questions are no longer mainly technical — they are about what we should choose to do.<cite>The standing result</cite></div>'
+      ]
+    ]
   }
 };
 

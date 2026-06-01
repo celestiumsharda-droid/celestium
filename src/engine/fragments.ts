@@ -157,6 +157,126 @@ function decayFigure(): string {
   return s;
 }
 
+/** Cosmic microwave background: the blackbody spectrum, with measured
+ *  points falling exactly on a single-temperature Planck curve. */
+function cmbFigure(): string {
+  const X0 = 76, X1 = 658, Y0 = 250, Y1 = 52, xMax = 1.4, a = 3.9;
+  const B = (x: number) => (x <= 0 ? 0 : Math.pow(x, 3) / (Math.exp(a * x) - 1));
+  let bmax = 0;
+  for (let i = 0; i <= 240; i++) { const v = B((i / 240) * xMax); if (v > bmax) bmax = v; }
+  const px = (x: number) => X0 + (x / xMax) * (X1 - X0);
+  const py = (f: number) => Y0 + f * (Y1 - Y0);
+  let curve = "";
+  for (let i = 0; i <= 240; i++) {
+    const x = (i / 240) * xMax, f = B(x) / bmax;
+    curve += `${i === 0 ? "M" : "L"} ${px(x).toFixed(1)} ${py(f).toFixed(1)} `;
+  }
+  const area = `${curve}L ${px(xMax).toFixed(1)} ${Y0} L ${px(0).toFixed(1)} ${Y0} Z`;
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The cosmic microwave background spectrum: measured points lying on a single-temperature blackbody curve.">';
+  s += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#363c4a"/>`;
+  s += `<path d="${area}" fill="rgba(169,188,255,.08)"/>`;
+  s += `<path d="${curve}" fill="none" stroke="#a9bcff" stroke-width="2"/>`;
+  for (const x of [0.22, 0.4, 0.55, 0.72, 0.9, 1.06, 1.22]) {
+    const f = B(x) / bmax;
+    s += `<circle cx="${px(x).toFixed(1)}" cy="${py(f).toFixed(1)}" r="4" fill="#f2e6c4"/>`;
+    s += `<circle cx="${px(x).toFixed(1)}" cy="${py(f).toFixed(1)}" r="8.5" fill="none" stroke="rgba(242,230,196,.3)"/>`;
+  }
+  s += `<text x="${px(0.72)}" y="${py(B(0.72) / bmax) - 18}" fill="#a9bcff" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">2.725 K blackbody</text>`;
+  s += `<text x="${px(1.18)}" y="${py(B(1.18) / bmax) - 16}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="10">measured · COBE/FIRAS</text>`;
+  s += `<text x="${(X0 + X1) / 2}" y="${Y0 + 22}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" letter-spacing="2">FREQUENCY &#8594;</text>`;
+  s += `<text x="${X0 - 8}" y="${Y1 + 4}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="end">bright</text>`;
+  s += "</svg><figcaption>Plot the brightness of the cosmic microwave background against frequency and every measured point lands on the curve for one temperature: 2.725 K. It is the most perfect blackbody ever measured — the cooled, stretched-out glow of the universe when it first turned transparent.</figcaption></figure>";
+  return s;
+}
+
+/** Seafloor spreading: mirror-symmetric magnetic stripes recording the
+ *  field reversals frozen into new crust either side of a ridge. */
+function seafloorFigure(): string {
+  const cx = 360, top = 72, h = 120;
+  const widths = [24, 16, 34, 14, 38, 20, 30, 18];
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Magnetic stripes on the seafloor, mirror-symmetric about a mid-ocean ridge.">';
+  let off = 0;
+  widths.forEach((w, i) => {
+    const col = i % 2 === 0 ? "#33406c" : "#10131c";
+    s += `<rect x="${cx + off}" y="${top}" width="${w}" height="${h}" fill="${col}"/>`;
+    s += `<rect x="${cx - off - w}" y="${top}" width="${w}" height="${h}" fill="${col}"/>`;
+    off += w;
+  });
+  // ridge
+  s += `<rect x="${cx - 3}" y="${top - 14}" width="6" height="${h + 28}" fill="#f2e6c4"/>`;
+  s += `<circle cx="${cx}" cy="${top + h / 2}" r="${h / 2 + 14}" fill="none" stroke="rgba(242,230,196,.12)"/>`;
+  // spreading arrows
+  const ay = top + h + 34;
+  s += `<line x1="${cx - 60}" y1="${ay}" x2="${cx - 140}" y2="${ay}" stroke="#9aa2b4" stroke-width="1.5"/><path d="M ${cx - 140} ${ay} l 10 -5 v 10 z" fill="#9aa2b4"/>`;
+  s += `<line x1="${cx + 60}" y1="${ay}" x2="${cx + 140}" y2="${ay}" stroke="#9aa2b4" stroke-width="1.5"/><path d="M ${cx + 140} ${ay} l -10 -5 v 10 z" fill="#9aa2b4"/>`;
+  s += `<text x="${cx}" y="${top - 22}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle" letter-spacing="2">MID-OCEAN RIDGE</text>`;
+  s += `<text x="${cx}" y="${ay + 4}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">new crust spreads both ways</text>`;
+  s += `<text x="${cx - 200}" y="${top + h / 2}" fill="#9aa2b4" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" transform="rotate(-90 ${cx - 200} ${top + h / 2})">OLDER &#8592;</text>`;
+  s += `<text x="${cx + 200}" y="${top + h / 2}" fill="#9aa2b4" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" transform="rotate(90 ${cx + 200} ${top + h / 2})">&#8594; OLDER</text>`;
+  s += "</svg><figcaption>New seafloor erupts at the ridge and spreads outward, freezing the direction of Earth&#8217;s magnetic field into the rock as it cools. Because the field flips every so often, the floor records a barcode of reversals — mirror-identical on both sides. That symmetry is what proved the continents move.</figcaption></figure>";
+  return s;
+}
+
+/** Zone of inhibition: a bacterial lawn cleared in a ring around a mould. */
+function inhibitionFigure(): string {
+  const cx = 360, cy = 150, R = 118;
+  const mx = 360, my = 96, clearR = 50, mouldR = 19;
+  let seed = 11;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A petri dish: a bacterial lawn cleared in a ring around a colony of Penicillium mould.">';
+  s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#0c0e14" stroke="rgba(243,245,251,.18)" stroke-width="2"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${R - 7}" fill="none" stroke="rgba(243,245,251,.05)"/>`;
+  for (let i = 0; i < 520; i++) {
+    const x = cx + (rnd() * 2 - 1) * R, y = cy + (rnd() * 2 - 1) * R;
+    if (Math.hypot(x - cx, y - cy) > R - 12) continue;     // inside dish
+    if (Math.hypot(x - mx, y - my) < clearR) continue;     // not in the clear zone
+    const r = rnd() * 1.1 + 0.5;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#7e879b" opacity="${(0.25 + rnd() * 0.4).toFixed(2)}"/>`;
+  }
+  s += `<circle cx="${mx}" cy="${my}" r="${clearR}" fill="none" stroke="rgba(242,230,196,.18)" stroke-dasharray="3 5"/>`;
+  s += `<circle cx="${mx}" cy="${my}" r="${mouldR}" fill="#f2e6c4" opacity=".88"/>`;
+  s += `<circle cx="${mx}" cy="${my}" r="${mouldR - 6}" fill="none" stroke="rgba(12,14,20,.4)"/>`;
+  s += `<circle cx="${mx}" cy="${my}" r="${mouldR - 12}" fill="none" stroke="rgba(12,14,20,.4)"/>`;
+  s += `<text x="${mx}" y="${my - mouldR - 8}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" letter-spacing="1">PENICILLIUM</text>`;
+  s += `<text x="${mx + clearR + 6}" y="${my + 30}" fill="#9aa2b4" font-family="IBM Plex Mono,monospace" font-size="9">clear zone — nothing grows</text>`;
+  s += `<text x="${cx + R - 28}" y="${cy + R - 24}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="end">bacterial lawn</text>`;
+  s += "</svg><figcaption>A dish seeded with bacteria grows as a haze everywhere — except in a clear moat around a stray speck of <i>Penicillium</i>. Something the mould released was killing the bacteria. Fleming noticed the gap; it became the first antibiotic.</figcaption></figure>";
+  return s;
+}
+
+/** CRISPR–Cas9: a programmable guide RNA finds a 20-letter target beside
+ *  a PAM, and the enzyme cuts both DNA strands at that spot. */
+function cas9Figure(): string {
+  const x0 = 70, x1 = 650, y1 = 158, y2 = 182;
+  const tx0 = 300, tx1 = 470, pamX = tx1 + 8, cutX = tx1 - 26;
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CRISPR-Cas9: a guide RNA pairs with a twenty-letter DNA target beside a PAM, and the enzyme cuts both strands.">';
+  // Cas9 body
+  s += `<ellipse cx="385" cy="150" rx="132" ry="78" fill="rgba(169,188,255,.07)" stroke="rgba(169,188,255,.32)"/>`;
+  s += `<text x="300" y="92" fill="#a9bcff" font-family="IBM Plex Mono,monospace" font-size="11" letter-spacing="1">Cas9</text>`;
+  // target highlight
+  s += `<rect x="${tx0}" y="${y1 - 8}" width="${tx1 - tx0}" height="${y2 - y1 + 16}" rx="4" fill="rgba(158,230,196,.10)"/>`;
+  // DNA backbones
+  s += `<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#dfe6ff" stroke-width="2.4" opacity=".65"/>`;
+  s += `<line x1="${x0}" y1="${y2}" x2="${x1}" y2="${y2}" stroke="#dfe6ff" stroke-width="2.4" opacity=".5"/>`;
+  for (let x = x0 + 8; x <= x1 - 4; x += 13) {
+    s += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="rgba(223,230,255,.22)" stroke-width="1.4"/>`;
+  }
+  // guide RNA pairing across the target
+  let guide = `M ${tx0} ${y1 - 26} `;
+  for (let x = tx0; x <= tx1; x += 8) guide += `L ${x} ${y1 - (x % 16 === 0 ? 22 : 30)} `;
+  s += `<path d="${guide}" fill="none" stroke="#9ee6c4" stroke-width="2.2"/>`;
+  for (let x = tx0 + 4; x <= tx1; x += 16) s += `<line x1="${x}" y1="${y1 - 24}" x2="${x}" y2="${y1 - 2}" stroke="rgba(158,230,196,.5)" stroke-width="1.2"/>`;
+  s += `<text x="${(tx0 + tx1) / 2}" y="${y1 - 40}" fill="#9ee6c4" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">GUIDE RNA · 20 letters, reprogrammable</text>`;
+  // PAM
+  s += `<rect x="${pamX}" y="${y1 - 8}" width="22" height="${y2 - y1 + 16}" rx="3" fill="rgba(242,230,196,.16)" stroke="rgba(242,230,196,.4)"/>`;
+  s += `<text x="${pamX + 11}" y="${y2 + 22}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="middle">PAM</text>`;
+  // cut
+  s += `<line x1="${cutX}" y1="${y1 - 16}" x2="${cutX}" y2="${y2 + 16}" stroke="#ff9ec4" stroke-width="2" stroke-dasharray="3 3"/>`;
+  s += `<text x="${cutX}" y="${y2 + 34}" fill="#ff9ec4" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="middle">cut</text>`;
+  s += "</svg><figcaption>Cas9 (the enzyme) carries a short guide RNA whose letters are written to match one twenty-letter stretch of DNA. It scans the genome, locks onto the matching sequence beside a short &#8220;PAM&#8221; signal, and cuts both strands at exactly that spot. Rewrite the guide and you retarget the same tool to any gene.</figcaption></figure>";
+  return s;
+}
+
 const FRAGMENTS: Record<FragmentToken, string> = {
   "__STATS_EHT__":
     '<div class="stats"><div><div class="v">8</div><div class="l">Observatories linked across the globe</div></div><div><div class="v">~5 PB</div><div class="l">Data — too big for the internet, flown on drives</div></div><div><div class="v">55M ly</div><div class="l">Distance to M87&#42;, the first target</div></div></div>',
@@ -192,6 +312,18 @@ const FRAGMENTS: Record<FragmentToken, string> = {
   "__FIG_DECAY__": decayFigure(),
   "__FIG_HELIX__": helixFigure(),
   "__FIG_HOMININ__": homininFigure(),
+  "__FIG_CMB__": cmbFigure(),
+  "__FIG_SEAFLOOR__": seafloorFigure(),
+  "__FIG_INHIBITION__": inhibitionFigure(),
+  "__FIG_CAS9__": cas9Figure(),
+  "__STATS_CMB__":
+    '<div class="stats"><div><div class="v">2.725 K</div><div class="l">Temperature of the sky today, almost perfectly uniform</div></div><div><div class="v">380,000 yr</div><div class="l">Age of the universe when this light was set free</div></div><div><div class="v">1 in 100,000</div><div class="l">Size of the temperature ripples — the seeds of galaxies</div></div></div>',
+  "__STATS_TECTONICS__":
+    '<div class="stats"><div><div class="v">1912</div><div class="l">Wegener proposes drifting continents — and is dismissed</div></div><div><div class="v">1963</div><div class="l">Magnetic stripes on the seafloor confirm it</div></div><div><div class="v">~3 cm/yr</div><div class="l">How fast plates move — about as fast as fingernails grow</div></div></div>',
+  "__STATS_PENICILLIN__":
+    '<div class="stats"><div><div class="v">1928</div><div class="l">Fleming spots the clear ring around a mould</div></div><div><div class="v">1941</div><div class="l">The Oxford team treats the first patient</div></div><div><div class="v">1945</div><div class="l">Nobel Prize — and an age of antibiotics begins</div></div></div>',
+  "__STATS_CRISPR__":
+    '<div class="stats"><div><div class="v">2012</div><div class="l">Cas9 turned into a programmable cutting tool</div></div><div><div class="v">20 letters</div><div class="l">The guide-RNA address that aims it at one gene</div></div><div><div class="v">2023</div><div class="l">First CRISPR therapy approved, for sickle-cell disease</div></div></div>',
 };
 
 export default FRAGMENTS;

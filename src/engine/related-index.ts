@@ -11,6 +11,10 @@ const RELATED_INDEX: RelatedIndex = {
   "age-of-earth":          { field: "Deep Time",         title: "Reading four billion years out of a rock." },
   "double-helix":          { field: "Life & Origins",    title: "The shape that copies itself." },
   "ancient-dna":           { field: "Human History",     title: "Reading the genomes of the dead." },
+  "cosmic-background":     { field: "Origins",           title: "The static that turned out to be the Big Bang." },
+  "plate-tectonics":       { field: "Earth Science",     title: "The discovery that the ground is moving." },
+  "penicillin":            { field: "Medicine",          title: "The mould that beat infection." },
+  "crispr":                { field: "Biotechnology",     title: "We learned to edit the code of life." },
   "__scale":               { field: "Perspective",       title: "Find where you sit in thirteen orders of magnitude.", href: "/#scale", cta: "Open the tool" },
 };
 

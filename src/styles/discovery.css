@@ -104,6 +104,16 @@ nav {
 .helix-flow { animation: helixflow 7s linear infinite; }
 @keyframes helixflow { to { transform: translateY(-125.66px); } }
 
+/* "cmb" — cooled afterglow of the Big Bang, a soft mottled oval sky. */
+.v-cmb { width: 92%; aspect-ratio: 1; animation: spin 260s linear infinite; }
+.v-cmb svg { width: 100%; height: 100%; }
+/* "seafloor" — symmetric magnetic stripes about a glowing ridge. */
+.v-seafloor { width: 88%; aspect-ratio: 1; }
+.v-seafloor svg { width: 100%; height: 100%; }
+/* "culture" — a petri dish with a clear ring around a mould colony. */
+.v-culture { width: 88%; aspect-ratio: 1; }
+.v-culture svg { width: 100%; height: 100%; }
+
 /* "wobble" — exoplanet around a sun-like star.
    A faint orbit ring with a dark planet orbiting a warm star. */
 .v-wobble {
