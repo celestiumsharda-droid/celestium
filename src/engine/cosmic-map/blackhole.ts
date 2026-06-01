@@ -90,7 +90,7 @@ const FRAG = /* glsl */ `
     vec3 wup = abs(fwd.y) > 0.985 ? vec3(0.0,0.0,1.0) : vec3(0.0,1.0,0.0);
     vec3 rgt = normalize(cross(fwd, wup));
     vec3 upv = cross(rgt, fwd);
-    vec3 rd  = normalize(uv.x*rgt + uv.y*upv + 1.35*fwd);
+    vec3 rd  = normalize(uv.x*rgt + uv.y*upv + 0.95*fwd);  // wide field → disk sits well inside the quad
 
     vec3 p = ro, v = rd;
     float dt = 0.16;
@@ -121,6 +121,7 @@ const FRAG = /* glsl */ `
     vec3 col = acc.rgb;
     float a = acc.a;
     if(horizon){ a = 1.0; }                 // shadow blocks the background
+    a *= smoothstep(1.0, 0.85, max(abs(uv.x), abs(uv.y))); // soft fade so the quad edge never shows
     gl_FragColor = vec4(col, a * uFade);
   }
 `;
@@ -143,7 +144,7 @@ export function buildBlackHole(): Stage {
   mat.userData.base = 1;
 
   // camera-facing quad large enough to frame the hole + lensed disk
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat);
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(170, 170), mat);
   g.add(quad);
 
   // faint outer bloom so the disk bleeds light into the dark
