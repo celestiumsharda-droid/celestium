@@ -1,186 +1,149 @@
 /* =====================================================================
-   CELESTIUM — SAGITTARIUS A* (the galactic-centre black hole)
-   An Interstellar/Gargantua-style render: a black event horizon, a
-   bright photon ring, a hot textured accretion disk with Doppler
-   beaming (one side brighter), and a second perpendicular disk that
-   fakes the gravitationally-lensed arc over the top and bottom — the
-   signature look — plus a handful of S-stars whipping around it.
-
-   No GLSL: everything is built from standard geometry + a procedural
-   canvas texture, so it is robust across drivers.
+   CELESTIUM — SAGITTARIUS A* (gravitationally-lensed black hole)
+   A real raymarched render: photons are integrated along the
+   Schwarzschild light-bending geodesic (acceleration −1.5·h²·r̂/r⁵),
+   so the accretion disk's far side is genuinely bent up and over the
+   event horizon — the Interstellar/Gargantua look — with a photon
+   ring and mild Doppler beaming. Drawn on a single camera-facing quad.
    ===================================================================== */
 import * as THREE from "three";
 import { glowSprite } from "./glow";
 import type { Stage } from "./stages";
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-/* Hot accretion-gas texture: radius (v) ramps blue-white → orange →
-   dark red; angle (u) carries grainy streaks and bright filaments. */
-function makeDiskTexture(): THREE.CanvasTexture {
-  const W = 1024, H = 128;
-  const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const ctx = c.getContext("2d")!;
-  const img = ctx.createImageData(W, H);
-  const d = img.data;
-  const hash = (n: number) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
-
-  for (let y = 0; y < H; y++) {
-    const rad = y / (H - 1);
-    let r: number, g: number, b: number;
-    if (rad < 0.5) { const t = rad / 0.5; r = lerp(212, 255, t); g = lerp(230, 200, t); b = lerp(255, 120, t); }
-    else { const t = (rad - 0.5) / 0.5; r = lerp(255, 150, t); g = lerp(200, 55, t); b = lerp(120, 28, t); }
-    const aEnv = Math.pow(Math.sin(Math.PI * Math.min(1, Math.max(0, rad))), 0.7);
-    for (let x = 0; x < W; x++) {
-      const ang = x / W;
-      const grain = 0.4 + 0.6 * hash(x * 0.7 + y * 13.3);
-      const swirl = 0.5 + 0.5 * Math.sin(ang * Math.PI * 2 * 6 + rad * 8);
-      const spoke = Math.pow(Math.abs(Math.sin(ang * Math.PI * 36)), 10);
-      const bright = Math.min(1.5, 0.42 + 0.5 * grain + 0.3 * swirl + 0.55 * spoke);
-      const i = (y * W + x) * 4;
-      d[i] = Math.min(255, r * bright);
-      d[i + 1] = Math.min(255, g * bright);
-      d[i + 2] = Math.min(255, b * bright);
-      d[i + 3] = Math.min(255, aEnv * bright * 255);
-    }
+const VERT = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
-  ctx.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = THREE.RepeatWrapping;
-  return t;
-}
+`;
 
-/* Soft ring sprite (transparent centre, bright band) for the photon ring. */
-function makePhotonTexture(): THREE.CanvasTexture {
-  const s = 256;
-  const c = document.createElement("canvas");
-  c.width = c.height = s;
-  const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-  g.addColorStop(0.0, "rgba(255,255,255,0)");
-  g.addColorStop(0.66, "rgba(255,255,255,0)");
-  g.addColorStop(0.78, "rgba(255,240,210,0.95)");
-  g.addColorStop(0.85, "rgba(255,255,255,1)");
-  g.addColorStop(0.92, "rgba(255,225,170,0.5)");
-  g.addColorStop(1.0, "rgba(255,200,120,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, s, s);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
+const FRAG = /* glsl */ `
+  precision highp float;
+  varying vec2 vUv;
+  uniform float uTime;
+  uniform float uFade;
 
-/* A textured accretion-disk ring with radial UVs and optional
-   Doppler-beaming vertex colours. Returned flat in the XY plane. */
-function makeDisk(inner: number, outer: number, texture: THREE.Texture, doppler: boolean):
-  { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial } {
-  const geo = new THREE.RingGeometry(inner, outer, 220, 6);
-  const pos = geo.attributes.position as THREE.BufferAttribute;
-  const uv = geo.attributes.uv as THREE.BufferAttribute;
-  const v = new THREE.Vector3();
-  const colors: number[] = [];
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const ang = Math.atan2(v.y, v.x);
-    const radius = Math.hypot(v.x, v.y);
-    uv.setXY(i, ang / (Math.PI * 2) + 0.5, (radius - inner) / (outer - inner));
-    if (doppler) {
-      const beam = 0.35 + 0.65 * ((1 + Math.cos(ang)) / 2); // +x side brightest
-      colors.push(beam, beam, beam);
-    }
+  float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p){
+    vec2 i = floor(p), f = fract(p);
+    float a = hash(i), b = hash(i + vec2(1.0,0.0));
+    float c = hash(i + vec2(0.0,1.0)), d = hash(i + vec2(1.0,1.0));
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
   }
-  const mat = new THREE.MeshBasicMaterial({
-    map: texture, transparent: true, side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending, depthWrite: false, opacity: 1,
-    vertexColors: doppler,
-  });
-  if (doppler) geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  return { mesh: new THREE.Mesh(geo, mat), mat };
-}
+  float fbm(vec2 p){
+    float v = 0.0, a = 0.5;
+    for(int i=0;i<4;i++){ v += a*noise(p); p *= 2.03; a *= 0.5; }
+    return v;
+  }
+
+  // Accretion-disk emission at a point where a ray crosses the y=0 plane.
+  vec4 disk(vec3 hit, vec3 vel){
+    float r = length(hit.xz);
+    float inR = 2.2, outR = 8.4;
+    if(r < inR || r > outR) return vec4(0.0);
+    float t = (r - inR) / (outR - inR);            // 0 inner .. 1 outer
+
+    // temperature ramp: white-blue (hot, inner) -> orange -> deep red
+    vec3 hot  = vec3(1.0, 0.96, 0.92);
+    vec3 mid  = vec3(1.0, 0.58, 0.20);
+    vec3 cool = vec3(0.78, 0.20, 0.06);
+    vec3 col = t < 0.5 ? mix(hot, mid, t/0.5) : mix(mid, cool, (t-0.5)/0.5);
+
+    // swirling turbulence (orbits faster on the inside)
+    float ang = atan(hit.z, hit.x);
+    float spin = uTime * (0.9 / (0.4 + r*0.25));
+    float gas = fbm(vec2(ang*2.2 + spin, r*0.7));
+    float fine = fbm(vec2(ang*7.0 - spin*1.6, r*2.2));
+    float bright = (1.0 - t) * 1.5 + 0.35;
+    bright *= 0.55 + 0.7*gas + 0.25*fine;
+
+    // mild relativistic Doppler beaming: approaching side a touch brighter/bluer
+    vec3 orbit = normalize(vec3(-hit.z, 0.0, hit.x));
+    float dop = dot(orbit, normalize(-vel));
+    bright *= clamp(0.78 + 0.5*dop, 0.25, 1.7);
+    col += vec3(0.0, 0.04, 0.16) * max(0.0, dop);
+
+    // soft fade at both edges
+    float edge = smoothstep(0.0, 0.12, t) * smoothstep(0.0, 0.18, 1.0 - t);
+    float a = clamp(bright * edge, 0.0, 1.0);
+    return vec4(col * bright, a);
+  }
+
+  void main(){
+    vec2 uv = (vUv - 0.5) * 2.0;          // -1 .. 1, square quad
+
+    // camera looking at the hole, slightly above the disk plane so the
+    // disk is seen nearly edge-on (the Interstellar framing)
+    vec3 ro = vec3(0.0, 2.4, 13.0);
+    vec3 ta = vec3(0.0);
+    vec3 fwd = normalize(ta - ro);
+    vec3 rgt = normalize(cross(fwd, vec3(0.0,1.0,0.0)));
+    vec3 upv = cross(rgt, fwd);
+    vec3 rd  = normalize(uv.x*rgt + uv.y*upv + 1.35*fwd);
+
+    vec3 p = ro, v = rd;
+    float dt = 0.16;
+    vec4 acc = vec4(0.0);
+    bool horizon = false;
+
+    for(int i=0;i<200;i++){
+      float r = length(p);
+      if(r < 1.0){ horizon = true; break; }     // event horizon (Rs = 1)
+      if(r > 36.0) break;
+      // Schwarzschild photon bending
+      vec3 h = cross(p, v);
+      vec3 acc3 = -1.5 * dot(h,h) * p / pow(r, 5.0);
+      vec3 nv = v + acc3 * dt;
+      vec3 np = p + nv * dt;
+      // disk plane crossing (y = 0)
+      if(p.y * np.y < 0.0){
+        float k = -p.y / (np.y - p.y);
+        vec3 hitp = mix(p, np, k);
+        vec4 dc = disk(hitp, nv);
+        acc.rgb += (1.0 - acc.a) * dc.rgb;
+        acc.a   += (1.0 - acc.a) * dc.a;
+        if(acc.a > 0.99) break;
+      }
+      v = nv; p = np;
+    }
+
+    vec3 col = acc.rgb;
+    float a = acc.a;
+    if(horizon){ a = 1.0; }                 // shadow blocks the background
+    gl_FragColor = vec4(col, a * uFade);
+  }
+`;
 
 export function buildBlackHole(): Stage {
   const g = new THREE.Group();
-  const Rh = 10;
 
-  // Event horizon — a true black sphere.
-  g.add(new THREE.Mesh(
-    new THREE.SphereGeometry(Rh, 64, 48),
-    new THREE.MeshBasicMaterial({ color: 0x000000 }),
-  ));
-
-  // Photon ring — billboard, always hugging the horizon.
-  const photon = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makePhotonTexture(), color: 0xffe9c4, transparent: true,
-    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
-  }));
-  photon.scale.set(Rh * 2.55, Rh * 2.55, 1);
-  g.add(photon);
-
-  const diskTex = makeDiskTexture();
-  const inner = Rh * 1.35, outer = Rh * 4.4;
-
-  // Main accretion disk (horizontal, Doppler-beamed).
-  const diskH = makeDisk(inner, outer, diskTex, true);
-  diskH.mesh.rotation.x = -Math.PI / 2;
-  g.add(diskH.mesh);
-
-  // Lensed arc — a perpendicular disk faking the over-the-top band.
-  const diskV = makeDisk(inner, outer, diskTex, false);
-  diskV.mat.opacity = 0.5;
-  g.add(diskV.mesh);
-
-  // outer bloom
-  g.add(glowSprite(0xff9a52, Rh * 9, 0.22));
-  g.add(glowSprite(0xffcaa0, Rh * 4.6, 0.3));
-
-  // S-stars whipping around the centre
-  type SStar = { sp: THREE.Sprite; a: number; b: number; inc: number; node: number; phase: number; speed: number };
-  const sStars: SStar[] = [];
-  const starColors = [0xbfd4ff, 0xffffff, 0xfff0d0, 0xcfe0ff, 0xffe6c0, 0xdfe9ff];
-  for (let i = 0; i < 6; i++) {
-    const sp = glowSprite(starColors[i % starColors.length]!, 2.2, 1);
-    g.add(sp);
-    sStars.push({
-      sp,
-      a: Rh * (2.6 + Math.random() * 4),
-      b: Rh * (2.0 + Math.random() * 3),
-      inc: (Math.random() - 0.5) * 1.4,
-      node: Math.random() * Math.PI * 2,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.5 + Math.random() * 0.8,
-    });
-  }
-  function placeStars(t: number) {
-    for (const s of sStars) {
-      const th = s.phase + t * s.speed;
-      const x = Math.cos(th) * s.a, z = Math.sin(th) * s.b;
-      const ci = Math.cos(s.inc), si = Math.sin(s.inc);
-      const cn = Math.cos(s.node), sn = Math.sin(s.node);
-      // incline then rotate by node
-      const y = z * si;
-      const z2 = z * ci;
-      s.sp.position.set(x * cn - z2 * sn, y, x * sn + z2 * cn);
-    }
-  }
-  placeStars(0);
-
-  g.rotation.x = 0.32; // tilt toward the viewer
-
-  // base opacities for the cross-fade
-  g.traverse(o => {
-    const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-    if (!m) return;
-    (Array.isArray(m) ? m : [m]).forEach(mat => { mat.transparent = true; mat.userData.base = mat.opacity; });
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: VERT,
+    fragmentShader: FRAG,
+    uniforms: { uTime: { value: 0 }, uFade: { value: 1 } },
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
   });
+  mat.userData.base = 1;
+
+  // camera-facing quad large enough to frame the hole + lensed disk
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat);
+  g.add(quad);
+
+  // faint outer bloom so the disk bleeds light into the dark
+  const bloom = glowSprite(0xff8a3a, 150, 0.12);
+  bloom.material.userData.base = 0.12;
+  g.add(bloom);
 
   return {
     key: "blackhole",
     group: g,
-    update: (t) => {
-      diskTex.offset.x = t * 0.03;       // swirl the gas (Doppler stays fixed)
-      placeStars(t);
+    update: (t, _now, camera) => {
+      mat.uniforms.uTime!.value = t;
+      if (camera) quad.quaternion.copy(camera.quaternion); // billboard
     },
   };
 }

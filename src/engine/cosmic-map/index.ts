@@ -165,7 +165,7 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
     if (!reduced) sky.rotation.y = elapsed * 0.004;
 
     const date = new Date();
-    for (const s of stages) if (s.group.visible && s.update) s.update(elapsed, date);
+    for (const s of stages) if (s.group.visible && s.update) s.update(elapsed, date, camera);
 
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);

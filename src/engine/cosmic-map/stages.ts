@@ -19,7 +19,7 @@ import { helio, julianCenturies, type PlanetName } from "../ephemeris";
 export interface Stage {
   key: string;
   group: THREE.Group;
-  update?: (elapsed: number, now: Date) => void;
+  update?: (elapsed: number, now: Date, camera: THREE.PerspectiveCamera) => void;
 }
 
 /* Record each material's authored opacity so cross-fades can multiply
@@ -46,6 +46,8 @@ export function setStageFade(root: THREE.Object3D, fade: number): void {
     mats.forEach(mat => {
       const base = (mat.userData.base as number) ?? 1;
       mat.opacity = base * fade;
+      const sm = mat as THREE.ShaderMaterial;
+      if (sm.uniforms && sm.uniforms.uFade) sm.uniforms.uFade.value = base * fade;
     });
   });
 }
