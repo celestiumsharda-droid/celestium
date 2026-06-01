@@ -57,6 +57,7 @@ export default defineConfig({
       input: {
         home: resolve(__dirname, "src/index.html"),
         discovery: resolve(__dirname, "src/discovery.html"),
+        discoveriesIndex: resolve(__dirname, "src/discoveries/index.html"),
         notfound: resolve(__dirname, "src/404.html"),
       },
     },

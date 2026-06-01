@@ -16,6 +16,7 @@ const DIST = resolve(__dirname, "..", "dist");
 const today = new Date().toISOString().slice(0, 10);
 const urls = [
   { loc: SITE.origin + "/", priority: "1.0" },
+  { loc: SITE.origin + "/discoveries/", priority: "0.9" },
   ...Object.keys(DISCOVERIES).map(slug => ({
     loc: `${SITE.origin}/discoveries/${slug}/`,
     priority: "0.8",
