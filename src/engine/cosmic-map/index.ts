@@ -74,7 +74,7 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
   for (const s of stages) { scene.add(s.group); setStageFade(s.group, 0); }
 
   /* ---- camera orbit state ---- */
-  const D = 155;
+  let D = 155;                       // distance, recomputed per aspect in resize()
   let az = 0.6, pol = 1.15;          // azimuth, polar (radians)
   let tAz = az, tPol = pol;          // targets (eased)
   let dragging = false, px = 0, py = 0;
@@ -194,8 +194,16 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
     const w = canvas.clientWidth || innerWidth;
     const h = canvas.clientHeight || innerHeight;
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
+    const aspect = w / h;
+    camera.aspect = aspect;
     camera.updateProjectionMatrix();
+    // Pull the camera back on narrow/portrait screens so a ~80-unit scene
+    // fits in the limiting (usually horizontal) field of view — otherwise
+    // wide objects like the black-hole disk get clipped at the edges.
+    const vHalf = (camera.fov / 2) * (Math.PI / 180);
+    const hHalf = Math.atan(Math.tan(vHalf) * aspect);
+    const limit = Math.min(vHalf, hHalf);
+    D = Math.min(560, 82 / Math.tan(limit));
   }
   resize();
   addEventListener("resize", resize);

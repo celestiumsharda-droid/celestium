@@ -226,18 +226,32 @@ section { position: relative; padding: 140px 0; }
 .cm-arrow { display: inline-block; animation: cmbob 2s infinite; }
 @keyframes cmbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 @media (max-width: 620px) {
-  .persp-hud .persp-head { max-width: 100%; }
-  .persp-hud { padding: 18px; }
+  .persp-hud { padding: 14px; z-index: 2; }
+  /* heading clears the fixed nav */
+  .persp-hud .persp-head { max-width: 100%; padding-top: 52px; }
+  .persp-head h2 { font-size: 1.7rem; line-height: 1.05; }
+  .persp-hud .eyebrow { margin-bottom: 8px; font-size: 9px; }
   .persp-hint { display: none; }
-  /* compact info that clears the chip row */
-  .persp-info { bottom: 86px; left: 18px; right: 18px; max-width: none; }
-  .persp-info p { display: none; }
-  .persp-info h3 { font-size: 2rem; margin: .15em 0 .2em; }
+
+  /* readability scrim so the bottom text reads over the 3D scene */
+  .persp-sticky::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 48%;
+    background: linear-gradient(transparent, rgba(5,6,9,.92));
+    pointer-events: none; z-index: 1;
+  }
+
+  .persp-info { left: 16px; right: 16px; bottom: 84px; max-width: none; }
+  .persp-info h3 { font-size: 1.9rem; margin: .12em 0 .18em; }
+  .persp-info p {
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: .92rem;
+  }
+
   /* one horizontally-scrollable row of chips — never overlaps the text */
-  .persp-foot { left: 0; right: 0; bottom: 16px; flex-direction: column; align-items: stretch; gap: 0; }
+  .persp-foot { left: 0; right: 0; bottom: 14px; flex-direction: column; align-items: stretch; gap: 0; }
   .persp-stages {
     flex-wrap: nowrap; overflow-x: auto; gap: 7px;
-    padding: 0 18px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    padding: 0 16px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .persp-stages::-webkit-scrollbar { display: none; }
   .cm-chip { flex: 0 0 auto; }
