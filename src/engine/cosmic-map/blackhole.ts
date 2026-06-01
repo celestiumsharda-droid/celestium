@@ -23,6 +23,7 @@ const FRAG = /* glsl */ `
   varying vec2 vUv;
   uniform float uTime;
   uniform float uFade;
+  uniform vec3 uViewDir;   // direction from the hole to the camera (unit)
 
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p){
@@ -51,22 +52,27 @@ const FRAG = /* glsl */ `
     vec3 cool = vec3(0.78, 0.20, 0.06);
     vec3 col = t < 0.5 ? mix(hot, mid, t/0.5) : mix(mid, cool, (t-0.5)/0.5);
 
-    // swirling turbulence (orbits faster on the inside)
+    // swirling turbulence (orbits faster on the inside), layered for detail
     float ang = atan(hit.z, hit.x);
-    float spin = uTime * (0.9 / (0.4 + r*0.25));
-    float gas = fbm(vec2(ang*2.2 + spin, r*0.7));
-    float fine = fbm(vec2(ang*7.0 - spin*1.6, r*2.2));
-    float bright = (1.0 - t) * 1.5 + 0.35;
-    bright *= 0.55 + 0.7*gas + 0.25*fine;
+    float spin = uTime * (1.1 / (0.5 + r*0.22));
+    float n1 = fbm(vec2(ang*3.0  + spin,        r*1.1));
+    float n2 = fbm(vec2(ang*9.0  - spin*1.5,    r*3.4));
+    float n3 = fbm(vec2(ang*22.0 + spin*0.7,    r*7.5));
+    float gas = n1*0.6 + n2*0.32 + n3*0.2;
+    float bright = (1.0 - t) * 1.7 + 0.3;
+    bright *= 0.4 + 1.15*gas;
+    // bright shredded filaments
+    float fil = pow(n2, 2.2) + 0.6*pow(n3, 3.0);
+    bright += 0.7 * fil * (1.0 - t*0.7);
 
     // mild relativistic Doppler beaming: approaching side a touch brighter/bluer
     vec3 orbit = normalize(vec3(-hit.z, 0.0, hit.x));
     float dop = dot(orbit, normalize(-vel));
-    bright *= clamp(0.78 + 0.5*dop, 0.25, 1.7);
-    col += vec3(0.0, 0.04, 0.16) * max(0.0, dop);
+    bright *= clamp(0.74 + 0.6*dop, 0.22, 1.9);
+    col += vec3(0.0, 0.05, 0.18) * max(0.0, dop);
 
     // soft fade at both edges
-    float edge = smoothstep(0.0, 0.12, t) * smoothstep(0.0, 0.18, 1.0 - t);
+    float edge = smoothstep(0.0, 0.10, t) * smoothstep(0.0, 0.16, 1.0 - t);
     float a = clamp(bright * edge, 0.0, 1.0);
     return vec4(col * bright, a);
   }
@@ -74,12 +80,13 @@ const FRAG = /* glsl */ `
   void main(){
     vec2 uv = (vUv - 0.5) * 2.0;          // -1 .. 1, square quad
 
-    // camera looking at the hole, slightly above the disk plane so the
-    // disk is seen nearly edge-on (the Interstellar framing)
-    vec3 ro = vec3(0.0, 2.4, 13.0);
+    // camera orbits the hole — driven by the real drag direction, so the
+    // lensing genuinely re-renders from each angle you look from.
+    vec3 ro = uViewDir * 13.0;
     vec3 ta = vec3(0.0);
     vec3 fwd = normalize(ta - ro);
-    vec3 rgt = normalize(cross(fwd, vec3(0.0,1.0,0.0)));
+    vec3 wup = abs(fwd.y) > 0.985 ? vec3(0.0,0.0,1.0) : vec3(0.0,1.0,0.0);
+    vec3 rgt = normalize(cross(fwd, wup));
     vec3 upv = cross(rgt, fwd);
     vec3 rd  = normalize(uv.x*rgt + uv.y*upv + 1.35*fwd);
 
@@ -122,7 +129,11 @@ export function buildBlackHole(): Stage {
   const mat = new THREE.ShaderMaterial({
     vertexShader: VERT,
     fragmentShader: FRAG,
-    uniforms: { uTime: { value: 0 }, uFade: { value: 1 } },
+    uniforms: {
+      uTime: { value: 0 },
+      uFade: { value: 1 },
+      uViewDir: { value: new THREE.Vector3(0, 0.32, 1).normalize() },
+    },
     transparent: true,
     depthWrite: false,
     depthTest: false,
@@ -143,7 +154,12 @@ export function buildBlackHole(): Stage {
     group: g,
     update: (t, _now, camera) => {
       mat.uniforms.uTime!.value = t;
-      if (camera) quad.quaternion.copy(camera.quaternion); // billboard
+      if (camera) {
+        quad.quaternion.copy(camera.quaternion);            // billboard the quad
+        const p = camera.position;                          // hole sits at the origin
+        const len = Math.hypot(p.x, p.y, p.z) || 1;
+        (mat.uniforms.uViewDir!.value as THREE.Vector3).set(p.x / len, p.y / len, p.z / len);
+      }
     },
   };
 }
