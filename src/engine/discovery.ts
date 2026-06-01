@@ -220,6 +220,21 @@ const lt = $("lvltag");
 const seg = $("seg");
 body.style.transition = "opacity .35s";
 
+// Dynamic, per-article reading time on each depth button.
+const DEPTH_NAMES = ["Glance", "Curious", "Deep"] as const;
+function readTime(l: number): string {
+  const words = expandFragments(D.depths[l] ?? [])
+    .replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ")
+    .split(/\s+/).filter(Boolean).length;
+  const secs = (words / 220) * 60;
+  return secs < 75 ? `${Math.max(15, Math.round(secs / 15) * 15)}s` : `${Math.max(1, Math.round(secs / 60))}m`;
+}
+seg.querySelectorAll<HTMLButtonElement>("button").forEach((b, i) => {
+  b.textContent = `${DEPTH_NAMES[i]} · ${readTime(i)}`;
+});
+
+const DEPTH_KEY = "celestium:depth";
+
 function renderDepth(l: number) {
   body.style.opacity = "0";
   setTimeout(() => {
@@ -252,7 +267,9 @@ seg.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
     b.classList.add("on");
     b.setAttribute("aria-pressed", "true");
     playClick();
-    renderDepth(Number(b.dataset["l"]));
+    const lvl = Number(b.dataset["l"]);
+    try { localStorage.setItem(DEPTH_KEY, String(lvl)); } catch (_e) { /* private mode */ }
+    renderDepth(lvl);
     const y = document.querySelector("article")!.getBoundingClientRect().top + scrollY - 104;
     if (scrollY > y) scrollTo({ top: y, behavior: "smooth" });
   });
@@ -265,6 +282,15 @@ if (body.innerHTML.trim()) {
 } else {
   renderDepth(0);
 }
+
+// Resume at the reader's preferred altitude: if they last chose Curious
+// or Deep, open there instead of the Glance.
+try {
+  const pref = Number(localStorage.getItem(DEPTH_KEY));
+  if ((pref === 1 || pref === 2) && D.depths[pref]) {
+    seg.querySelector<HTMLButtonElement>(`button[data-l="${pref}"]`)?.click();
+  }
+} catch (_e) { /* private mode */ }
 
 // Keyboard shortcuts: press 1 / 2 / 3 to jump to a reading depth.
 addEventListener("keydown", e => {
