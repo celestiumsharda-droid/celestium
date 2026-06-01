@@ -1,7 +1,8 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets } from "./living-sky";
-import SCALES, { TICK_LABELS } from "../data/scales";
+import { STAGES } from "./cosmic-map/data";
+import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
 import STORY from "../data/story";
 import DEPTH_PREVIEW from "../data/depth-preview";
@@ -44,31 +45,82 @@ txt.split("").forEach((ch, i) => {
 });
 setTimeout(() => ttl.classList.add("go"), 100);
 
-/* ---------- scale zoomer ---------- */
-const zoom = $<HTMLInputElement>("zoom");
-const tk = $("ticks");
-TICK_LABELS.forEach((label, i) => {
-  const s = document.createElement("span");
-  s.textContent = label;
-  s.setAttribute("role", "button");
-  s.setAttribute("tabindex", "0");
-  s.setAttribute("aria-label", `Jump to ${label} scale`);
-  const jump = () => { zoom.value = String(i); paint(i); };
-  s.addEventListener("click", jump);
-  s.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); jump(); } });
-  tk.appendChild(s);
-});
-function paint(i: number) {
-  const o = SCALES[i]!;
-  $("glyph").textContent = o.g;
-  $("s-lvl").textContent = "Level 0" + (i + 1) + " — " + o.l;
-  $("s-name").textContent = o.n;
-  $("s-size").textContent = o.s;
-  $("s-desc").textContent = o.d;
-  tk.querySelectorAll<HTMLElement>("span").forEach((sp, j) => sp.classList.toggle("on", j === i));
-}
-zoom.addEventListener("input", () => paint(+zoom.value));
-paint(0);
+/* ---------- perspective: 3D cosmic map ----------
+   The Perspective section is a tall, pinned track. Page-scroll over it
+   drives a single zoom scalar in [0, STAGES-1]; Three.js is lazy-loaded
+   only when the section nears, so it never blocks first paint. */
+(function perspective() {
+  const track = document.getElementById("persp-track");
+  const canvas = document.getElementById("cosmic") as HTMLCanvasElement | null;
+  const fallback = document.getElementById("persp-fallback");
+  const chipWrap = document.getElementById("cm-stages");
+  if (!track || !canvas || !chipWrap) return;
+
+  const N = STAGES.length;
+  const lastIdx = N - 1;
+
+  // Build stage chips (also the accessible / keyboard control surface).
+  const chips: HTMLButtonElement[] = STAGES.map((s, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cm-chip" + (i === 0 ? " on" : "");
+    b.textContent = s.name.replace(/^The\s+/, "").replace(/,.*$/, "");
+    b.setAttribute("aria-label", `Jump to ${s.name}`);
+    b.addEventListener("click", () => {
+      const total = track.offsetHeight - innerHeight;
+      const top = track.getBoundingClientRect().top + scrollY;
+      scrollTo({ top: top + (i / lastIdx) * total, behavior: "smooth" });
+    });
+    chipWrap.appendChild(b);
+    return b;
+  });
+
+  function progress(): number {
+    const total = track.offsetHeight - innerHeight;
+    if (total <= 0) return 0;
+    const scrolled = -track.getBoundingClientRect().top;
+    return Math.min(1, Math.max(0, scrolled / total));
+  }
+
+  let map: CosmicMap | null = null;
+  let loading = false;
+
+  function syncChips(z: number) {
+    const active = Math.round(z);
+    chips.forEach((c, i) => c.classList.toggle("on", i === active));
+  }
+
+  function onScrollZoom() {
+    const z = progress() * lastIdx;
+    if (map) map.setZoom(z);
+    syncChips(z);
+  }
+
+  // Lazy-load Three.js + the map module when the section is close.
+  const loadIO = new IntersectionObserver(async entries => {
+    if (!entries.some(e => e.isIntersecting) || map || loading) return;
+    loading = true;
+    try {
+      const mod = await import("./cosmic-map");
+      map = mod.mountCosmicMap(canvas, {
+        level: $("cm-level"),
+        name: $("cm-name"),
+        desc: $("cm-desc"),
+        readout: $("cm-readout"),
+        live: $("cm-live"),
+      });
+      if (fallback) fallback.style.display = "none";
+      requestAnimationFrame(() => { map!.resize(); onScrollZoom(); });
+    } catch (err) {
+      console.warn("Cosmic map unavailable; showing fallback.", err);
+      loading = false; // allow a retry on a later intersection
+    }
+  }, { rootMargin: "400px 0px" });
+  loadIO.observe(track);
+
+  addEventListener("scroll", onScrollZoom, { passive: true });
+  addEventListener("resize", onScrollZoom);
+})();
 
 /* ---------- timeline ---------- */
 const rail = document.querySelector<HTMLElement>(".tlrail")!;

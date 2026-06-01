@@ -84,26 +84,38 @@
     <div class="scrollcue"><span>Descend</span><span class="ln"></span></div>
   </header>
 
-  <!-- SCALE / YOU ARE HERE -->
-  <section id="scale">
-    <div class="wrap">
-      <div class="shead reveal">
-        <h2>You are<br>somewhere here.</h2>
-        <p>Before the news, before the theory — orientation. Drag through thirteen orders of magnitude and watch where you sit in it all.</p>
-      </div>
-      <div class="scalewrap reveal">
-        <div class="stage">
-          <div class="glyph" id="glyph">🧍</div>
-          <div class="scaledot"></div>
+  <!-- PERSPECTIVE / YOU ARE HERE — 3D cosmic map -->
+  <section id="scale" class="perspective" aria-label="A zoomable map of the universe, from Earth to the cosmic web">
+    <div class="persp-track" id="persp-track">
+      <div class="persp-sticky">
+        <canvas id="cosmic" class="persp-canvas" aria-hidden="true"></canvas>
+
+        <div class="persp-hud">
+          <div class="persp-head">
+            <p class="eyebrow">You are here</p>
+            <h2>You are<br>somewhere&nbsp;here.</h2>
+          </div>
+
+          <div class="persp-info" id="persp-info">
+            <div class="cm-live" id="cm-live"><span class="cm-beat"></span>Positions live</div>
+            <div class="lvl" id="cm-level">Level 01 — Home</div>
+            <h3 id="cm-name">Earth</h3>
+            <div class="cm-readout mono"><span id="cm-readout">12,742 km</span></div>
+            <p id="cm-desc">A single pale stone. Every war, ocean and idea you know of has happened on this one dot.</p>
+          </div>
+
+          <div class="persp-foot">
+            <div class="persp-stages" id="cm-stages" role="group" aria-label="Jump to a scale"></div>
+            <div class="persp-hint" id="cm-hint"><span class="cm-arrow">↓</span> Scroll to zoom out · drag to look around</div>
+          </div>
         </div>
-        <div class="scaleinfo">
-          <div class="lvl" id="s-lvl">Level 01 — Human</div>
-          <h3 id="s-name">A person</h3>
-          <div class="size mono" id="s-size">≈ 1.7 metres</div>
-          <p id="s-desc">This is the only scale evolution ever prepared you to comprehend. Everything beyond it, your species had to reason its way toward. Keep going.</p>
-          <div class="slider">
-            <input type="range" id="zoom" min="0" max="7" value="0" step="1" aria-label="Zoom through scales of the universe">
-            <div class="ticks" id="ticks"></div>
+
+        <!-- Fallback if WebGL or JS is unavailable; JS hides it on success. -->
+        <div class="persp-fallback" id="persp-fallback">
+          <div class="wrap">
+            <p class="eyebrow">You are here</p>
+            <h2>You are somewhere here.</h2>
+            <p>From a single person to the observable universe — Earth, the Solar System, the nearest stars, the Milky Way, the Local Group, and the cosmic web of galaxies. Thirteen orders of magnitude, and you are one quiet point inside all of it.</p>
           </div>
         </div>
       </div>

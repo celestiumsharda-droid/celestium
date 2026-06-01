@@ -134,65 +134,101 @@ section { position: relative; padding: 140px 0; }
 .reveal.in { opacity: 1; transform: none; }
 .num { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: .34em; }
 
-/* ---- scale zoomer ---- */
-#scale { border-top: 1px solid var(--line-soft); background: linear-gradient(180deg, transparent, rgba(10,12,18,.5), transparent); }
-.scalewrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 70px; align-items: center; }
-@media (max-width: 900px) { .scalewrap { grid-template-columns: 1fr; gap: 44px; } }
-.stage {
-  aspect-ratio: 1;
-  border: 1px solid var(--line-soft); border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden;
-  background: radial-gradient(circle at 50% 50%, rgba(169,188,255,.06), transparent 62%);
+/* ---- perspective: 3D cosmic map ---- */
+#scale.perspective { padding: 0; border-top: 1px solid var(--line-soft); }
+.persp-track { position: relative; height: 620vh; }
+@media (max-width: 900px) { .persp-track { height: 560vh; } }
+.persp-sticky {
+  position: sticky; top: 0;
+  height: 100vh; width: 100%;
+  overflow: hidden;
 }
-.stage::before, .stage::after { content: ""; position: absolute; border: 1px solid var(--line-soft); border-radius: 50%; }
-.stage::before { inset: 14%; }
-.stage::after  { inset: 30%; }
-.glyph {
-  font-size: clamp(3.4rem, 11vw, 7rem);
-  transition: .7s cubic-bezier(.4,1.4,.4,1);
-  filter: drop-shadow(0 0 30px rgba(169,188,255,.3));
+.persp-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: pan-y;            /* let vertical swipe scroll = zoom */
+  cursor: grab;
 }
-.scaledot {
-  position: absolute; width: 9px; height: 9px;
-  border-radius: 50%; background: var(--accent);
-  box-shadow: 0 0 16px var(--accent);
-  bottom: 18%; left: 50%; transform: translateX(-50%);
-  animation: pulse 2s infinite;
+.persp-canvas:active { cursor: grabbing; }
+
+.persp-hud {
+  position: absolute; inset: 0;
+  pointer-events: none;           /* clicks pass to the canvas... */
+  padding: clamp(20px, 4vw, 54px);
+  display: flex; flex-direction: column; justify-content: space-between;
 }
-@keyframes pulse { 50% { transform: translateX(-50%) scale(1.7); opacity: .5; } }
-.scaleinfo .lvl { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .3em; text-transform: uppercase; }
-.scaleinfo h3 { font-size: clamp(2rem, 4.4vw, 3.4rem); margin: .18em 0 .25em; }
-.scaleinfo .size { font-family: var(--mono); font-size: 13px; color: var(--mut); margin-bottom: 18px; }
-.scaleinfo p { color: var(--mut); max-width: 46ch; min-height: 5.4em; }
-.slider { margin-top: 34px; }
-.slider input {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 2px;
-  background: var(--faint); outline: none; border-radius: 2px;
+.persp-hud .persp-head { max-width: 60%; }
+.persp-hud .eyebrow { margin-bottom: 14px; }
+.persp-head h2 {
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  line-height: 1.02;
 }
-.slider input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px; height: 18px;
-  border-radius: 50%; background: var(--ink);
-  box-shadow: 0 0 0 6px rgba(169,188,255,.14), 0 0 22px var(--accent);
-  cursor: grab; transition: .2s;
+
+.persp-info {
+  position: absolute;
+  left: clamp(20px, 4vw, 54px);
+  bottom: clamp(96px, 16vh, 150px);
+  max-width: min(38ch, 80vw);
 }
-.slider input::-moz-range-thumb {
-  width: 18px; height: 18px; border: none;
-  border-radius: 50%; background: var(--ink);
-  box-shadow: 0 0 18px var(--accent); cursor: grab;
+.persp-info .cm-live {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--star);
+  margin-bottom: 16px; opacity: 0; transition: opacity .5s;
 }
-.ticks {
-  display: flex; justify-content: space-between;
-  margin-top: 16px;
-  font-family: var(--mono); font-size: 9px;
-  letter-spacing: .18em; color: var(--dim);
-  text-transform: uppercase;
+.cm-beat {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--star); box-shadow: 0 0 12px var(--star);
+  animation: pulse 1.8s infinite;
 }
-.ticks span { cursor: pointer; transition: .3s; }
-.ticks span:hover { color: var(--ink); }
-.ticks span.on { color: var(--accent); }
+@keyframes pulse { 50% { transform: scale(1.6); opacity: .45; } }
+.persp-info .lvl { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); }
+.persp-info h3 { font-size: clamp(1.8rem, 4vw, 3rem); margin: .2em 0 .26em; }
+.persp-info .cm-readout { font-family: var(--mono); font-size: 13px; color: var(--star); margin-bottom: 16px; letter-spacing: .04em; }
+.persp-info p { color: var(--mut); font-size: 1rem; line-height: 1.6; }
+
+.persp-foot {
+  position: absolute;
+  left: clamp(20px, 4vw, 54px);
+  right: clamp(20px, 4vw, 54px);
+  bottom: clamp(20px, 3vh, 40px);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+}
+.persp-stages { display: flex; gap: 8px; flex-wrap: wrap; pointer-events: auto; }
+.cm-chip {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--mut);
+  background: rgba(16,19,28,.5); backdrop-filter: blur(8px);
+  border: 1px solid var(--line-soft); border-radius: 2px;
+  padding: 9px 13px; cursor: pointer;
+  transition: .3s; white-space: nowrap;
+}
+.cm-chip:hover { color: var(--ink); border-color: var(--line); }
+.cm-chip.on { color: #06070b; background: var(--accent); border-color: var(--accent); }
+.persp-hint {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--dim);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.cm-arrow { display: inline-block; animation: cmbob 2s infinite; }
+@keyframes cmbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+@media (max-width: 620px) {
+  .persp-hud .persp-head { max-width: 100%; }
+  .persp-hint { display: none; }
+  .persp-info { bottom: 110px; }
+}
+
+/* Fallback (no WebGL / no JS): normal-flow content in place of the canvas. */
+.persp-fallback {
+  position: absolute; inset: 0;
+  display: flex; align-items: center;
+  background: var(--void);
+}
+.persp-fallback .eyebrow { margin-bottom: 18px; }
+.persp-fallback h2 { font-size: clamp(2.2rem, 5vw, 4.4rem); margin-bottom: 24px; }
+.persp-fallback p { color: var(--mut); max-width: 52ch; font-size: 1.05rem; }
 
 /* ---- timeline ---- */
 #timeline { border-top: 1px solid var(--line-soft); }
