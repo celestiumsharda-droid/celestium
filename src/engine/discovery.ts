@@ -218,6 +218,24 @@ const rg = $("rgrid");
 
 $("legal").textContent = "© 2026 CELESTIUM — " + D.field + " · " + D.era;
 
+/* ---------- next in the series (a guided linear path) ---------- */
+const SERIES = [
+  "black-hole-image", "gravitational-waves", "weighing-the-universe",
+  "first-exoplanet", "double-slit", "age-of-earth", "double-helix", "ancient-dna",
+];
+const si = SERIES.indexOf(id);
+if (si >= 0) {
+  const nextSlug = SERIES[(si + 1) % SERIES.length]!;
+  const nm = RELATED_INDEX[nextSlug];
+  const nx = $<HTMLAnchorElement>("nextseries");
+  if (nm && nx) {
+    nx.href = `/discoveries/${nextSlug}/`;
+    $("ns-field").textContent = nm.field;
+    $("ns-title").textContent = nm.title;
+    nx.hidden = false;
+  }
+}
+
 /* ---------- mobile menu ---------- */
 const bg = $<HTMLButtonElement>("burger");
 const mn = $("menu");
