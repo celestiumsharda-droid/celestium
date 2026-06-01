@@ -24,6 +24,11 @@ nav {
 
 /* mobile-nav: hide back link, show burger */
 @media (max-width: 720px) { .back { display: none; } #burger { display: flex; } }
+@media (max-width: 640px) {
+  nav { padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); gap: 6px; }
+  .brand { font-size: 16px; letter-spacing: .1em; gap: 10px; min-width: 0; }
+  .mark { width: 26px; height: 26px; flex: 0 0 auto; }
+}
 
 /* ---- article hero ---- */
 .ahero {
@@ -33,6 +38,11 @@ nav {
   gap: 60px; align-items: center;
 }
 @media (max-width: 920px) { .ahero { grid-template-columns: 1fr; padding-top: 150px; gap: 36px; } }
+@media (max-width: 560px) {
+  .ahero { padding: 110px 22px 50px; gap: 26px; }
+  .ahero h1 { font-size: clamp(1.9rem, 8vw, 2.7rem); margin: 18px 0 20px; }
+  .ahero .heroart { max-width: 70%; margin: 0 auto; }
+}
 
 .kick { font-family: var(--mono); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: var(--accent); }
 .ahero h1 {
@@ -158,10 +168,27 @@ nav {
 }
 .seg button.on { background: var(--ink); color: #06070b; }
 .seg button:not(.on):hover { color: var(--ink); }
-@media (max-width: 440px) { .seg button { padding: 10px 11px; font-size: 10px; letter-spacing: .08em; } }
+@media (max-width: 560px) {
+  /* full-width depth selector that always fits — no clipped "DEEP · 15M" */
+  .dbin { padding: 12px 16px; gap: 0; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; min-height: 44px; padding: 10px 4px; font-size: 9px; letter-spacing: .03em; }
+}
 
 /* ---- article body ---- */
 article { max-width: 720px; margin: 0 auto; padding: 70px 32px 60px; }
+/* phone typography: lighter, more breathing room, comfortable margins */
+@media (max-width: 560px) {
+  article { padding: 48px 22px 48px; }
+  article p { font-size: 1.04rem; line-height: 1.72; margin-bottom: 22px; }
+  article h2 { font-size: 1.5rem; margin: 44px 0 16px; }
+  .lvltag { margin-bottom: 34px; }
+  .lead { font-size: 3em; padding: 6px 12px 0 0; }
+  .pull { margin: 38px 0; padding-left: 20px; }
+  .know { padding: 24px 22px !important; margin: 38px 0 !important; }
+  figure { margin: 40px 0 !important; }
+  .stats { margin: 38px 0 !important; }
+}
 .lvltag {
   font-family: var(--mono); font-size: 11px;
   letter-spacing: .24em; text-transform: uppercase;
@@ -263,6 +290,11 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 .cat-hero h1 i { font-style: italic; color: var(--mut); }
 .cat-hero .dek { color: var(--mut); max-width: 56ch; font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.65; }
 .catalog { max-width: 1100px; margin: 0 auto; padding: 30px 32px 100px; }
+@media (max-width: 560px) {
+  .cat-hero { padding: 110px 22px 36px; }
+  .catalog { padding: 24px 22px 80px; }
+  .cat-card { padding: 30px 24px; min-height: 0; }
+}
 .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--line-soft); border: 1px solid var(--line-soft); }
 @media (max-width: 760px) { .cat-grid { grid-template-columns: 1fr; } }
 .cat-card {
@@ -305,6 +337,10 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 }
 
 .related { max-width: 1100px; margin: 0 auto; padding: 90px 32px; border-top: 1px solid var(--line-soft); }
+@media (max-width: 560px) {
+  .related { padding: 56px 22px; }
+  .nextseries { margin: 0 22px; padding: 22px 22px; }
+}
 .related .rh { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--dim); margin-bottom: 40px; }
 .rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--line-soft); border: 1px solid var(--line-soft); }
 @media (max-width: 820px) { .rgrid { grid-template-columns: 1fr; } }

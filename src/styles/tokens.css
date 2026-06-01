@@ -117,6 +117,19 @@ main { position: relative; z-index: 2; }
 .soundtoggle.on { color: var(--accent); }
 .soundtoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 
+/* ===== Phones — shared (≤640px) ===== */
+@media (max-width: 640px) {
+  /* 44×44 touch targets for nav controls */
+  #burger { width: 44px; height: 44px; justify-content: center; }
+  .soundtoggle { width: 44px; height: 44px; }
+  /* full-screen menu: roomier links + safe-area padding */
+  #menu {
+    gap: 2px;
+    padding: max(env(safe-area-inset-top), 20px) 24px max(env(safe-area-inset-bottom), 24px);
+  }
+  #menu a { font-size: 7vw; padding: 12px; }
+}
+
 /* View Transitions: soft crossfade between document loads where the
    browser supports it. Browsers without support do a normal full nav. */
 @view-transition { navigation: auto; }
