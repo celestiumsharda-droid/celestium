@@ -1,0 +1,11 @@
+Planetary, lunar, solar and Milky Way texture maps in this directory are
+from Solar System Scope (https://www.solarsystemscope.com/textures),
+released under Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+Attribution: Textures by Solar System Scope, CC BY 4.0.
+License: https://creativecommons.org/licenses/by/4.0/
+
+Files:
+  sun.jpg, mercury.jpg, venus.jpg, earth_day.jpg, earth_clouds.jpg,
+  moon.jpg, mars.jpg, jupiter.jpg, saturn.jpg, saturn_ring.png,
+  uranus.jpg, neptune.jpg, stars_milky_way.jpg

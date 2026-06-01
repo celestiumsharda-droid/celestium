@@ -11,7 +11,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { buildStages, setStageFade, type Stage } from "./stages";
-import { glowTexture } from "./glow";
+import { tex, setMaxAnisotropy } from "./textures";
 import { STAGES } from "./data";
 
 export interface HudEls {
@@ -51,31 +51,21 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
+  setMaxAnisotropy(renderer.capabilities.getMaxAnisotropy());
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 8000);
 
-  // ambient + key light for the lit Earth terminator
-  const ambient = new THREE.AmbientLight(0x6072a0, 0.9);
-  const key = new THREE.DirectionalLight(0xfff2d8, 1.5);
-  key.position.set(3, 2, 4);
-  scene.add(ambient, key);
+  // soft ambient fill; each near stage carries its own key light so the
+  // planets get a real day/night terminator.
+  scene.add(new THREE.AmbientLight(0x4a566f, 0.45));
 
-  /* ---- background starfield (independent of zoom, gives depth) ---- */
-  const bgN = 1400;
-  const bgPos = new Float32Array(bgN * 3);
-  for (let i = 0; i < bgN; i++) {
-    const r = 1600 + Math.random() * 1400;
-    const th = Math.acos(2 * Math.random() - 1);
-    const ph = Math.random() * Math.PI * 2;
-    bgPos[i * 3] = r * Math.sin(th) * Math.cos(ph);
-    bgPos[i * 3 + 1] = r * Math.sin(th) * Math.sin(ph);
-    bgPos[i * 3 + 2] = r * Math.cos(th);
-  }
-  const bgGeo = new THREE.BufferGeometry();
-  bgGeo.setAttribute("position", new THREE.BufferAttribute(bgPos, 3));
-  const bg = new THREE.Points(bgGeo, new THREE.PointsMaterial({ color: 0x9fb0e0, size: 7, map: glowTexture(), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true }));
-  scene.add(bg);
+  /* ---- real Milky Way sky backdrop (dimmed, gives depth + place) ---- */
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(3400, 64, 48),
+    new THREE.MeshBasicMaterial({ map: tex("stars_milky_way.jpg"), side: THREE.BackSide, color: 0x6b7286, depthWrite: false }),
+  );
+  scene.add(sky);
 
   /* ---- stages ---- */
   const stages: Stage[] = buildStages();
@@ -159,7 +149,7 @@ export function mountCosmicMap(canvas: HTMLCanvasElement, hud: HudEls): CosmicMa
       D * Math.sin(pol) * Math.sin(az),
     );
     camera.lookAt(0, 0, 0);
-    if (!reduced) bg.rotation.y = elapsed * 0.005;
+    if (!reduced) sky.rotation.y = elapsed * 0.004;
 
     const date = new Date();
     for (const s of stages) if (s.group.visible && s.update) s.update(elapsed, date);

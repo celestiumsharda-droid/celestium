@@ -11,6 +11,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { glowSprite, glowTexture } from "./glow";
+import { tex } from "./textures";
 import { PLANET_STYLES, NEAR_STARS, LOCAL_GROUP, raDecToXYZ } from "./data";
 import { helio, julianCenturies, type PlanetName } from "../ephemeris";
 
@@ -55,37 +56,70 @@ const TWO_PI = Math.PI * 2;
 /* ----------------------------------------------------------------- */
 function buildEarth(): Stage {
   const g = new THREE.Group();
+  const R = 22;
+  const TILT = 0.41; // 23.4° axial tilt
 
   const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(22, 64, 48),
-    new THREE.MeshStandardMaterial({ color: 0x2a5a9c, roughness: 0.85, metalness: 0.0, emissive: 0x0a1830, emissiveIntensity: 0.5 }),
+    new THREE.SphereGeometry(R, 96, 64),
+    new THREE.MeshStandardMaterial({ map: tex("earth_day.jpg"), roughness: 1, metalness: 0 }),
   );
+  earth.rotation.z = TILT;
   g.add(earth);
 
-  // thin atmosphere halo (back-side additive shell)
+  // drifting cloud layer (clouds map used as alpha)
+  const clouds = new THREE.Mesh(
+    new THREE.SphereGeometry(R * 1.012, 96, 64),
+    new THREE.MeshStandardMaterial({ alphaMap: tex("earth_clouds.jpg", false), color: 0xffffff, transparent: true, opacity: 0.9, roughness: 1, depthWrite: false }),
+  );
+  clouds.rotation.z = TILT;
+  g.add(clouds);
+
+  // atmosphere rim + soft halo
   const atmo = new THREE.Mesh(
-    new THREE.SphereGeometry(24.4, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0x6fb1ff, transparent: true, opacity: 0.16, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+    new THREE.SphereGeometry(R * 1.07, 64, 48),
+    new THREE.MeshBasicMaterial({ color: 0x6fb1ff, transparent: true, opacity: 0.18, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false }),
   );
   g.add(atmo);
-
-  const halo = glowSprite(0x6fb1ff, 82, 0.45);
-  g.add(halo);
+  g.add(glowSprite(0x6fb1ff, R * 3.1, 0.3));
 
   // Moon
   const moon = new THREE.Mesh(
-    new THREE.SphereGeometry(5.5, 32, 24),
-    new THREE.MeshStandardMaterial({ color: 0x9099a6, roughness: 1, emissive: 0x141822, emissiveIntensity: 0.4 }),
+    new THREE.SphereGeometry(6, 48, 32),
+    new THREE.MeshStandardMaterial({ map: tex("moon.jpg"), roughness: 1, metalness: 0 }),
   );
-  moon.position.set(58, 7, -16);
+  moon.position.set(58, 6, -16);
   g.add(moon);
+
+  // sunlight — gives the day/night terminator
+  const light = new THREE.DirectionalLight(0xfff4e2, 2.4);
+  light.position.set(60, 18, 34);
+  g.add(light);
 
   recordBase(g);
   return {
     key: "earth",
     group: g,
-    update: (t) => { earth.rotation.y = t * 0.06; },
+    update: (t) => { earth.rotation.y = t * 0.04; clouds.rotation.y = t * 0.052; },
   };
+}
+
+/** A radially-UV'd, textured planetary ring (Saturn). */
+function buildRing(planetSize: number, tilt: number): THREE.Mesh {
+  const inner = planetSize * 1.32, outer = planetSize * 2.3;
+  const geo = new THREE.RingGeometry(inner, outer, 128, 1);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  const uv = geo.attributes.uv as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    uv.setXY(i, (v.length() - inner) / (outer - inner), 0.5);
+  }
+  const ring = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({ map: tex("saturn_ring.png"), transparent: true, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  ring.rotation.x = Math.PI / 2 - tilt;
+  return ring;
 }
 
 /* ----------------------------------------------------------------- */
@@ -102,17 +136,19 @@ function radialMap(auDist: number): number {
 function buildSolarSystem(): Stage {
   const g = new THREE.Group();
 
-  // Sun
+  // Sun — textured, full-bright, with corona + the light that lights everything
   const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(4.2, 32, 24),
-    new THREE.MeshBasicMaterial({ color: 0xfff0c4 }),
+    new THREE.SphereGeometry(5.4, 64, 48),
+    new THREE.MeshBasicMaterial({ map: tex("sun.jpg") }),
   );
   g.add(sun);
-  g.add(glowSprite(0xffe6a0, 34, 0.95));
-  g.add(glowSprite(0xffd070, 64, 0.4));
+  g.add(glowSprite(0xffe6a0, 30, 0.8));
+  g.add(glowSprite(0xffcf6a, 62, 0.3));
+  const sunLight = new THREE.PointLight(0xfff2d8, 2.6, 0, 0); // decay 0 → even illumination
+  g.add(sunLight);
 
-  // Orbit rings (from each planet's semi-major axis)
-  const ringMat = new THREE.LineBasicMaterial({ color: 0x6f7a9c, transparent: true, opacity: 0.34 });
+  // Orbit rings — subtle, so the planets read as the subject
+  const ringMat = new THREE.LineBasicMaterial({ color: 0x5a6480, transparent: true, opacity: 0.16 });
   const SEMI: Record<PlanetName, number> = {
     Mercury: 0.387, Venus: 0.723, Earth: 1.0, Mars: 1.524,
     Jupiter: 5.203, Saturn: 9.537, Uranus: 19.19, Neptune: 30.07,
@@ -120,33 +156,24 @@ function buildSolarSystem(): Stage {
   for (const style of PLANET_STYLES) {
     const dR = radialMap(SEMI[style.name]);
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 96; i++) {
-      const a = (i / 96) * TWO_PI;
+    for (let i = 0; i <= 128; i++) {
+      const a = (i / 128) * TWO_PI;
       pts.push(new THREE.Vector3(Math.cos(a) * dR, 0, Math.sin(a) * dR));
     }
     g.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), ringMat));
   }
 
-  // Planets
-  const meshes: { name: PlanetName; mesh: THREE.Mesh; halo: THREE.Sprite }[] = [];
+  // Planets — real maps, lit by the Sun (true day/night terminator)
+  const meshes: { name: PlanetName; mesh: THREE.Mesh; spin: number }[] = [];
   for (const style of PLANET_STYLES) {
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(style.size, 24, 18),
-      new THREE.MeshBasicMaterial({ color: style.color }),
+      new THREE.SphereGeometry(style.size, 48, 32),
+      new THREE.MeshStandardMaterial({ map: tex(style.map), roughness: 1, metalness: 0 }),
     );
+    if (style.name === "Earth") mesh.rotation.z = 0.41;
+    if (style.ring) mesh.add(buildRing(style.size, style.tilt ?? 0.47));
     g.add(mesh);
-    const halo = glowSprite(style.color, style.size * 4.5, 0.6);
-    g.add(halo);
-
-    if (style.ring) {
-      const ring = new THREE.Mesh(
-        new THREE.RingGeometry(style.size * 1.4, style.size * 2.3, 48),
-        new THREE.MeshBasicMaterial({ color: 0xe6cd92, transparent: true, opacity: 0.55, side: THREE.DoubleSide }),
-      );
-      ring.rotation.x = Math.PI / 2 - 0.35;
-      mesh.add(ring);
-    }
-    meshes.push({ name: style.name, mesh, halo });
+    meshes.push({ name: style.name, mesh, spin: 0.05 + Math.random() * 0.05 });
   }
 
   function place(now: Date) {
@@ -156,11 +183,7 @@ function buildSolarSystem(): Stage {
       const r = Math.hypot(h.x, h.y, h.z) || 1;
       const dR = radialMap(r);
       // ecliptic (x,y) → scene (x,z); ecliptic z (inclination) → scene y
-      const X = (h.x / r) * dR;
-      const Z = (h.y / r) * dR;
-      const Y = (h.z / r) * dR;
-      p.mesh.position.set(X, Y, Z);
-      p.halo.position.set(X, Y, Z);
+      p.mesh.position.set((h.x / r) * dR, (h.z / r) * dR, (h.y / r) * dR);
     }
   }
   place(new Date());
@@ -170,8 +193,9 @@ function buildSolarSystem(): Stage {
     key: "system",
     group: g,
     update: (t, now) => {
-      place(now);              // real positions, refreshed live
-      sun.rotation.y = t * 0.1;
+      place(now);                        // real positions, refreshed live
+      sun.rotation.y = t * 0.06;
+      for (const p of meshes) p.mesh.rotation.y = t * p.spin;
     },
   };
 }

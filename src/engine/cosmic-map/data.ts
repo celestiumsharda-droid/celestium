@@ -7,23 +7,25 @@
 
 import type { PlanetName } from "../ephemeris";
 
-/* ---- Planets: display colour + relative dot size ---- */
+/* ---- Planets: real texture map + relative display size ---- */
 export interface PlanetStyle {
   name: PlanetName;
-  color: number;      // three.js hex
+  map: string;        // texture file in /public/textures
+  color: number;      // fallback / accent colour
   size: number;       // display radius (scene units), NOT to scale
-  ring?: boolean;     // draw a Saturn-style ring
+  ring?: boolean;     // draw the textured Saturn ring
+  tilt?: number;      // axial tilt (radians) for the ring
 }
 
 export const PLANET_STYLES: PlanetStyle[] = [
-  { name: "Mercury", color: 0x9a8c7a, size: 0.9 },
-  { name: "Venus",   color: 0xd8b87a, size: 1.5 },
-  { name: "Earth",   color: 0x6fb1ff, size: 1.6 },
-  { name: "Mars",    color: 0xd9764a, size: 1.2 },
-  { name: "Jupiter", color: 0xd8a878, size: 3.6 },
-  { name: "Saturn",  color: 0xe6cd92, size: 3.1, ring: true },
-  { name: "Uranus",  color: 0x9fe3e6, size: 2.4 },
-  { name: "Neptune", color: 0x5a7bff, size: 2.3 },
+  { name: "Mercury", map: "mercury.jpg", color: 0x9a8c7a, size: 1.3 },
+  { name: "Venus",   map: "venus.jpg",   color: 0xd8b87a, size: 2.0 },
+  { name: "Earth",   map: "earth_day.jpg", color: 0x6fb1ff, size: 2.1 },
+  { name: "Mars",    map: "mars.jpg",    color: 0xd9764a, size: 1.6 },
+  { name: "Jupiter", map: "jupiter.jpg", color: 0xd8a878, size: 5.0 },
+  { name: "Saturn",  map: "saturn.jpg",  color: 0xe6cd92, size: 4.3, ring: true, tilt: 0.47 },
+  { name: "Uranus",  map: "uranus.jpg",  color: 0x9fe3e6, size: 3.1 },
+  { name: "Neptune", map: "neptune.jpg", color: 0x5a7bff, size: 3.0 },
 ];
 
 /* ---- Nearest stars: real positions ----
