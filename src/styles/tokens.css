@@ -104,6 +104,19 @@ main { position: relative; z-index: 2; }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+/* ambient-sound toggle (nav) */
+.soundtoggle {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); transition: color .3s;
+  z-index: 55;
+}
+.soundtoggle svg { width: 19px; height: 19px; }
+.soundtoggle:hover { color: var(--ink); }
+.soundtoggle.on { color: var(--accent); }
+.soundtoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
 /* View Transitions: soft crossfade between document loads where the
    browser supports it. Browsers without support do a normal full nav. */
 @view-transition { navigation: auto; }

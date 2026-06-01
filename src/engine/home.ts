@@ -1,6 +1,7 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
+import { initSound, playClick } from "./sound";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -68,6 +69,7 @@ setTimeout(() => ttl.classList.add("go"), 100);
     b.textContent = s.name.replace(/^The\s+/, "").replace(/,.*$/, "");
     b.setAttribute("aria-label", `Jump to ${s.name}`);
     b.addEventListener("click", () => {
+      playClick();
       const total = track.offsetHeight - innerHeight;
       const top = track.getBoundingClientRect().top + scrollY;
       scrollTo({ top: top + (i / lastIdx) * total, behavior: "smooth" });
@@ -191,6 +193,7 @@ tog.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
     });
     b.classList.add("on");
     b.setAttribute("aria-pressed", "true");
+    playClick();
     renderDepth(Number(b.dataset["l"]));
   });
 });
@@ -202,6 +205,9 @@ renderTonightsPlanets($("planets-card"));
 loadAPOD($("apod-card"));
 startISS($("iss-card"));
 loadAurora($("aurora-card"));
+
+/* ---------- ambient sound (opt-in) ---------- */
+initSound($("sound"), { pad: true });
 
 /* ---------- explore grid ---------- */
 const grid = $("grid");

@@ -3,6 +3,7 @@ import { enableViewTransitions } from "./view-transitions";
 import DISCOVERIES from "../data/discoveries";
 import RELATED_INDEX from "./related-index";
 import { expandFragments } from "./fragments";
+import { initSound, playClick } from "./sound";
 import type { Discovery } from "./types";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -194,6 +195,7 @@ seg.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
     });
     b.classList.add("on");
     b.setAttribute("aria-pressed", "true");
+    playClick();
     renderDepth(Number(b.dataset["l"]));
     const y = document.querySelector("article")!.getBoundingClientRect().top + scrollY - 104;
     if (scrollY > y) scrollTo({ top: y, behavior: "smooth" });
@@ -253,3 +255,6 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
   bg.setAttribute("aria-expanded", "false");
   document.body.style.overflow = "";
 }));
+
+/* ---------- ambient sound (opt-in) ---------- */
+initSound($("sound"), { pad: true });

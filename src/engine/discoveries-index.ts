@@ -5,6 +5,7 @@
  */
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
+import { initSound } from "./sound";
 import DISCOVERIES from "../data/discoveries";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -59,3 +60,6 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
   bg.classList.remove("x");
   document.body.style.overflow = "";
 }));
+
+/* ambient sound (opt-in) */
+initSound($("sound"), { pad: true });
