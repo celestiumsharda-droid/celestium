@@ -1,6 +1,6 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
-import { startClock, loadAPOD, renderTonightsPlanets } from "./living-sky";
+import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -200,6 +200,8 @@ renderDepth(0);
 startClock();
 renderTonightsPlanets($("planets-card"));
 loadAPOD($("apod-card"));
+startISS($("iss-card"));
+loadAurora($("aurora-card"));
 
 /* ---------- explore grid ---------- */
 const grid = $("grid");

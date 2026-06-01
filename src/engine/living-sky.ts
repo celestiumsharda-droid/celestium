@@ -129,3 +129,63 @@ export function renderTonightsPlanets(target: HTMLElement | null): void {
       `<div class="sub">Planet ephemeris unavailable. Step outside anyway.</div>`;
   }
 }
+
+/* -------------------- ISS live position --------------------
+   wheretheiss.at — HTTPS, no key, CORS-enabled. */
+export async function loadISS(target: HTMLElement | null): Promise<void> {
+  if (!target) return;
+  try {
+    const r = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+    if (!r.ok) throw new Error(`ISS HTTP ${r.status}`);
+    const j = await r.json();
+    const lat = (j.latitude as number).toFixed(1);
+    const lon = (j.longitude as number).toFixed(1);
+    const ns = (j.latitude as number) >= 0 ? "N" : "S";
+    const ew = (j.longitude as number) >= 0 ? "E" : "W";
+    const alt = Math.round(j.altitude as number);
+    const vel = Math.round(j.velocity as number);
+    target.innerHTML =
+      `<div class="lab"><span class="beat"></span>The Space Station, right now</div>` +
+      `<div class="big" style="font-size:2.1rem">${Math.abs(+lat)}°${ns} &nbsp;${Math.abs(+lon)}°${ew}</div>` +
+      `<div class="sub">streaking <b>${alt.toLocaleString()} km</b> overhead at <b>${vel.toLocaleString()} km/h</b> — a full lap of Earth every ninety minutes, with people aboard.</div>`;
+  } catch (_e) {
+    target.innerHTML =
+      `<div class="lab">The Space Station</div>` +
+      `<div class="big" style="font-size:1.6rem">Circling overhead.</div>` +
+      `<div class="sub">Live position unavailable right now — but it is up there, lapping the planet every ninety minutes.</div>`;
+  }
+}
+
+/** Start the ISS card and refresh it every few seconds. */
+export function startISS(target: HTMLElement | null): void {
+  if (!target) return;
+  loadISS(target);
+  setInterval(() => loadISS(target), 8000);
+}
+
+/* -------------------- Aurora / space weather --------------------
+   NOAA SWPC planetary Kp index — HTTPS, no key, CORS-enabled. */
+export async function loadAurora(target: HTMLElement | null): Promise<void> {
+  if (!target) return;
+  try {
+    const r = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
+    if (!r.ok) throw new Error(`SWPC HTTP ${r.status}`);
+    const rows = (await r.json()) as string[][];
+    const last = rows[rows.length - 1];
+    const kp = Math.round(parseFloat(last?.[1] ?? "0"));
+    let txt: string;
+    if (kp >= 7) txt = "Severe storm — aurora possible far from the poles tonight.";
+    else if (kp >= 5) txt = "Geomagnetic storm — aurora pushing toward lower latitudes.";
+    else if (kp >= 4) txt = "Unsettled — aurora active across high latitudes.";
+    else txt = "Quiet — the aurora is keeping to the polar regions.";
+    target.innerHTML =
+      `<div class="lab">Aurora · planetary Kp index</div>` +
+      `<div class="big">${kp}<span style="font-size:1.2rem"> Kp</span></div>` +
+      `<div class="sub">${txt}</div>`;
+  } catch (_e) {
+    target.innerHTML =
+      `<div class="lab">Aurora · Kp index</div>` +
+      `<div class="big" style="font-size:1.6rem">Watching the Sun.</div>` +
+      `<div class="sub">Space-weather feed unavailable right now. The Sun is still throwing wind at us.</div>`;
+  }
+}
