@@ -52,12 +52,14 @@ const FRAG = /* glsl */ `
     vec3 cool = vec3(0.78, 0.20, 0.06);
     vec3 col = t < 0.5 ? mix(hot, mid, t/0.5) : mix(mid, cool, (t-0.5)/0.5);
 
-    // swirling turbulence (orbits faster on the inside), layered for detail
-    float ang = atan(hit.z, hit.x);
-    float spin = uTime * (1.1 / (0.5 + r*0.22));
-    float n1 = fbm(vec2(ang*3.0  + spin,        r*1.1));
-    float n2 = fbm(vec2(ang*9.0  - spin*1.5,    r*3.4));
-    float n3 = fbm(vec2(ang*22.0 + spin*0.7,    r*7.5));
+    // swirling turbulence sampled in rotating Cartesian disk coords, so it
+    // is seamless (no angle-wrap line) and orbits faster on the inside
+    float omega = uTime * (1.1 / (0.5 + r*0.22));   // differential rotation
+    float ca = cos(omega), sa = sin(omega);
+    vec2 q = vec2(hit.x*ca - hit.z*sa, hit.x*sa + hit.z*ca);
+    float n1 = fbm(q * 0.85);
+    float n2 = fbm(q * 2.3 + 11.0);
+    float n3 = fbm(q * 5.5 + 27.0);
     float gas = n1*0.6 + n2*0.32 + n3*0.2;
     float bright = (1.0 - t) * 1.7 + 0.3;
     bright *= 0.4 + 1.15*gas;
