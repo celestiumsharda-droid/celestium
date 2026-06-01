@@ -326,10 +326,10 @@ function buildLocalGroup(): Stage {
     if (gal.tex) {
       // real galaxy photo as an additive sprite (black space adds nothing)
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: tex(gal.tex), transparent: true, opacity: 0.95,
+        map: tex(gal.tex), transparent: true, opacity: 1,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }));
-      const s = gal.size * 2.7;
+      const s = gal.size * 3.2;
       sp.scale.set(s, s, 1);
       sp.position.set(px, py, pz);
       g.add(sp);
