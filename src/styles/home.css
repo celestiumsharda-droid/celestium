@@ -128,10 +128,17 @@ section { position: relative; padding: 140px 0; }
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 30px; margin-bottom: 64px; flex-wrap: wrap;
 }
-.shead h2 { font-size: clamp(2.2rem, 5vw, 4.4rem); max-width: 14ch; }
+.shead h2 {
+  font-size: clamp(2.2rem, 5vw, 4.4rem); max-width: 14ch;
+  /* variable-font choreography: blooms from light / low optical size to
+     display weight as the section scrolls into view */
+  font-variation-settings: "opsz" 28, "wght" 330;
+  transition: font-variation-settings 1.3s cubic-bezier(.2,.7,.2,1);
+}
 .shead p { color: var(--mut); max-width: 42ch; font-size: 1.02rem; }
 .reveal { opacity: 0; transform: translateY(34px); transition: 1s cubic-bezier(.2,.7,.2,1); }
 .reveal.in { opacity: 1; transform: none; }
+.reveal.in h2 { font-variation-settings: "opsz" 144, "wght" 400; }
 .num { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: .34em; }
 
 /* ---- perspective: 3D cosmic map ---- */
