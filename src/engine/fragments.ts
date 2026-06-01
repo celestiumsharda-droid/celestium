@@ -100,6 +100,33 @@ function helixFigure(): string {
   return s;
 }
 
+/** Hominin family tree with interbreeding between the lineages. */
+function homininFigure(): string {
+  const root: [number, number] = [360, 40];
+  const nean: [number, number] = [150, 250];
+  const deni: [number, number] = [360, 250];
+  const sap: [number, number] = [580, 250];
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A family tree of Neanderthals, Denisovans and modern humans, with arrows showing interbreeding.">';
+  // branches from a common ancestor
+  for (const [x, y] of [nean, deni, sap]) {
+    s += `<path d="M ${root[0]} ${root[1]} C ${root[0]} ${(root[1] + y) / 2}, ${x} ${(root[1] + y) / 2}, ${x} ${y - 16}" fill="none" stroke="rgba(243,245,251,.22)" stroke-width="2"/>`;
+  }
+  // interbreeding (dashed)
+  s += `<line x1="${nean[0] + 14}" y1="230" x2="${sap[0] - 14}" y2="234" stroke="rgba(169,188,255,.5)" stroke-width="1.5" stroke-dasharray="4 5"/>`;
+  s += `<line x1="${deni[0] + 14}" y1="240" x2="${sap[0] - 14}" y2="244" stroke="rgba(242,230,196,.5)" stroke-width="1.5" stroke-dasharray="4 5"/>`;
+  // nodes
+  const node = (x: number, y: number, c: number, label: string, sub: string) =>
+    `<circle cx="${x}" cy="${y}" r="9" fill="#${c.toString(16)}"/>` +
+    `<text x="${x}" y="${y + 26}" fill="#9aa2b4" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle" letter-spacing="1">${label}</text>` +
+    `<text x="${x}" y="${y + 40}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="middle">${sub}</text>`;
+  s += `<circle cx="${root[0]}" cy="${root[1]}" r="6" fill="#5a6273"/><text x="${root[0]}" y="${root[1] - 12}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">COMMON ANCESTOR</text>`;
+  s += node(nean[0], nean[1], 0xa9bcff, "NEANDERTHAL", "Europe & W. Asia");
+  s += node(deni[0], deni[1], 0xf2e6c4, "DENISOVAN", "found from DNA alone");
+  s += node(sap[0], sap[1], 0x9ee6c4, "US", "Homo sapiens");
+  s += '</svg><figcaption>Three human lineages from one ancestor — and the dashed lines are real: our species interbred with both. Most people outside Africa still carry Neanderthal DNA; many in Asia and Oceania carry Denisovan DNA too.</figcaption></figure>';
+  return s;
+}
+
 /** Radioactive-decay clock: parent halves each half-life, daughter grows. */
 function decayFigure(): string {
   const X0 = 70, X1 = 660, Y0 = 250, Y1 = 50; // axes box
@@ -164,6 +191,7 @@ const FRAGMENTS: Record<FragmentToken, string> = {
   "__FIG_DSLIT__": dslitFigure(),
   "__FIG_DECAY__": decayFigure(),
   "__FIG_HELIX__": helixFigure(),
+  "__FIG_HOMININ__": homininFigure(),
 };
 
 export default FRAGMENTS;

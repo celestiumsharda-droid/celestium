@@ -353,6 +353,51 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">Life turned out to keep its instructions as a sequence of four letters, in a shape that carries its own way of being copied.<cite>The standing result</cite></div>'
       ]
     ]
+  },
+
+  "ancient-dna": {
+    field: "Human History",
+    era: "2010 CE",
+    subject: "Neanderthals & Denisovans",
+    kick: "Human History · The Discovery Series",
+    title: 'Reading the genomes<br><i>of the dead.</i>',
+    dek: "DNA was thought to crumble into uselessness soon after death. Painstakingly, we learned to read it anyway — and the genomes of people gone for tens of thousands of years revealed that our own species is not as alone, or as pure, as we believed.",
+    hero: "helix",
+    related: ["double-helix", "age-of-earth", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">A</span>fter death, DNA shatters into tiny fragments and is swamped by microbes and the DNA of everyone who has since handled the bone — so for decades, reading the genome of an ancient human looked impossible. Svante Pääbo and his colleagues spent years inventing the clean-room methods and controls to do it reliably. In 2010 they published the genome of a Neanderthal, and found something startling: people outside Africa carry about 1–2% Neanderthal DNA. Our ancestors interbred with them. The same year, a single finger bone yielded the genome of an entirely unknown human group — the Denisovans — identified from DNA alone.</p>',
+        '<div class="know"><div class="kh">Why it matters</div><p>It turned human prehistory from a story told by a handful of bones into one we can read in the genome — and showed that <em>Homo sapiens</em> shared the planet, and children, with other kinds of human. Pääbo received the 2022 Nobel Prize.</p></div>'
+      ],
+      [
+        '<h2>A molecule that does not keep</h2>',
+        '<p><span class="lead">D</span>NA begins to break down the moment an organism dies. Over millennia it fragments into pieces a few dozen letters long, chemically damaged, and vastly outnumbered by the DNA of soil bacteria and of every modern human who has touched the specimen. Early claims of DNA from dinosaurs or million-year-old insects collapsed under scrutiny: they were almost always contamination. The field had a credibility problem.</p>',
+        '<p>Svante Pääbo’s contribution was less a single eureka than a decade of obsessive method. He built dedicated clean rooms, ran controls to detect contamination, and — crucially — learned to recognise genuine ancient DNA by its characteristic damage: short fragments, and a specific chemical change at their ends that accumulates only over very long times.</p>',
+        '<div class="pull">The breakthrough was not a machine but a discipline — learning to tell the genome of the dead from the fingerprints of the living.<cite>Why ancient DNA became trustworthy</cite></div>',
+        '<h2>The Neanderthal genome, 2010</h2>',
+        '<p>Working from bones tens of thousands of years old, Pääbo’s team at the Max Planck Institute reconstructed a draft genome of a Neanderthal — our closest extinct relatives, who lived across Europe and western Asia until about 40,000 years ago. Comparing it to people living today revealed the twist: everyone whose ancestry lies outside Africa carries roughly 1–2% Neanderthal DNA. The two groups had met, and had children whose lines survive in us.</p>',
+        '__FIG_HOMININ__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The signal is specific: Neanderthal-matching DNA is found in non-Africans but largely absent in sub-Saharan Africans, exactly as expected if the interbreeding happened after modern humans left Africa and met Neanderthals in Eurasia. Independent labs, independent samples, and the predictable pattern of damage all converge.</p></div>',
+        '<h2>A human species found in a genome</h2>',
+        '<p>Then came the stranger result. A small finger bone from Denisova Cave in Siberia yielded DNA that matched neither Neanderthals nor modern humans. It belonged to a previously unknown group of humans — the Denisovans — recognised, for the first time in history, not from skeletons but from their genome alone. Their DNA, too, lives on: many people in Asia and especially Oceania carry a Denisovan inheritance.</p>'
+      ],
+      [
+        '<h2>The contamination wars</h2>',
+        '<p><span class="lead">F</span>or much of the 1990s, "ancient DNA" was a byword for irreproducible results. Spectacular claims — DNA from dinosaur bones, from insects in amber — kept failing to replicate, because the tiny amounts of real ancient material were overwhelmed by modern contamination introduced during excavation and handling, then amplified along with everything else. Any method sensitive enough to find ancient DNA was sensitive enough to find a technician’s skin cells.</p>',
+        '<p>Svante Pääbo, who as a student had secretly experimented on Egyptian mummies, spent years turning the field into a rigorous science. The tools were unglamorous: positive-pressure clean rooms, reagents screened for contamination, replication in independent labs, and a battery of controls designed to catch modern DNA masquerading as ancient.</p>',
+        '<div class="pull">A method powerful enough to read a 40,000-year-old genome is powerful enough to read the lab around it. Telling them apart was the whole achievement.<cite>The central problem of the field</cite></div>',
+        '<h2>Authenticating the dead</h2>',
+        '<p>The decisive insight was that genuinely ancient DNA carries a signature of age. Over tens of thousands of years it breaks into very short fragments, and the chemical bases at the ends of those fragments undergo a characteristic deamination — cytosine drifting to uracil — that modern contaminating DNA does not show. By reading that damage pattern, Pääbo’s group could weigh how much of a sample was authentically old. Combined with high-throughput sequencing, which could read billions of fragments and reassemble the genome statistically, the impossible became routine.</p>',
+        '__FIG_HOMININ__',
+        '<h2>Two genomes, two surprises</h2>',
+        '<p>The 2010 draft Neanderthal genome compared three present-day human populations against the ancient sequence and found that non-Africans share slightly more variants with Neanderthals than Africans do — the genetic echo of interbreeding in Eurasia after the migration out of Africa. The admixture is small, about 1–2%, but real and widespread, and individual Neanderthal gene variants influence traits in living people, from immunity to skin to the way some of us metabolise the cold.</p>',
+        '<p>The Denisovans were even more radical. From a finger bone and a couple of teeth in a Siberian cave, the team sequenced a genome belonging to a sister group of the Neanderthals — and named a human population that no one had ever knowingly seen. Denisovan ancestry peaks in Melanesians and Aboriginal Australians at several percent, and one Denisovan gene variant helps Tibetans live at high altitude today.</p>',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The conclusions rest on the convergence of independent strands: the geographic pattern of shared variants matches the known timing of human migration; the damage signatures certify the DNA as ancient; multiple specimens and laboratories reproduce the result; and later, higher-quality genomes from better-preserved individuals confirmed the draft conclusions in fine detail.</p></div>',
+        '<h2>A rewritten prehistory</h2>',
+        '<p>Ancient genomics has since exploded, reading thousands of ancient individuals and tracing the great migrations and mixtures that produced today’s populations. The headline, though, was set in 2010: <em>Homo sapiens</em> is not the lone survivor of a clean family tree but a web of populations that met, mixed, and absorbed one another. Most living humans carry, in every cell, the DNA of people from species that vanished tens of thousands of years ago. Pääbo founded the field of palaeogenomics and was awarded the 2022 Nobel Prize in Physiology or Medicine.</p>',
+        '<div class="pull">We did not just find our extinct relatives. We found them inside ourselves.<cite>The standing result</cite></div>'
+      ]
+    ]
   }
 };
 
