@@ -44,24 +44,43 @@ interface ApodResponse {
 
 const ESC = (s: string) => s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+const APOD_CACHE = "celestium:apod";
+
+function renderApod(target: HTMLElement, j: ApodResponse): void {
+  const img = j.media_type === "video" ? (j.thumbnail_url || "") : (j.url || "");
+  const title = ESC(j.title || "");
+  const explanation = ESC((j.explanation || "").split(/\s+/).slice(0, 28).join(" ")) + "…";
+  target.innerHTML =
+    `<div class="lab">Astronomy picture of the day · NASA</div>` +
+    (img
+      ? `<a class="apod-link" href="${j.hdurl || j.url}" target="_blank" rel="noopener noreferrer" aria-label="Open full-resolution image on NASA">` +
+        `<img class="apod-img" src="${img}" alt="${title}" loading="lazy">` +
+        `</a>`
+      : "") +
+    `<div class="apod-title">${title}</div>` +
+    `<div class="sub apod-sub">${explanation}</div>`;
+}
+
 export async function loadAPOD(target: HTMLElement | null): Promise<void> {
   if (!target) return;
+  const today = new Date().toISOString().slice(0, 10);
+
+  // APOD changes once a day — serve from cache and skip the network
+  // (this is what was triggering DEMO_KEY 429s on every load).
+  try {
+    const raw = localStorage.getItem(APOD_CACHE);
+    if (raw) {
+      const c = JSON.parse(raw) as { date: string; data: ApodResponse };
+      if (c.date === today && c.data) { renderApod(target, c.data); return; }
+    }
+  } catch (_e) { /* ignore cache errors */ }
+
   try {
     const r = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${APOD_KEY}&thumbs=true`);
     if (!r.ok) throw new Error(`APOD HTTP ${r.status}`);
     const j = (await r.json()) as ApodResponse;
-    const img = j.media_type === "video" ? (j.thumbnail_url || "") : (j.url || "");
-    const title = ESC(j.title || "");
-    const explanation = ESC((j.explanation || "").split(/\s+/).slice(0, 28).join(" ")) + "…";
-    target.innerHTML =
-      `<div class="lab">Astronomy picture of the day · NASA</div>` +
-      (img
-        ? `<a class="apod-link" href="${j.hdurl || j.url}" target="_blank" rel="noopener noreferrer" aria-label="Open full-resolution image on NASA">` +
-          `<img class="apod-img" src="${img}" alt="${title}" loading="lazy">` +
-          `</a>`
-        : "") +
-      `<div class="apod-title">${title}</div>` +
-      `<div class="sub apod-sub">${explanation}</div>`;
+    renderApod(target, j);
+    try { localStorage.setItem(APOD_CACHE, JSON.stringify({ date: today, data: j })); } catch (_e) { /* quota */ }
   } catch (_e) {
     target.innerHTML =
       `<div class="lab">Astronomy picture of the day</div>` +
@@ -165,23 +184,42 @@ export function startISS(target: HTMLElement | null): void {
 
 /* -------------------- Aurora / space weather --------------------
    NOAA SWPC planetary Kp index — HTTPS, no key, CORS-enabled. */
+const AURORA_CACHE = "celestium:aurora";
+const AURORA_TTL = 10 * 60 * 1000; // Kp updates every 3h; 10 min is plenty
+
+function renderAurora(target: HTMLElement, kp: number): void {
+  let txt: string;
+  if (kp >= 7) txt = "Severe storm — aurora possible far from the poles tonight.";
+  else if (kp >= 5) txt = "Geomagnetic storm — aurora pushing toward lower latitudes.";
+  else if (kp >= 4) txt = "Unsettled — aurora active across high latitudes.";
+  else txt = "Quiet — the aurora is keeping to the polar regions.";
+  target.innerHTML =
+    `<div class="lab">Aurora · planetary Kp index</div>` +
+    `<div class="big">${kp}<span style="font-size:1.2rem"> Kp</span></div>` +
+    `<div class="sub">${txt}</div>`;
+}
+
 export async function loadAurora(target: HTMLElement | null): Promise<void> {
   if (!target) return;
+
+  // Serve a recent reading from session cache — avoids re-hitting SWPC on
+  // every navigation within a visit.
+  try {
+    const raw = sessionStorage.getItem(AURORA_CACHE);
+    if (raw) {
+      const c = JSON.parse(raw) as { t: number; kp: number };
+      if (Date.now() - c.t < AURORA_TTL) { renderAurora(target, c.kp); return; }
+    }
+  } catch (_e) { /* ignore cache errors */ }
+
   try {
     const r = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
     if (!r.ok) throw new Error(`SWPC HTTP ${r.status}`);
     const rows = (await r.json()) as string[][];
     const last = rows[rows.length - 1];
     const kp = Math.round(parseFloat(last?.[1] ?? "0"));
-    let txt: string;
-    if (kp >= 7) txt = "Severe storm — aurora possible far from the poles tonight.";
-    else if (kp >= 5) txt = "Geomagnetic storm — aurora pushing toward lower latitudes.";
-    else if (kp >= 4) txt = "Unsettled — aurora active across high latitudes.";
-    else txt = "Quiet — the aurora is keeping to the polar regions.";
-    target.innerHTML =
-      `<div class="lab">Aurora · planetary Kp index</div>` +
-      `<div class="big">${kp}<span style="font-size:1.2rem"> Kp</span></div>` +
-      `<div class="sub">${txt}</div>`;
+    renderAurora(target, kp);
+    try { sessionStorage.setItem(AURORA_CACHE, JSON.stringify({ t: Date.now(), kp })); } catch (_e) { /* quota */ }
   } catch (_e) {
     target.innerHTML =
       `<div class="lab">Aurora · Kp index</div>` +

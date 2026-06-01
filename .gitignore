@@ -6,3 +6,6 @@ dist
 .env
 .env.local
 /tmp/
+
+# local audit/debug scripts
+_audit.cjs
