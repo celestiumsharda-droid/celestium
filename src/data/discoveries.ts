@@ -39,6 +39,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="know"><div class="kh">How we know it is real</div><p>To avoid seeing what they hoped to see, separate teams reconstructed the image independently, using different methods, without comparing notes. They converged on the same ring. The result was only announced once the independent paths agreed.</p></div>',
         '<h2>First sight, 2019</h2>',
         '<p>On 10 April 2019 the collaboration released it: a luminous ring with a dark centre, around the black hole in M87, a galaxy 55 million light-years away. The shadow’s measured size matched the prediction from general relativity for an object of that mass. In 2022, after years of extra work, they imaged Sagittarius A&#42; — the black hole at the heart of our own Milky Way.</p>',
+        '__FIG_M87__',
         '<p>Two black holes, a thousandfold apart in mass, both ringed exactly as the equations demanded. A prediction made with chalk in 1915 had become a photograph.</p>'
       ],
       [
@@ -57,6 +58,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="know"><div class="kh">How we know it is real</div><p>Multiple teams were deliberately kept apart and reconstructed the image with independent pipelines and assumptions, without sharing intermediate results. Synthetic data with known answers was run through the same machinery to expose bias. Only once the independent reconstructions converged on the same ring — same size, same orientation — was the result considered sound.</p></div>',
         '<h2>The image, and what it confirmed</h2>',
         '<p>On 10 April 2019 the collaboration unveiled M87&#42;: an asymmetric ring roughly 42 microarcseconds across, brighter on one side because gas there moves toward us at nearly light speed. The measured shadow implied a mass in close agreement with independent estimates and with the size general relativity predicts for that mass. Strong-field gravity had been tested where it is most extreme, and it held.</p>',
+        '__FIG_M87__',
         '<p>Sagittarius A&#42; was far harder: a thousand times less massive, its gas orbits in minutes rather than days, so the source visibly changes within a single night. It took until May 2022, and new techniques to handle that variability, to release its ring. One theory described both, across a factor of a thousand in mass.</p>',
         '<div class="pull">A claim made with chalk in 1915 had become a photograph in 2019 — and the universe had not blinked.<cite>The result</cite></div>',
         '<h2>What comes next</h2>',

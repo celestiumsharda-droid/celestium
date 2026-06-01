@@ -1,0 +1,5 @@
+m87-*.{avif,webp,jpg} — The Event Horizon Telescope image of the
+supermassive black hole in M87 (M87*), released 2019-04-10.
+Credit: Event Horizon Telescope Collaboration. Licensed CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). Via Wikimedia Commons.
+Resized to 720w / 1280w in AVIF, WebP and JPEG.

@@ -226,7 +226,14 @@ figure svg {
   border: 1px solid var(--line-soft); border-radius: 4px;
   background: rgba(10,12,18,.5);
 }
+figure picture { display: block; }
+figure img {
+  width: 100%; height: auto; display: block;
+  border: 1px solid var(--line-soft); border-radius: 4px;
+  background: #000;
+}
 figcaption { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; color: var(--dim); margin-top: 16px; text-align: center; line-height: 1.6; }
+figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 
 .stats {
   display: grid; grid-template-columns: repeat(3, 1fr);

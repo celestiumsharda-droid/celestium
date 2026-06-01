@@ -42,6 +42,12 @@ const FRAGMENTS: Record<FragmentToken, string> = {
   "__STATS_EXO__":
     '<div class="stats"><div><div class="v">4.23 d</div><div class="l">Orbital period — a year on 51 Pegasi b</div></div><div><div class="v">~50 ly</div><div class="l">Distance to the star</div></div><div><div class="v">5,000+</div><div class="l">Confirmed exoplanets today</div></div></div>',
   "__FIG_EHT__": ehtFigure(),
+  "__FIG_M87__":
+    '<figure><picture>' +
+    '<source type="image/avif" srcset="/img/m87-720.avif 720w, /img/m87-1280.avif 1280w" sizes="(max-width: 760px) 100vw, 720px">' +
+    '<source type="image/webp" srcset="/img/m87-720.webp 720w, /img/m87-1280.webp 1280w" sizes="(max-width: 760px) 100vw, 720px">' +
+    '<img src="/img/m87-1280.jpg" srcset="/img/m87-720.jpg 720w, /img/m87-1280.jpg 1280w" sizes="(max-width: 760px) 100vw, 720px" width="1280" height="1280" alt="The Event Horizon Telescope&#8217;s 2019 image of M87&#42;: a bright, slightly asymmetric orange ring of light around a dark central shadow." loading="lazy" decoding="async">' +
+    '</picture><figcaption>The first photograph of a black hole — M87&#42;, released 10 April 2019. The ring glows brighter where gas sweeps toward us at nearly light speed. <span class="credit">Image: EHT Collaboration · CC BY 4.0</span></figcaption></figure>',
 };
 
 export default FRAGMENTS;
