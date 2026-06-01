@@ -199,24 +199,26 @@ section { position: relative; padding: 140px 0; }
 .tlrail { position: relative; margin-top: 30px; }
 .tlrail::before {
   content: ""; position: absolute;
-  left: 120px; top: 0; bottom: 0;
+  left: 140px; top: 0; bottom: 0;
   width: 1px;
   background: linear-gradient(var(--line), var(--line-soft));
 }
 @media (max-width: 760px) { .tlrail::before { left: 14px; } }
-.tlrow { position: relative; padding: 34px 0 34px 180px; cursor: pointer; }
+.tlrow { position: relative; padding: 34px 0 34px 200px; cursor: pointer; }
 @media (max-width: 760px) { .tlrow { padding-left: 46px; } }
 .tlrow .when {
   position: absolute; left: 0; top: 38px;
-  width: 120px; text-align: right;
+  width: 116px; text-align: right;
+  white-space: nowrap; overflow: visible;
+  padding-right: 10px;            /* breathing room before the rail line */
   font-family: var(--mono); font-size: 12px;
   color: var(--accent); letter-spacing: .06em;
 }
 @media (max-width: 760px) {
-  .tlrow .when { position: relative; left: 0; top: 0; width: auto; text-align: left; margin-bottom: 8px; }
+  .tlrow .when { position: relative; left: 0; top: 0; width: auto; text-align: left; padding-right: 0; margin-bottom: 8px; }
 }
 .tlrow .knot {
-  position: absolute; left: 115px; top: 42px;
+  position: absolute; left: 135px; top: 42px;   /* 135 + 5.5 ≈ centred on the 140px line */
   width: 11px; height: 11px;
   border-radius: 50%;
   background: var(--void);
@@ -246,18 +248,28 @@ section { position: relative; padding: 140px 0; }
 }
 .discov b { color: var(--star); font-weight: 500; }
 
-/* ---- scrollytelling ---- */
+/* ---- scrollytelling ----
+   Desktop (>1024px): black hole sits in its own column beside the
+   scrolling text. Tablet/mobile (<=1024px): the sticky black hole and
+   the text stack into the SAME grid cell, so the black hole becomes a
+   dimmed, centred background BEHIND the prose rather than a foreground
+   block that covers it. Layering is enforced with z-index and the
+   black hole is made non-interactive so it never eats a tap. */
 #story { padding: 0; border-top: 1px solid var(--line-soft); }
 .scrolly { display: grid; grid-template-columns: 1fr 1fr; }
-@media (max-width: 900px) { .scrolly { grid-template-columns: 1fr; } }
 .sticky {
   position: sticky; top: 0;
   height: 100vh;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
+  z-index: 0;
 }
-@media (max-width: 900px) { .sticky { height: 60vh; top: 0; } }
-.bh { width: min(62%, 420px); aspect-ratio: 1; border-radius: 50%; position: relative; transition: .9s cubic-bezier(.3,.8,.3,1); }
+.bh {
+  width: clamp(240px, 30vw, 420px);
+  aspect-ratio: 1; border-radius: 50%;
+  position: relative;
+  transition: .9s cubic-bezier(.3,.8,.3,1);
+}
 .bh .disk {
   position: absolute; inset: -30%;
   border-radius: 50%;
@@ -271,18 +283,51 @@ section { position: relative; padding: 140px 0; }
   border-radius: 50%; background: #000;
   box-shadow: 0 0 0 1px rgba(255,255,255,.08), inset 0 0 60px rgba(0,0,0,1), 0 0 90px rgba(169,188,255,.18);
 }
-.steps { padding: 8vh 0; }
+.steps { padding: 8vh 0; position: relative; z-index: 2; }
 .step {
   min-height: 88vh;
   display: flex; flex-direction: column; justify-content: center;
   padding: 0 60px;
   opacity: .16; transition: .6s;
 }
-@media (max-width: 900px) { .step { padding: 0 28px; min-height: 70vh; } }
 .step.on { opacity: 1; }
 .step .k { font-family: var(--mono); font-size: 11px; letter-spacing: .34em; color: var(--accent); text-transform: uppercase; margin-bottom: 18px; }
 .step h3 { font-size: clamp(1.8rem, 3.6vw, 3rem); margin-bottom: 18px; }
 .step p { color: var(--mut); font-size: 1.08rem; max-width: 46ch; }
+
+/* Tablet + mobile: collapse to one column and stack the black hole
+   behind the text in a shared grid cell. */
+@media (max-width: 1024px) {
+  .scrolly {
+    grid-template-columns: 1fr;
+    grid-template-areas: "stack";
+  }
+  .sticky {
+    grid-area: stack;
+    height: 100vh;
+    pointer-events: none;          /* never intercept taps meant for the prose */
+  }
+  .steps {
+    grid-area: stack;
+    padding: 8vh 32px;
+  }
+  .bh {
+    width: clamp(220px, 52vw, 360px);
+    opacity: .5;                   /* recede behind the words */
+  }
+  .bh .core {
+    box-shadow: 0 0 0 1px rgba(255,255,255,.06), inset 0 0 50px #000, 0 0 70px rgba(169,188,255,.12);
+  }
+  .step { padding: 0 32px; min-height: 82vh; }
+  .step p { max-width: 38ch; }
+}
+
+@media (max-width: 560px) {
+  .bh { width: clamp(170px, 60vw, 280px); opacity: .38; }
+  .steps, .step { padding-left: 24px; padding-right: 24px; }
+  .step h3 { font-size: clamp(1.6rem, 7vw, 2.2rem); }
+  .step p { max-width: none; }
+}
 
 /* ---- depth preview ---- */
 #depth { border-top: 1px solid var(--line-soft); background: linear-gradient(180deg, transparent, rgba(10,12,18,.55)); }
