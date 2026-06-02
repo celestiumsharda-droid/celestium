@@ -33,8 +33,34 @@ function onScroll() {
 addEventListener("scroll", onScroll, { passive: true });
 onScroll();
 
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* count-up: a static number ticks up to its value. The real value stays
+   in the HTML, so if this never runs the number is simply shown. */
+function countUp(el: HTMLElement): void {
+  if (el.dataset["done"] || reduceMotion) return;
+  el.dataset["done"] = "1";
+  const target = parseFloat(el.dataset["count"] || "0");
+  const dec = parseInt(el.dataset["dec"] || "0", 10);
+  const t0 = performance.now(), dur = 1300;
+  const step = (now: number) => {
+    const t = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = (target * eased).toFixed(dec);
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = target.toFixed(dec);
+  };
+  requestAnimationFrame(step);
+}
+
+// Reveal-on-scroll. Piggybacks the count-up onto the same observer so the
+// numbers tick up exactly when their card fades in.
 const io = new IntersectionObserver(
-  es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add("in"); }),
+  es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add("in");
+    e.target.querySelectorAll<HTMLElement>(".cnt[data-count]").forEach(countUp);
+  }),
   { threshold: 0.15 }
 );
 document.querySelectorAll<HTMLElement>(".reveal").forEach(el => io.observe(el));
@@ -51,6 +77,19 @@ txt.split("").forEach((ch, i) => {
 });
 // The cinematic intro lifts, then hands off to the hero letters.
 playIntro(() => ttl.classList.add("go"));
+
+// Magnetic hero buttons — they lean gently toward the cursor (desktop).
+if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: reduce)").matches) {
+  document.querySelectorAll<HTMLElement>(".herocta .btn").forEach(btn => {
+    btn.addEventListener("pointermove", (e: PointerEvent) => {
+      const r = btn.getBoundingClientRect();
+      const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
+      const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
+      btn.style.transform = `translate(${(dx * 7).toFixed(1)}px, ${(dy * 7).toFixed(1)}px)`;
+    });
+    btn.addEventListener("pointerleave", () => { btn.style.transform = ""; });
+  });
+}
 
 /* ---------- perspective: 3D cosmic map ----------
    The Perspective section is a tall, pinned track. Page-scroll over it
