@@ -207,6 +207,20 @@ switch (D.hero) {
     ha.innerHTML = s;
     break;
   }
+  case "grid": {
+    // a periodic-table-like grid with one glowing gap
+    let s = '<div class="v-grid"><svg viewBox="0 0 200 200" role="img" aria-label="A grid of element cells with one gap.">';
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+      const x = 20 + c * 34, y = 20 + r * 34, gap = (r === 2 && c === 3);
+      const attrs = gap
+        ? 'class="gridgap" fill="rgba(242,230,196,.10)" stroke="#f2e6c4" stroke-width="1.4" stroke-dasharray="3 3"'
+        : 'fill="rgba(169,188,255,.06)" stroke="rgba(169,188,255,.3)" stroke-width="1"';
+      s += `<rect x="${x}" y="${y}" width="28" height="28" rx="4" ${attrs}/>`;
+    }
+    s += "</svg></div>";
+    ha.innerHTML = s;
+    break;
+  }
   default:
     ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
 }
@@ -351,9 +365,9 @@ $("legal").textContent = "© 2026 CELESTIUM — " + D.field + " · " + D.era;
 
 /* ---------- next in the series (a guided linear path) ---------- */
 const SERIES = [
-  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
-  "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
-  "double-helix", "crispr", "ancient-dna", "penicillin",
+  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background", "expanding-universe",
+  "first-exoplanet", "double-slit", "periodic-table", "age-of-earth", "plate-tectonics",
+  "double-helix", "crispr", "ancient-dna", "penicillin", "vaccination",
 ];
 const si = SERIES.indexOf(id);
 if (si >= 0) {

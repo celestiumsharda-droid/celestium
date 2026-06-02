@@ -10,7 +10,7 @@
 /** Visual variants registered on the article page (extensible). */
 export type HeroVariant =
   | "bh" | "wave" | "web" | "wobble" | "deep-field" | "helix"
-  | "cmb" | "seafloor" | "culture";
+  | "cmb" | "seafloor" | "culture" | "grid";
 
 /** A single fragment token that gets expanded at render time. */
 export type FragmentToken = `__${string}__`;

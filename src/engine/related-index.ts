@@ -15,6 +15,9 @@ const RELATED_INDEX: RelatedIndex = {
   "plate-tectonics":       { field: "Earth Science",     title: "The discovery that the ground is moving." },
   "penicillin":            { field: "Medicine",          title: "The mould that beat infection." },
   "crispr":                { field: "Biotechnology",     title: "We learned to edit the code of life." },
+  "expanding-universe":    { field: "Cosmology",         title: "The night we learned the universe is growing." },
+  "periodic-table":        { field: "Chemistry",         title: "The table that predicted the unknown." },
+  "vaccination":           { field: "Medicine",          title: "How we taught the body to remember a disease." },
   "__scale":               { field: "Perspective",       title: "Find where you sit in thirteen orders of magnitude.", href: "/#scale", cta: "Open the tool" },
 };
 

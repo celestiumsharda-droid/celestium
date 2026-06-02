@@ -624,6 +624,149 @@ const DISCOVERIES: DiscoveryMap = {
         '<div class="pull">In barely a decade, rewriting a chosen gene went from impossible to routine. The remaining questions are no longer mainly technical — they are about what we should choose to do.<cite>The standing result</cite></div>'
       ]
     ]
+  },
+
+  "expanding-universe": {
+    field: "Cosmology",
+    era: "1929 CE",
+    subject: "The expanding universe",
+    kick: "Cosmology · The Discovery Series",
+    title: 'The night we learned<br><i>the universe is growing.</i>',
+    dek: "For all of history the cosmos was assumed to be fixed and eternal. Then someone measured the light of distant galaxies and found them all rushing away — and the faster, the farther. Space itself was stretching.",
+    hero: "deep-field",
+    related: ["weighing-the-universe", "cosmic-background", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">L</span>ight from a galaxy moving away from us is stretched to redder wavelengths, like a receding siren drops in pitch. In 1929 Edwin Hubble compared the distances of galaxies with these redshifts and found a clean rule: the farther a galaxy, the faster it recedes. There is only one way every galaxy can see all the others fleeing — space itself is expanding, carrying the galaxies apart. Run that expansion backwards and everything was once together: the seed of the Big Bang.</p>',
+        '__FIG_HUBBLE__',
+        '<div class="know"><div class="kh">Why it matters</div><p>It overturned a universe believed to be static and eternal, and gave us a cosmos with a beginning and an age — about 13.8 billion years. Nearly all of modern cosmology starts here.</p></div>'
+      ],
+      [
+        '<h2>A cosmos assumed to be still</h2>',
+        '<p><span class="lead">F</span>or millennia the heavens were the very image of permanence. Even Einstein, applying general relativity to the whole universe in 1917, added a term to his equations to hold it static, because a changing universe seemed unthinkable. The tools to test the assumption did not yet exist.</p>',
+        '<p>Two advances changed that. Vesto Slipher found that most &#8220;spiral nebulae&#8221; showed their light shifted toward the red — they were moving away at enormous speeds. And Henrietta Leavitt had discovered that a certain kind of pulsing star, the Cepheid, beats at a rate fixed by its true brightness, turning it into a ruler for measuring cosmic distance.</p>',
+        '<div class="pull">Redshift told you how fast a galaxy was moving. Cepheids told you how far. Put them on the same graph and the universe confessed.<cite>The two measurements Hubble combined</cite></div>',
+        '<h2>A straight line, 1929</h2>',
+        '<p>Edwin Hubble, working with the giant telescope on Mount Wilson and the observations of Milton Humason, plotted recession speed against distance for a set of galaxies. The points fell along a rising straight line: double the distance, double the speed. Two years earlier Georges Lema&#238;tre had derived exactly this from relativity and even estimated the rate.</p>',
+        '__FIG_HUBBLE__',
+        '__STATS_HUBBLE__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>If only our galaxy were special, we might be at some centre. But a uniform expansion looks the same from every galaxy — each sees all the others receding, faster with distance. That is exactly what a stretching space predicts, and exactly what is seen. Later, far more precise surveys confirmed the linear law to great distances.</p></div>',
+        '<h2>A universe with a birthday</h2>',
+        '<p>An expanding universe was smaller and denser in the past. Wind the film back far enough and everything converges to a hot, dense beginning. The expansion also gives the cosmos an age, found by running it backwards: about 13.8 billion years. The static, eternal universe was gone for good.</p>'
+      ],
+      [
+        '<h2>The assumption nobody questioned</h2>',
+        '<p><span class="lead">A</span>n unchanging universe was so deeply assumed that when general relativity implied otherwise, the response was to change the theory. In 1917 Einstein introduced the cosmological constant, a repulsion finely tuned to balance gravity and keep the universe static. It was a fix for a problem that turned out not to exist; he later called it his greatest blunder, though the term has since returned in a different guise.</p>',
+        '<p>Meanwhile the raw material for a different picture was accumulating. From 1912 Vesto Slipher, at the Lowell Observatory, painstakingly measured the spectra of spiral nebulae and found the great majority redshifted — receding at hundreds of kilometres per second, far faster than any star in our galaxy. No one yet knew how far away these objects were, or even whether they lay inside the Milky Way.</p>',
+        '<div class="pull">The spectra screamed that the nebulae were fleeing. The missing number was their distance — and a pulsing star supplied it.<cite>The state of play in the 1920s</cite></div>',
+        '<h2>A ruler made of starlight</h2>',
+        '<p>The distance came from Henrietta Swan Leavitt. Studying Cepheid variable stars in the Magellanic Clouds, she found that a Cepheid&#8217;s pulsation period is tightly linked to its intrinsic luminosity. Measure how fast one blinks and you know its true brightness; compare that with how bright it appears and you have its distance. It was the first reliable rung of the cosmic distance ladder.</p>',
+        '<p>In 1923&#8211;24 Edwin Hubble found Cepheids in the Andromeda &#8220;nebula&#8221; and used Leavitt&#8217;s relation to measure their distance. The answer placed Andromeda far outside the Milky Way: it was a separate galaxy, an island universe of its own. At a stroke the cosmos grew from one galaxy to countless.</p>',
+        '<h2>The law, 1929</h2>',
+        '<p>Hubble then combined the two threads. For about two dozen galaxies he had both a distance (from Cepheids and other indicators) and a recession velocity (from Slipher&#8217;s and Humason&#8217;s redshifts). Plotted together, velocity rose in direct proportion to distance: v = H&#8320;d, now called Hubble&#8217;s law. Georges Lema&#238;tre had published the same relation, derived from general relativity, in 1927 &#8212; an expanding-universe solution Einstein had dismissed.</p>',
+        '__FIG_HUBBLE__',
+        '__STATS_HUBBLE__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The decisive point is that the law has no centre. In a uniformly expanding space, an observer in any galaxy sees every other galaxy receding, with speed proportional to distance &#8212; raisins in a rising loaf all move apart. Coincidental motions cannot produce that pattern. Modern measurements, using supernovae and other standard candles out to billions of light-years, confirm the linear relation and refine the rate.</p></div>',
+        '<h2>What the expansion means</h2>',
+        '<p>Crucially, the galaxies are not flying through space like debris from an explosion; space itself is expanding and carrying them along. The redshift is space stretching the light in transit, not a simple Doppler shift. Extrapolated backwards, the expansion implies a hot, dense origin &#8212; the framework that became the Big Bang, later confirmed by the cosmic microwave background.</p>',
+        '<p>Hubble&#8217;s own value for the expansion rate was far too large, the result of miscalibrated distances; the true rate is roughly 70 kilometres per second per megaparsec, giving an age near 13.8 billion years. Pinning that number down remains live science: two precise methods currently disagree slightly, a discrepancy called the Hubble tension that may yet point to something new.</p>',
+        '<div class="pull">We did not watch the universe expand. We measured one straight line, and the whole history of the cosmos followed from its slope.<cite>The standing result</cite></div>'
+      ]
+    ]
+  },
+
+  "periodic-table": {
+    field: "Chemistry",
+    era: "1869 CE",
+    subject: "The periodic table",
+    kick: "Chemistry · The Discovery Series",
+    title: 'The table that<br><i>predicted the unknown.</i>',
+    dek: "Arrange the elements in the right order and a rhythm appears — their properties repeat. Mendeleev trusted that rhythm so completely that he left blank squares for elements no one had found, and described them before they existed.",
+    hero: "grid",
+    related: ["age-of-earth", "double-slit", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">B</span>y the 1860s dozens of elements were known, but they looked like a junk drawer. In 1869 Dmitri Mendeleev laid them out in order of atomic weight and noticed that chemical properties recur at regular intervals &#8212; a periodic pattern. To keep the pattern intact he did something audacious: where no known element fit, he left a gap, and predicted the missing element&#8217;s weight and behaviour. Within twenty years gallium, scandium and germanium were discovered, matching his forecasts almost exactly. The table had predicted the unknown.</p>',
+        '__FIG_PERIODIC__',
+        '<div class="know"><div class="kh">Why it matters</div><p>It turned chemistry from a catalogue into a science with a deep structure &#8212; a structure later explained by the architecture of the atom itself. Every chemistry classroom on Earth still hangs the same map.</p></div>'
+      ],
+      [
+        '<h2>A drawer full of elements</h2>',
+        '<p><span class="lead">I</span>n the mid-nineteenth century chemists had isolated more than sixty elements and measured their atomic weights, but had no framework to organise them. Several people sensed a pattern in the numbers; the German chemist Julius Lothar Meyer was working toward one at the same time. The breakthrough belonged to Dmitri Mendeleev.</p>',
+        '<p>Laying the elements out in order of increasing atomic weight, Mendeleev saw that properties &#8212; how an element bonds, what it reacts with, how it behaves &#8212; repeat at regular intervals. Start a new row at the right moment and elements with similar character line up in columns. He called it the periodic law.</p>',
+        '<div class="pull">The genius was not the rows. It was trusting the pattern more than the data &#8212; leaving holes rather than forcing a bad fit.<cite>What set Mendeleev apart</cite></div>',
+        '<h2>Blanks, filled in advance</h2>',
+        '<p>Where the pattern demanded an element that no one had found, Mendeleev left an empty square and predicted what would fill it. For the gap below silicon &#8212; he called it &#8220;eka-silicon&#8221; &#8212; he foretold the atomic weight, the density, even the colour of its compounds. When germanium was isolated in 1886, the match was uncanny.</p>',
+        '__FIG_PERIODIC__',
+        '__STATS_PERIODIC__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>A good classification organises what you already know; a great one predicts what you do not. Mendeleev&#8217;s table forecast three elements &#8212; gallium, scandium and germanium &#8212; with specific properties, and all three were found, as described, within fifteen years. Predictions that risky, confirmed that precisely, are how a pattern proves it is real and not a coincidence.</p></div>',
+        '<h2>Why it works</h2>',
+        '<p>Mendeleev did not know why the elements repeat; he only knew that they do. The reason emerged decades later, with the discovery that the true order is the number of protons in the nucleus, and that the recurring properties come from how electrons fill shells around it. The table was a map of atomic structure drawn long before anyone could see the atom.</p>'
+      ],
+      [
+        '<h2>Order out of sixty-three elements</h2>',
+        '<p><span class="lead">B</span>y 1869 chemistry had assembled the pieces of a puzzle without the picture: sixty-odd elements, reasonably accurate atomic weights, and a growing sense that elements fall into families &#8212; the reactive alkali metals, the corrosive halogens, the inert-seeming earths. Several chemists had glimpsed periodicity. John Newlands proposed a &#8220;law of octaves&#8221; and was mocked; Lothar Meyer built a similar table near-simultaneously with Mendeleev. The problem was not noticing a pattern but committing to it.</p>',
+        '<p>Mendeleev, the story goes, wrote the elements on cards and shuffled them like a game of patience until the structure fell out. Arranged by ascending atomic weight and broken into rows at the right points, elements of like character stacked into vertical groups. He published the periodic law in 1869.</p>',
+        '<div class="pull">Newlands saw the octaves and was laughed at. Mendeleev saw them and bet his reputation that the gaps were elements waiting to be found.<cite>Pattern versus conviction</cite></div>',
+        '<h2>The audacity of the gaps</h2>',
+        '<p>Two features made Mendeleev&#8217;s table more than a tidy arrangement. First, where ordering strictly by weight broke the chemical pattern, he trusted the chemistry and adjusted &#8212; correctly anticipating that some accepted atomic weights were simply wrong. Second, and famously, he left blanks. Rather than crush a misfit element into the wrong slot, he asserted that the slot belonged to an element not yet discovered, and predicted its properties in detail.</p>',
+        '<p>For eka-silicon he predicted an atomic weight near 72, a density around 5.5, a grey metal forming an oxide of a particular formula. In 1886 Clemens Winkler isolated germanium: atomic weight 72.6, density 5.35, every property close to the forecast. Gallium (eka-aluminium, 1875) and scandium (eka-boron, 1879) had already confirmed two earlier predictions. The table was not describing chemistry; it was anticipating it.</p>',
+        '__FIG_PERIODIC__',
+        '__STATS_PERIODIC__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The predictions are the proof. Three undiscovered elements, each forecast with specific numbers, each subsequently found matching those numbers &#8212; that is a classification making falsifiable claims about reality and passing. Later, the table survived an even sterner test: whole families of elements no one anticipated, the noble gases, were discovered in the 1890s, and slotted cleanly into a new column without breaking the structure.</p></div>',
+        '<h2>The deeper law beneath</h2>',
+        '<p>Mendeleev ordered by atomic weight, which mostly works but occasionally misfires &#8212; argon is heavier than potassium yet clearly belongs before it. In 1913 Henry Moseley resolved the anomalies by showing that the true ordering principle is the atomic number, the count of protons in the nucleus. The periodic recurrence itself was finally explained by quantum mechanics: properties repeat because electrons fill shells in a repeating pattern, and an element&#8217;s chemistry is set by its outermost electrons.</p>',
+        '<p>The table has since grown to 118 elements, the heaviest of them fleeting creations of particle accelerators, each one slotting into the place the structure reserves for it. A map sketched from chemical intuition in 1869 turned out to be a map of the atom.</p>',
+        '<div class="pull">He could not have known about protons or electron shells. He simply trusted the rhythm of the elements &#8212; and the rhythm was the atom, keeping time.<cite>The standing result</cite></div>'
+      ]
+    ]
+  },
+
+  "vaccination": {
+    field: "Medicine",
+    era: "1796 – 1980",
+    subject: "Vaccination & smallpox",
+    kick: "Medicine · The Discovery Series",
+    title: 'How we taught the body<br><i>to remember a disease.</i>',
+    dek: "Smallpox killed hundreds of millions and scarred or blinded millions more. Then a country doctor noticed that milkmaids never caught it — and turned that clue into the idea that would, two centuries later, wipe the disease from the Earth.",
+    hero: "culture",
+    related: ["penicillin", "double-helix", "__scale"],
+    depths: [
+      [
+        '<p><span class="lead">T</span>he immune system remembers. Show it a harmless version of a threat and it builds defences, so that when the real pathogen arrives it is met and beaten before it can take hold. In 1796 Edward Jenner acted on a country observation &#8212; milkmaids who caught mild cowpox never got smallpox &#8212; and deliberately gave a boy cowpox, then exposed him to smallpox. The boy stayed well. That was the first vaccine. Refined and spread over two centuries, it ended with smallpox &#8212; a disease that killed perhaps 300 million people in the twentieth century alone &#8212; being declared eradicated in 1980, the only human disease ever erased.</p>',
+        '__FIG_IMMUNE__',
+        '<div class="know"><div class="kh">Why it matters</div><p>Vaccination is among the few interventions that have saved lives by the hundreds of millions, and the only one that has driven a human disease to extinction. Every modern vaccine descends from Jenner&#8217;s insight.</p></div>'
+      ],
+      [
+        '<h2>The most feared disease</h2>',
+        '<p><span class="lead">F</span>or most of history smallpox was a near-universal terror. It killed roughly a third of those it infected and left survivors scarred, often blinded. Older defences existed: variolation &#8212; deliberately infecting someone with a small dose of smallpox itself to induce mild illness and lasting immunity &#8212; was practised for centuries in China, India, Africa and the Ottoman world, and reached Britain in the 1720s. It worked, but it could kill, and it could start outbreaks.</p>',
+        '<p>Edward Jenner, a physician in rural Gloucestershire, knew the local lore that milkmaids who caught cowpox &#8212; a mild disease of the udder &#8212; seemed immune to smallpox. In 1796 he tested it: he took matter from a cowpox sore on a milkmaid&#8217;s hand and inoculated an eight-year-old boy, James Phipps. Weeks later he exposed the boy to smallpox. Nothing happened. The protection of cowpox carried across to its deadly cousin.</p>',
+        '<div class="pull">Variolation fought smallpox with smallpox, and sometimes lost. Jenner&#8217;s leap was to fight it with something milder that the body mistook for the same enemy.<cite>Why cowpox changed everything</cite></div>',
+        '<h2>A safe substitute</h2>',
+        '<p>Because cowpox is closely related to smallpox but far milder, the immune response it provokes also recognises smallpox &#8212; without the danger of giving someone the lethal disease. Jenner called the method vaccination, from <em>vacca</em>, the Latin for cow. He published in 1798. The practice spread across the world within years, long before anyone understood why it worked.</p>',
+        '__FIG_IMMUNE__',
+        '__STATS_VACCINE__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>The effect is repeatable and specific: vaccinated populations stop getting the disease, and the protection tracks the immune memory the vaccine creates. The ultimate proof was global. A coordinated campaign in the twentieth century pushed smallpox into ever-smaller pockets until the last natural case, in Somalia in 1977. After years of surveillance finding none, it was declared eradicated in 1980.</p></div>',
+        '<h2>Memory, made visible</h2>',
+        '<p>The mechanism, worked out by later immunology, is memory. The first encounter with a pathogen &#8212; or a vaccine &#8212; provokes a slow, modest response while the body learns the threat. But it keeps that lesson in long-lived memory cells. A second encounter triggers a response so large and so fast that the infection is often stopped before symptoms ever appear. A vaccine simply arranges that first, safe lesson in advance.</p>'
+      ],
+      [
+        '<h2>A scourge, and an old defence</h2>',
+        '<p><span class="lead">S</span>mallpox shaped human history as few diseases have, killing emperors and peasants alike and depopulating whole regions when it reached people with no prior exposure. Caused by the variola virus, it killed around 30 per cent of those infected and disfigured most survivors. Against it, societies had developed variolation: introducing material from a smallpox pustule into a healthy person, usually through a scratch, to provoke a milder infection and durable immunity.</p>',
+        '<p>Variolation was genuinely effective and widely practised across Asia and Africa; Lady Mary Wortley Montagu, having seen it in Constantinople, championed it in England from 1721. But it carried real risk: a few per cent of those variolated died, and each one was briefly contagious, capable of seeding a fresh epidemic. A safer method was badly needed.</p>',
+        '<div class="pull">The folk wisdom was hiding in plain sight on every dairy farm: the women who milked the cows did not get the pox.<cite>The clue Jenner followed</cite></div>',
+        '<h2>The experiment of 1796</h2>',
+        '<p>Edward Jenner formalised a piece of country knowledge &#8212; that cowpox seemed to protect against smallpox. On 14 May 1796 he took fluid from a cowpox lesion on the hand of a milkmaid, Sarah Nelmes, and introduced it into incisions on the arm of James Phipps, the young son of his gardener. The boy developed a brief mild illness and recovered. Then, in July, Jenner deliberately inoculated him with smallpox itself. No disease developed. He repeated the smallpox challenge later; still nothing. Cowpox had made the boy immune.</p>',
+        '<p>By modern standards the experiment was ethically fraught &#8212; a child, deliberately exposed to a lethal disease. But the result was unambiguous and reproducible. Jenner published <em>An Inquiry into the Causes and Effects of the Variolae Vaccinae</em> in 1798, coining the term vaccine from the Latin for cow.</p>',
+        '__FIG_IMMUNE__',
+        '__STATS_VACCINE__',
+        '<div class="know"><div class="kh">How we know it is real</div><p>Vaccination&#8217;s effect is specific, dose-dependent and reproducible, and it was tested at every scale &#8212; from Jenner&#8217;s repeated challenges of single subjects, to national programmes, to a global eradication effort. The decisive evidence is that smallpox no longer exists in the wild: relentless vaccination and case-tracing drove transmission to zero, with the last endemic case in 1977 and eradication certified in 1980.</p></div>',
+        '<h2>Why a preview protects</h2>',
+        '<p>The biology behind Jenner&#8217;s success was understood only much later. The immune system learns the molecular signatures of pathogens and retains them in memory B and T cells. A first exposure mounts a sluggish primary response; a later exposure to the same signature triggers a secondary response that is faster and far stronger &#8212; frequently fast enough to clear the invader before illness begins. A vaccine presents a harmless version of those signatures &#8212; a weakened or related microbe, an inactivated one, a fragment, or, more recently, instructions for the body to make a fragment itself &#8212; so the protective memory is built without the disease.</p>',
+        '<p>From this one idea grew vaccines against polio, measles, tetanus, hepatitis, and more, sparing lives by the hundreds of millions. Smallpox remains the singular triumph: in 1980 the World Health Organization declared it eradicated, the first and still the only human disease ever deliberately wiped from the Earth.</p>',
+        '<div class="pull">A country doctor noticed who did not get sick, and acted on it. Two centuries later, a disease that had haunted humanity since antiquity was simply gone.<cite>The standing result</cite></div>'
+      ]
+    ]
   }
 };
 

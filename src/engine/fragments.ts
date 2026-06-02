@@ -302,8 +302,92 @@ function chirpFigure(): string {
   return s;
 }
 
+/** Hubble's law: a galaxy's recession speed rises in step with its
+ *  distance — the fingerprint of an expanding universe. */
+function hubbleFigure(): string {
+  const X0 = 70, X1 = 660, Y0 = 250, Y1 = 48;
+  let seed = 5;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hubble\'s diagram: galaxy recession speed rising in a straight line with distance.">';
+  s += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#363c4a"/>`;
+  s += `<line x1="${X0 + 8}" y1="${Y0 - 8}" x2="${X1 - 10}" y2="${Y1 + 24}" stroke="#a9bcff" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>`;
+  for (let i = 0; i < 22; i++) {
+    const d = (i + 0.5) / 22 + (rnd() - 0.5) * 0.04;
+    const x = X0 + 8 + d * (X1 - X0 - 22);
+    const yTrend = (Y0 - 8) + d * ((Y1 + 24) - (Y0 - 8));
+    const y = yTrend + (rnd() - 0.5) * 34;
+    s += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="4" fill="#a9bcff"/>`;
+  }
+  s += `<text x="${(X0 + X1) / 2}" y="${Y0 + 22}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" letter-spacing="2">DISTANCE &#8594;</text>`;
+  s += `<text x="${X0 - 16}" y="${(Y0 + Y1) / 2}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" transform="rotate(-90 ${X0 - 16} ${(Y0 + Y1) / 2})" letter-spacing="2">RECESSION SPEED &#8593;</text>`;
+  s += `<text x="${X1 - 30}" y="${Y1 + 40}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="12" text-anchor="end">v = H&#8320; &#215; d</text>`;
+  s += "</svg><figcaption>Hubble&#8217;s 1929 diagram: the farther a galaxy, the faster it flees, along a straight line. The only way every galaxy can see all the others rushing away is if space itself is stretching — the universe is expanding.</figcaption></figure>";
+  return s;
+}
+
+/** Mendeleev's group IV column with the gap he left for the unknown
+ *  "eka-silicon" — later found and named germanium. */
+function periodicFigure(): string {
+  const col: [string, string, boolean][] = [
+    ["C", "12", true], ["Si", "28", true], ["?", "~72", false], ["Sn", "119", true], ["Pb", "207", true],
+  ];
+  const cw = 84, ch = 64, gap = 12, x = 318;
+  let y = 26;
+  let s = '<figure><svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A column of the periodic table with a gap Mendeleev left for an undiscovered element.">';
+  for (const [sym, w, known] of col) {
+    const fill = known ? "#10131c" : "rgba(242,230,196,.06)";
+    const stroke = known ? "rgba(243,245,251,.16)" : "#f2e6c4";
+    s += `<rect x="${x}" y="${y}" width="${cw}" height="${ch}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${known ? 1 : 1.6}" ${known ? "" : 'stroke-dasharray="5 4"'}/>`;
+    s += `<text x="${x + cw / 2}" y="${y + 32}" fill="${known ? "#f3f5fb" : "#f2e6c4"}" font-family="Fraunces,Georgia,serif" font-size="26" text-anchor="middle">${sym}</text>`;
+    s += `<text x="${x + cw / 2}" y="${y + 50}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">${w}</text>`;
+    if (!known) {
+      s += `<text x="${x + cw + 18}" y="${y + 28}" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="11">&#8592; eka-silicon</text>`;
+      s += `<text x="${x + cw + 18}" y="${y + 44}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10">predicted 1871 &#183; found 1886</text>`;
+    }
+    y += ch + gap;
+  }
+  s += "</svg><figcaption>In his 1869 table Mendeleev left holes for elements no one had found, and predicted their properties from the neighbours. The gap below silicon he called &#8220;eka-silicon&#8221;; in 1886 it was discovered as germanium — its weight and density almost exactly as foretold.</figcaption></figure>";
+  return s;
+}
+
+/** Immune memory: a second exposure (after a vaccine) triggers a far
+ *  larger, faster antibody response than the first. */
+function immuneFigure(): string {
+  const X0 = 70, X1 = 660, Y0 = 250, Y1 = 46;
+  const px = (t: number) => X0 + t * (X1 - X0);
+  const py = (f: number) => Y0 + f * (Y1 - Y0);
+  const hump = (t: number, c: number, w: number, h: number) => h * Math.exp(-Math.pow((t - c) / w, 2));
+  let primary = "", secondary = "";
+  for (let i = 0; i <= 120; i++) {
+    const t = i / 120;
+    primary += `${i === 0 ? "M" : "L"} ${px(t).toFixed(1)} ${py(hump(t, 0.26, 0.075, 0.34)).toFixed(1)} `;
+    secondary += `${i === 0 ? "M" : "L"} ${px(t).toFixed(1)} ${py(hump(t, 0.26, 0.075, 0.34) + hump(t, 0.62, 0.05, 0.95)).toFixed(1)} `;
+  }
+  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Antibody levels over time: a small first response and a large, fast second response after a vaccine primes the immune system.">';
+  s += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#363c4a"/>`;
+  for (const [t, lab] of [[0.26, "1st exposure"], [0.62, "2nd exposure"]] as [number, string][]) {
+    s += `<line x1="${px(t)}" y1="${Y0}" x2="${px(t)}" y2="${Y1}" stroke="rgba(243,245,251,.06)" stroke-dasharray="3 5"/>`;
+    s += `<text x="${px(t)}" y="${Y0 + 18}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle">${lab}</text>`;
+  }
+  s += `<path d="${secondary}" fill="none" stroke="#9ee6c4" stroke-width="2.4"/>`;
+  s += `<path d="${primary}" fill="none" stroke="#a9bcff" stroke-width="1.6" opacity=".55" stroke-dasharray="4 4"/>`;
+  s += `<text x="${px(0.62)}" y="${py(0.99) - 6}" fill="#9ee6c4" font-family="IBM Plex Mono,monospace" font-size="11" text-anchor="middle">memory response</text>`;
+  s += `<text x="${X0 - 16}" y="${(Y0 + Y1) / 2}" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" transform="rotate(-90 ${X0 - 16} ${(Y0 + Y1) / 2})" letter-spacing="2">ANTIBODIES &#8593;</text>`;
+  s += "</svg><figcaption>What a vaccine buys: it shows the immune system a harmless preview, so the body keeps a memory. Meet the real pathogen later and the response is far larger and faster — often fast enough that you never fall ill.</figcaption></figure>";
+  return s;
+}
+
 const FRAGMENTS: Record<FragmentToken, string> = {
   "__CHIRP__": chirpFigure(),
+  "__FIG_HUBBLE__": hubbleFigure(),
+  "__FIG_PERIODIC__": periodicFigure(),
+  "__FIG_IMMUNE__": immuneFigure(),
+  "__STATS_HUBBLE__":
+    '<div class="stats"><div><div class="v">1929</div><div class="l">Hubble shows distance and recession speed rise together</div></div><div><div class="v">~70</div><div class="l">km/s per megaparsec — today&#8217;s expansion rate</div></div><div><div class="v">13.8 Byr</div><div class="l">Age of the universe the expansion implies</div></div></div>',
+  "__STATS_PERIODIC__":
+    '<div class="stats"><div><div class="v">1869</div><div class="l">Mendeleev orders the elements and leaves gaps</div></div><div><div class="v">3</div><div class="l">Predicted elements soon found: gallium, scandium, germanium</div></div><div><div class="v">118</div><div class="l">Elements on the table today</div></div></div>',
+  "__STATS_VACCINE__":
+    '<div class="stats"><div><div class="v">1796</div><div class="l">Jenner uses cowpox to protect against smallpox</div></div><div><div class="v">1980</div><div class="l">Smallpox declared eradicated worldwide</div></div><div><div class="v">Only one</div><div class="l">Human disease ever wiped from the wild</div></div></div>',
   "__STATS_EHT__":
     '<div class="stats"><div><div class="v">8</div><div class="l">Observatories linked across the globe</div></div><div><div class="v">~5 PB</div><div class="l">Data — too big for the internet, flown on drives</div></div><div><div class="v">55M ly</div><div class="l">Distance to M87&#42;, the first target</div></div></div>',
   "__STATS_LIGO__":

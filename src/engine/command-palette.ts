@@ -15,9 +15,9 @@ const flat = (s: string) =>
   s.replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim();
 
 const ORDER = [
-  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
-  "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
-  "double-helix", "crispr", "ancient-dna", "penicillin",
+  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background", "expanding-universe",
+  "first-exoplanet", "double-slit", "periodic-table", "age-of-earth", "plate-tectonics",
+  "double-helix", "crispr", "ancient-dna", "penicillin", "vaccination",
 ];
 
 /** A random discovery URL — powers "Surprise me" everywhere. */

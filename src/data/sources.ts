@@ -72,6 +72,21 @@ const SOURCES: SourceMap = {
     { by: "R. Barrangou et al.", title: "CRISPR Provides Acquired Resistance Against Viruses in Prokaryotes", where: "Science, 2007" },
     { by: "E. Charpentier & J. A. Doudna", title: "The Nobel Prize in Chemistry", where: "awarded 2020" },
   ],
+  "expanding-universe": [
+    { by: "E. Hubble", title: "A Relation between Distance and Radial Velocity among Extra-Galactic Nebulae", where: "PNAS, 1929" },
+    { by: "G. Lemaître", title: "Un Univers homogène de masse constante et de rayon croissant…", where: "Annales de la Société Scientifique de Bruxelles, 1927" },
+    { by: "H. S. Leavitt & E. C. Pickering", title: "Periods of 25 Variable Stars in the Small Magellanic Cloud", where: "Harvard College Observatory Circular, 1912" },
+  ],
+  "periodic-table": [
+    { by: "D. Mendeleev", title: "On the Relationship of the Properties of the Elements to their Atomic Weights", where: "Zeitschrift für Chemie, 1869" },
+    { by: "D. Mendeleev", title: "The Periodic Law of the Chemical Elements (predicting eka-silicon)", where: "Journal of the Chemical Society, 1871" },
+    { by: "H. G. J. Moseley", title: "The High-Frequency Spectra of the Elements (atomic number)", where: "Philosophical Magazine, 1913" },
+  ],
+  "vaccination": [
+    { by: "E. Jenner", title: "An Inquiry into the Causes and Effects of the Variolae Vaccinae", where: "1798" },
+    { by: "F. Fenner, D. A. Henderson, I. Arita, Z. Ježek & I. D. Ladnyi", title: "Smallpox and its Eradication", where: "World Health Organization, 1988" },
+    { by: "World Health Organization", title: "Declaration of Global Eradication of Smallpox", where: "Resolution WHA33.3, 1980" },
+  ],
 };
 
 export default SOURCES;

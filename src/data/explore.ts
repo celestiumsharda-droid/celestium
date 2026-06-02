@@ -14,6 +14,9 @@ const EXPLORE: readonly ExploreCard[] = [
   { field: "Earth Science",      title: "The discovery that the ground is moving.",     slug: "plate-tectonics",      cta: "Read the discovery" },
   { field: "Medicine",           title: "The mould that beat infection.",               slug: "penicillin",           cta: "Read the discovery" },
   { field: "Biotechnology",      title: "We learned to edit the code of life.",         slug: "crispr",               cta: "Read the discovery" },
+  { field: "Cosmology",          title: "The night we learned the universe is growing.", slug: "expanding-universe",  cta: "Read the discovery" },
+  { field: "Chemistry",          title: "The table that predicted the unknown.",        slug: "periodic-table",       cta: "Read the discovery" },
+  { field: "Medicine",           title: "How we taught the body to remember a disease.", slug: "vaccination",         cta: "Read the discovery" },
 ];
 
 export default EXPLORE;
