@@ -5,32 +5,8 @@
 
 body { line-height: 1.7; }
 
-/* ---- nav ---- */
-nav {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 50;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 32px;
-  background: var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-edge);
-  box-shadow: inset 0 1px 0 var(--glass-spec);
-}
-.brand { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-size: 18px; letter-spacing: .16em; font-weight: 600; }
-.mark { width: 28px; height: 28px; }
-.back { font-family: var(--mono); font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--mut); transition: .3s; }
-.back:hover { color: var(--ink); }
-.back span { display: inline-block; transition: .3s; margin-right: 8px; }
-.back:hover span { transform: translateX(-5px); }
-
-/* mobile-nav: hide back link, show burger */
-@media (max-width: 720px) { .back { display: none; } #burger { display: flex; } }
-@media (max-width: 640px) {
-  nav { padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); gap: 6px; }
-  .brand { font-size: 16px; letter-spacing: .1em; gap: 10px; min-width: 0; }
-  .mark { width: 26px; height: 26px; flex: 0 0 auto; }
-}
+/* nav is fully defined in tokens.css; inner pages just keep it always-solid
+   via class="solid" in markup. */
 
 /* ---- article hero: full-bleed cinematic banner, then the title block ---- */
 .ahero-media {
@@ -650,3 +626,55 @@ footer { border-top: 1px solid var(--line-soft); padding: 80px 0 46px; }
 #burger span:last-child  { width: 16px; }
 #burger.x span:first-child { width: 24px; }
 #burger.x span:last-child  { width: 24px; }
+
+/* =====================================================================
+   JOIN page — follow / subscribe / contribute
+   ===================================================================== */
+.join {
+  max-width: 1080px; margin: 0 auto; padding: 0 32px 60px;
+  display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr);
+}
+.join-card:first-child { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .join { grid-template-columns: 1fr; padding: 0 22px 50px; }
+  .join-card:first-child { grid-column: auto; }
+}
+.join-card {
+  background: var(--glass-tint);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-spec);
+  border-radius: 16px;
+  padding: clamp(28px, 4vw, 44px);
+}
+.join-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+.join-card h2 { font-family: var(--display); font-weight: 400; font-size: clamp(1.7rem, 3.2vw, 2.4rem); line-height: 1.05; letter-spacing: -.02em; margin-bottom: 16px; }
+.join-card > p { color: var(--mut); max-width: 54ch; line-height: 1.65; }
+
+.join-socials { margin-top: 26px; }
+.social {
+  display: flex; align-items: center; gap: 18px;
+  padding: 18px 22px; border: 1px solid var(--line-soft); border-radius: 12px;
+  transition: .35s; max-width: 440px;
+}
+.social:hover { border-color: var(--accent); background: var(--accent-dim); transform: translateY(-2px); }
+.social-ic { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 11px; background: rgba(169,188,255,.10); color: var(--ink); }
+.social-ic svg { width: 23px; height: 23px; }
+.social-tx { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.social-tx b { font-family: var(--body); font-weight: 500; font-size: 1.05rem; color: var(--ink); }
+.social-tx small { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+.social-go { color: var(--mut); transition: .3s; }
+.social:hover .social-go { color: var(--accent); transform: translateX(4px); }
+
+.join-form { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+.join-form input {
+  flex: 1; min-width: 220px;
+  background: rgba(255, 255, 255, .03); border: 1px solid var(--line);
+  border-radius: 2px; padding: 15px 18px; color: var(--ink);
+  font-family: var(--body); font-size: 1rem;
+}
+.join-form input::placeholder { color: var(--dim); }
+.join-form input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.join-form .btn { flex: 0 0 auto; }
+.join-note { margin-top: 16px; min-height: 1.2em; font-size: .96rem; line-height: 1.5; color: var(--mut); max-width: 52ch; }
+.join-note[data-state="ok"] { color: var(--accent); }
+.join-note[data-state="warn"] { color: var(--star); }

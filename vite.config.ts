@@ -59,6 +59,7 @@ export default defineConfig({
         discovery: resolve(__dirname, "src/discovery.html"),
         discoveriesIndex: resolve(__dirname, "src/discoveries/index.html"),
         about: resolve(__dirname, "src/about/index.html"),
+        join: resolve(__dirname, "src/join/index.html"),
         notfound: resolve(__dirname, "src/404.html"),
       },
     },

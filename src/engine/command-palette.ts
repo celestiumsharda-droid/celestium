@@ -45,6 +45,7 @@ function buildItems(): Item[] {
     { title: "Cosmic timeline", sub: "13.8 billion years", href: "/#timeline", kind: "page", q: "timeline history big bang cosmic" },
     { title: "Tonight's sky", sub: "Live above you now", href: "/#sky-sec", kind: "page", q: "tonight sky live planets aurora iss" },
     { title: "About Celestium", sub: "How it's made", href: "/about/", kind: "page", q: "about methodology how made philosophy sources standards" },
+    { title: "Join us", sub: "Follow, subscribe, contribute", href: "/join/", kind: "page", q: "join us follow instagram social newsletter subscribe contribute pitch contact community" },
   ];
   return [...items, ...pages];
 }

@@ -115,6 +115,73 @@ main { position: relative; z-index: 2; }
   transform: scaleX(0); transform-origin: 0 50%; will-change: transform;
 }
 
+/* =====================================================================
+   GLOBAL NAVIGATION — one canonical bar shared by every page, so the
+   header is identical everywhere and only content ever needs to change.
+   Transparent over a hero by default; add .solid (on scroll, or always
+   on inner pages) to bring up the glass.
+   ===================================================================== */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 32px;
+  transition: padding .5s, background .5s, backdrop-filter .5s, border-color .5s;
+}
+nav.solid {
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-spec);
+  padding: 14px 32px;
+}
+.brand {
+  display: flex; align-items: center; gap: 13px;
+  font-family: var(--display); font-size: 19px;
+  letter-spacing: .16em; font-weight: 600; color: var(--ink);
+}
+.mark { width: 30px; height: 30px; flex: 0 0 auto; }
+.navlinks {
+  display: flex; gap: 30px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .26em; text-transform: uppercase;
+  color: var(--mut);
+}
+.navlinks a { position: relative; white-space: nowrap; transition: color .3s; }
+.navlinks a:hover { color: var(--ink); }
+.navlinks a[aria-current="page"] { color: var(--ink); }
+.navlinks a::after {
+  content: ""; position: absolute; left: 0; bottom: -6px;
+  height: 1px; width: 0; background: var(--accent); transition: width .35s;
+}
+.navlinks a:hover::after,
+.navlinks a[aria-current="page"]::after { width: 100%; }
+@media (max-width: 920px) {
+  .navlinks { display: none; }
+  #burger { display: flex; }
+}
+@media (max-width: 640px) {
+  nav, nav.solid {
+    padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    gap: 6px;
+  }
+  .brand { font-size: 16px; letter-spacing: .1em; gap: 10px; min-width: 0; }
+  .mark { width: 26px; height: 26px; }
+}
+
+/* shared button primitive (hero CTAs, explore CTA, join page) */
+.btn {
+  display: inline-block;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .24em; text-transform: uppercase;
+  padding: 16px 30px;
+  border: 1px solid var(--line); border-radius: 2px;
+  transition: .4s; cursor: pointer;
+  background: none; color: var(--ink);
+}
+.btn:hover { border-color: var(--accent); background: var(--accent-dim); letter-spacing: .3em; }
+.btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); }
+.btn.fill:hover { background: var(--accent); border-color: var(--accent); }
+
 /* mobile menu (used by both pages) */
 #menu {
   position: fixed; inset: 0; z-index: 48;

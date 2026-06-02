@@ -290,7 +290,8 @@ async function buildExplore() {
   exploreBuilt = true;
   const DISCOVERIES = (await import("../data/discoveries")).default;
   const frag = document.createDocumentFragment();
-  EXPLORE.forEach(g => {
+  // A curated opening set — the full archive lives on /discoveries/.
+  EXPLORE.slice(0, 6).forEach(g => {
     const a = document.createElement("a");
     a.className = "cell";
     a.href = `/discoveries/${g.slug}/`;
