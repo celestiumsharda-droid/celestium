@@ -119,7 +119,7 @@ nav.solid {
   background: none; color: var(--ink);
 }
 .btn:hover { border-color: var(--accent); background: var(--accent-dim); letter-spacing: .3em; }
-.btn.fill { background: var(--ink); color: #06070b; border-color: var(--ink); }
+.btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); }
 .btn.fill:hover { background: var(--accent); border-color: var(--accent); }
 
 .scrollcue {
@@ -164,7 +164,9 @@ section { position: relative; padding: 140px 0; }
 .num { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: .34em; }
 
 /* ---- perspective: 3D cosmic map ---- */
-#scale.perspective { padding: 0; border-top: 1px solid var(--line-soft); }
+/* always a dark window into space (the WebGL canvas is transparent, so
+   it needs a dark backdrop of its own — matters in light mode) */
+#scale.perspective { padding: 0; border-top: 1px solid var(--line-soft); background: #050609; }
 .persp-track { position: relative; height: 620vh; }
 @media (max-width: 900px) { .persp-track { height: 560vh; } }
 .persp-sticky {
@@ -297,6 +299,26 @@ section { position: relative; padding: 140px 0; }
   }
 }
 
+/* Short / landscape viewports (e.g. a phone turned sideways): the desktop
+   absolute layout would overlap in ~390px of height. Compact the HUD —
+   info card top-left, controls bottom, hide the decorative heading. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .persp-hud .persp-head { display: none; }
+  .persp-info {
+    top: 66px; bottom: auto; left: clamp(16px, 3vw, 40px); right: auto;
+    max-width: min(44ch, 54vw); padding: 12px 16px;
+  }
+  .persp-info .cm-live { margin-bottom: 6px; }
+  .persp-info h3 { font-size: 1.3rem; margin: .08em 0 .12em; }
+  .persp-info .cm-readout { font-size: 11px; margin-bottom: 6px; }
+  .persp-info p {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: .86rem; line-height: 1.45;
+  }
+  .persp-foot { bottom: 12px; left: clamp(16px, 3vw, 40px); right: clamp(16px, 3vw, 40px); }
+  .persp-hint { display: none; }
+}
+
 /* Fallback (no WebGL / no JS): normal-flow content in place of the canvas. */
 .persp-fallback {
   position: absolute; inset: 0;
@@ -368,7 +390,7 @@ section { position: relative; padding: 140px 0; }
    dimmed, centred background BEHIND the prose rather than a foreground
    block that covers it. Layering is enforced with z-index and the
    black hole is made non-interactive so it never eats a tap. */
-#story { padding: 0; border-top: 1px solid var(--line-soft); }
+#story { padding: 0; border-top: 1px solid var(--line-soft); background: #050609; }
 .scrolly { display: grid; grid-template-columns: 1fr 1fr; }
 .sticky {
   position: sticky; top: 0;
@@ -456,7 +478,7 @@ section { position: relative; padding: 140px 0; }
   padding: 11px 20px; border-radius: 2px;
   cursor: pointer; transition: .35s; white-space: nowrap;
 }
-.toggle button.on { background: var(--ink); color: #06070b; }
+.toggle button.on { background: var(--ink); color: var(--void); }
 @media (max-width: 560px) {
   .toggle { width: 100%; }
   .toggle button { flex: 1; min-height: 44px; padding: 10px 4px; font-size: 9px; letter-spacing: .04em; }

@@ -67,6 +67,88 @@
   .glass { background: var(--glass-tint-strong); }
 }
 
+/* =====================================================================
+   LIGHT THEME — an option, not the default. The brand stays dark first;
+   light flips every token below. Surfaces that are intrinsically "a
+   window into space" (the cosmic map) re-declare the dark palette so
+   they keep working.
+   ===================================================================== */
+html[data-theme="light"] {
+  --void: #eef0f6;
+  --deep: #e7eaf2;
+  --panel: #e9ecf4;
+  --panel2: #dfe3ee;
+  --ink: #15181f;
+  --mut: #545c6e;
+  --dim: #868ea0;
+  --faint: #c4c9d4;
+  --line: rgba(12, 16, 26, 0.14);
+  --line-soft: rgba(12, 16, 26, 0.07);
+  --accent: #4a5bd0;
+  --accent-dim: rgba(74, 91, 208, 0.14);
+  --star: #997714;
+  --glass-tint: rgba(255, 255, 255, 0.58);
+  --glass-tint-strong: rgba(255, 255, 255, 0.78);
+  --glass-edge: rgba(12, 16, 26, 0.10);
+  --glass-spec: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 16px 40px rgba(20, 24, 44, 0.14);
+}
+html[data-theme="light"] body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, #ffffff, transparent 60%),
+    var(--void);
+}
+html[data-theme="light"] ::selection { background: var(--accent); color: #fff; }
+html[data-theme="light"] .grain { mix-blend-mode: multiply; opacity: .03; }
+/* brand mark + decorative line art are light-on-dark by default */
+html[data-theme="light"] .mark ellipse { stroke: var(--ink); }
+html[data-theme="light"] .mark circle { fill: var(--ink); }
+html[data-theme="light"] .mark path { fill: var(--star); }
+/* the "on" pill/segment needs a real fill on light */
+html[data-theme="light"] .seg button.on,
+html[data-theme="light"] .cat-chip.on {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 2px 10px rgba(74,91,208,.3);
+}
+html[data-theme="light"] .cmdk-item.on { background: rgba(12,16,26,.06); }
+/* hero orbit rings are light-on-dark line art — darken for light bg */
+html[data-theme="light"] .orbit svg { stroke: rgba(20,24,44,.22); }
+html[data-theme="light"] .scrollcue .ln { background: linear-gradient(var(--dim), transparent); }
+
+/* The cosmic map and the black-hole story are always dark windows into
+   space — re-declare the dark palette inside them so their text/glass
+   stay legible over the dark backdrop regardless of the page theme. */
+html[data-theme="light"] .perspective,
+html[data-theme="light"] #story {
+  --void: #050609;
+  --deep: #0a0c12;
+  --panel: #10131c;
+  --panel2: #161a25;
+  --ink: #f3f5fb;
+  --mut: #9aa2b4;
+  --dim: #5a6273;
+  --accent: #a9bcff;
+  --star: #f2e6c4;
+  --line: rgba(243,245,251,.12);
+  --line-soft: rgba(243,245,251,.06);
+  --glass-tint: rgba(13,16,24,.55);
+  --glass-edge: rgba(255,255,255,.10);
+  --glass-spec: rgba(255,255,255,.16);
+  --glass-shadow: 0 16px 48px rgba(0,0,0,.45);
+}
+
+/* nav theme toggle button (sits with the other nav icon buttons) */
+.themetoggle {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); transition: color .3s;
+  z-index: 55;
+}
+.themetoggle svg { width: 18px; height: 18px; }
+.themetoggle:hover { color: var(--ink); }
+@media (max-width: 640px) { .themetoggle { width: 44px; height: 44px; } }
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
@@ -252,7 +334,7 @@ main { position: relative; z-index: 2; }
 .skip {
   position: absolute; left: 16px; top: 16px;
   z-index: 100;
-  background: var(--ink); color: #06070b;
+  background: var(--ink); color: var(--void);
   font-family: var(--mono); font-size: 11px;
   letter-spacing: .2em; text-transform: uppercase;
   padding: 12px 18px;

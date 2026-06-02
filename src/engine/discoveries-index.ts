@@ -10,6 +10,7 @@ import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
 import { initCommandPalette } from "./command-palette";
+import { initTheme } from "./theme";
 import { cardVisual } from "./card-visual";
 import DISCOVERIES from "../data/discoveries";
 
@@ -126,5 +127,6 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 /* ambient sound (opt-in) */
 initSound($("sound"), { pad: true });
 
-/* ⌘K command palette */
+/* ⌘K command palette + theme toggle */
 initCommandPalette();
+initTheme();
