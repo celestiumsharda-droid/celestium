@@ -8,7 +8,7 @@
  */
 
 const KEY = "celestium:sound";
-type Pad = { master: GainNode; oscs: OscillatorNode[]; lfo: OscillatorNode };
+type Pad = { master: GainNode; nodes: OscillatorNode[] };
 
 let ctx: AudioContext | null = null;
 let pad: Pad | null = null;
@@ -31,42 +31,61 @@ function audio(): AudioContext {
 function startPad(): void {
   if (pad) return;
   const c = audio();
+  const nodes: OscillatorNode[] = [];
+
   const master = c.createGain();
   master.gain.value = 0;
   master.connect(c.destination);
+
+  // a touch of space — a soft feedback delay
+  const delay = c.createDelay(1);
+  delay.delayTime.value = 0.34;
+  const fb = c.createGain(); fb.gain.value = 0.26;
+  const wet = c.createGain(); wet.gain.value = 0.45;
+  delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(master);
 
   const filter = c.createBiquadFilter();
   filter.type = "lowpass";
   filter.frequency.value = 520;
   filter.Q.value = 0.6;
-  filter.connect(master);
+  filter.connect(master); filter.connect(delay);
 
-  // a calm open-fifths drone, very quiet
+  // a calm open-fifths drone, very quiet, spread across the stereo field
   const freqs = [55, 82.41, 110, 164.81];
-  const oscs = freqs.map((f, i) => {
+  freqs.forEach((f, i) => {
     const o = c.createOscillator();
     o.type = i % 2 ? "sine" : "triangle";
     o.frequency.value = f;
     o.detune.value = (i - 1.5) * 4;
-    const g = c.createGain();
-    g.gain.value = 0.16;
-    o.connect(g);
-    g.connect(filter);
-    o.start();
-    return o;
+    const g = c.createGain(); g.gain.value = 0.15;
+    const pan = c.createStereoPanner(); pan.pan.value = (i % 2 ? 1 : -1) * 0.32;
+    o.connect(g); g.connect(pan); pan.connect(filter);
+    o.start(); nodes.push(o);
+  });
+
+  // a high shimmer (an octave + a fifth up) that breathes in and out
+  const air = c.createBiquadFilter();
+  air.type = "lowpass"; air.frequency.value = 2400; air.connect(master); air.connect(delay);
+  [220, 329.63].forEach((f, i) => {
+    const o = c.createOscillator(); o.type = "sine"; o.frequency.value = f; o.detune.value = (i ? 1 : -1) * 5;
+    const g = c.createGain(); g.gain.value = 0.028;
+    const pan = c.createStereoPanner(); pan.pan.value = (i ? 1 : -1) * 0.5;
+    const swell = c.createOscillator(); swell.frequency.value = 0.03 + i * 0.013;
+    const swellAmt = c.createGain(); swellAmt.gain.value = 0.026;
+    swell.connect(swellAmt); swellAmt.connect(g.gain); swell.start(); nodes.push(swell);
+    o.connect(g); g.connect(pan); pan.connect(air);
+    o.start(); nodes.push(o);
   });
 
   // slow filter sweep for movement
   const lfo = c.createOscillator();
   lfo.frequency.value = 0.045;
-  const lfoGain = c.createGain();
-  lfoGain.gain.value = 160;
-  lfo.connect(lfoGain);
-  lfoGain.connect(filter.frequency);
-  lfo.start();
+  const lfoGain = c.createGain(); lfoGain.gain.value = 160;
+  lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+  lfo.start(); nodes.push(lfo);
 
-  master.gain.linearRampToValueAtTime(0.05, c.currentTime + 2.5);
-  pad = { master, oscs, lfo };
+  master.gain.linearRampToValueAtTime(0.05, c.currentTime + 3);
+  pad = { master, nodes };
 }
 
 function stopPad(): void {
@@ -76,7 +95,7 @@ function stopPad(): void {
   pad = null;
   p.master.gain.cancelScheduledValues(c.currentTime);
   p.master.gain.linearRampToValueAtTime(0, c.currentTime + 1.2);
-  setTimeout(() => { p.oscs.forEach(o => o.stop()); p.lfo.stop(); }, 1400);
+  setTimeout(() => { p.nodes.forEach(n => { try { n.stop(); } catch (_e) { /* already stopped */ } }); }, 1400);
 }
 
 /** A short, soft UI tick. No-op unless sound is enabled. */

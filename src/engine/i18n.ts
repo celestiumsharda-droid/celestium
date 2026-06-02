@@ -38,8 +38,28 @@ const en: Dict = {
   "sources.heading": "Sources & further reading",
 };
 
-const DICTS: Record<string, Dict> = { en };
-// DICTS.fr = fr;  // ← register additional locales here
+// A complete second locale, to prove the scaffold end-to-end. It is
+// registered but not yet selected anywhere — activate it with
+// setLocale("es") or by serving the page with <html lang="es">. Wiring a
+// public language switcher + translating the page-baked HTML and the
+// article prose (src/data) is the remaining work for a full locale.
+const es: Dict = {
+  "depth.glance": "Vistazo",
+  "depth.curious": "Curioso",
+  "depth.deep": "A fondo",
+  "depth.glance.tag": "El vistazo — la esencia en veinte segundos",
+  "depth.curious.tag": "La lectura curiosa — la historia, con el mecanismo",
+  "depth.deep.tag": "El análisis profundo — la física completa y las salvaguardas",
+  "share.quote": "Compartir cita",
+  "share.saved": "Tarjeta guardada · texto copiado",
+  "share.copied": "Cita copiada al portapapeles",
+  "surprise": "Sorpréndeme",
+  "read": "Leer",
+  "sources.heading": "Fuentes y lecturas adicionales",
+};
+
+const DICTS: Record<string, Dict> = { en, es };
+// DICTS.fr = fr;  // ← register additional locales the same way
 
 const SAVED_KEY = "celestium:locale";
 

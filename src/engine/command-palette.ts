@@ -8,6 +8,7 @@
  * initCommandPalette() once.
  */
 import DISCOVERIES from "../data/discoveries";
+import { t } from "./i18n";
 
 interface Item { title: string; sub: string; href: string; q: string; kind: "article" | "page"; }
 
@@ -37,7 +38,7 @@ function buildItems(): Item[] {
     items.push({ title, sub: d.field, href: `/discoveries/${slug}/`, kind: "article", q: (title + " " + d.field + " " + flat(d.dek)).toLowerCase() });
   }
   const pages: Item[] = [
-    { title: "Surprise me", sub: "Open a random discovery", href: "#random", kind: "page", q: "surprise me random shuffle lucky any discovery roll dice" },
+    { title: t("surprise"), sub: "Open a random discovery", href: "#random", kind: "page", q: "surprise me random shuffle lucky any discovery roll dice" },
     { title: "All discoveries", sub: "The series index", href: "/discoveries/", kind: "page", q: "all discoveries series index browse" },
     { title: "Home", sub: "The front page", href: "/", kind: "page", q: "home front cover" },
     { title: "The universe map", sub: "You are here", href: "/#scale", kind: "page", q: "universe map perspective scale you are here zoom" },

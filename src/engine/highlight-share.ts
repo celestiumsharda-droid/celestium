@@ -5,6 +5,7 @@
  */
 
 import { makeQuoteCard } from "./quote-card";
+import { t } from "./i18n";
 
 const ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>';
@@ -27,7 +28,7 @@ export function initHighlightShare(): void {
   btn.type = "button";
   btn.className = "hl-share";
   btn.setAttribute("aria-label", "Share this quote");
-  btn.innerHTML = `${ICON}<span>Share quote</span>`;
+  btn.innerHTML = `${ICON}<span>${t("share.quote")}</span>`;
   btn.hidden = true;
   document.body.appendChild(btn);
 
@@ -85,12 +86,12 @@ export function initHighlightShare(): void {
         a.click();
         URL.revokeObjectURL(href);
         try { await navigator.clipboard.writeText(`${text}\n${url}`); } catch (_e) { /* clipboard blocked */ }
-        toast("Quote card saved · text copied");
+        toast(t("share.saved"));
       } else if (navigator.share) {
         await navigator.share({ title: "Celestium", text, url });
       } else {
         await navigator.clipboard.writeText(`${text}\n${url}`);
-        toast("Quote copied to clipboard");
+        toast(t("share.copied"));
       }
     } catch (_e) { /* user cancelled / blocked */ }
     btn.classList.remove("busy");
