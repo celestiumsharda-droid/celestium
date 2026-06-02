@@ -235,8 +235,133 @@ function enhanceChirp(fig: HTMLElement): void {
   });
 }
 
+/* ---- CMB blackbody temperature slider ----
+   Drag the temperature and watch the Planck curve shift across the
+   spectrum — from a sun-like star's visible glow down to the 2.7 K
+   microwave hum of the cosmic background. */
+function blackbodyColor(T: number): string {
+  if (T < 800) return "#0b0708";                 // below visible — essentially black
+  const t = Math.max(1000, Math.min(40000, T)) / 100;
+  let r: number, g: number, b: number;
+  if (t <= 66) { r = 255; g = 99.47 * Math.log(t) - 161.12; }
+  else { r = 329.7 * Math.pow(t - 60, -0.1332); g = 288.12 * Math.pow(t - 60, -0.0755); }
+  if (t >= 66) b = 255; else if (t <= 19) b = 0; else b = 138.52 * Math.log(t - 10) - 305.04;
+  const cl = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  return `rgb(${cl(r)},${cl(g)},${cl(b)})`;
+}
+function enhanceCMB(fig: HTMLElement): void {
+  if (fig.dataset["enhanced"]) return;
+  fig.dataset["enhanced"] = "1";
+
+  const X0 = 64, X1 = 684, Y0 = 248, Y1 = 44;
+  const lmin = Math.log10(1e-7), lmax = Math.log10(1.2e-2);   // 100 nm → 12 mm
+  const px = (lg: number) => X0 + ((lg - lmin) / (lmax - lmin)) * (X1 - X0);
+  const py = (f: number) => Y0 + f * (Y1 - Y0);
+  const H = 6.626e-34, C = 3e8, K = 1.381e-23;
+  const planck = (lam: number, T: number) => (1 / Math.pow(lam, 5)) / (Math.exp((H * C) / (lam * K * T)) - 1);
+  function path(T: number): string {
+    const pts: [number, number][] = [];
+    let mx = 0;
+    for (let i = 0; i <= 170; i++) {
+      const lg = lmin + (i / 170) * (lmax - lmin);
+      const b = planck(Math.pow(10, lg), T);
+      pts.push([lg, b]); if (b > mx) mx = b;
+    }
+    return pts.map(([lg, b], i) => `${i ? "L" : "M"} ${px(lg).toFixed(1)} ${py(mx > 0 ? b / mx : 0).toFixed(1)}`).join(" ");
+  }
+  const bands: [number, number, string][] = [
+    [1e-7, 4e-7, "UV"], [4e-7, 7e-7, "VISIBLE"], [7e-7, 1e-4, "INFRARED"], [1e-4, 1.2e-2, "MICROWAVE"],
+  ];
+
+  let svg = '<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An interactive blackbody spectrum. Drag the temperature to shift the Planck curve across the spectrum.">';
+  for (const [a, b, name] of bands) {
+    const xa = px(Math.log10(a)), xb = px(Math.log10(b));
+    svg += `<rect x="${xa.toFixed(0)}" y="${Y1}" width="${(xb - xa).toFixed(0)}" height="${Y0 - Y1}" fill="${name === "VISIBLE" ? "rgba(169,188,255,.05)" : "rgba(243,245,251,.015)"}"/>`;
+    svg += `<text x="${((xa + xb) / 2).toFixed(0)}" y="${Y0 + 18}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="9" text-anchor="middle" letter-spacing="1">${name}</text>`;
+  }
+  svg += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/>`;
+  svg += `<path class="if-cmbfill" d="${path(2.725)} L ${X1} ${Y0} L ${X0} ${Y0} Z" fill="rgba(169,188,255,.08)"/>`;
+  svg += `<path class="if-cmbcurve" d="${path(2.725)}" fill="none" stroke="#a9bcff" stroke-width="2.4"/>`;
+  svg += `<text x="${X0 + 6}" y="${Y1 + 2}" fill="#5a6273" font-family="IBM Plex Mono,monospace" font-size="9">brightness</text>`;
+  svg += "</svg>";
+
+  const cap = fig.querySelector("figcaption")?.outerHTML ?? "";
+  fig.innerHTML =
+    `<div class="if-stage">${svg}</div>` +
+    `<div class="if-controls">` +
+    `<div class="if-cmbrow"><span class="if-swatch"></span>` +
+    `<input class="if-slider if-cmbslider" type="range" min="0" max="1" step="0.001" value="0" aria-label="Blackbody temperature"></div>` +
+    `<div class="if-time"><span class="if-cmbt">2.7 K</span> &nbsp;·&nbsp; <span class="if-cmbnote">the cosmic microwave background today</span></div>` +
+    `</div>` + cap;
+  fig.classList.add("ifig");
+
+  const curve = fig.querySelector(".if-cmbcurve") as SVGPathElement;
+  const fill = fig.querySelector(".if-cmbfill") as SVGPathElement;
+  const swatch = fig.querySelector(".if-swatch") as HTMLElement;
+  const tEl = fig.querySelector(".if-cmbt") as HTMLElement;
+  const noteEl = fig.querySelector(".if-cmbnote") as HTMLElement;
+  const slider = fig.querySelector(".if-cmbslider") as HTMLInputElement;
+
+  // slider 0..1 maps log-temperature 2.725 K → 6500 K
+  const loT = Math.log10(2.725), hiT = Math.log10(6500);
+  function update(s: number): void {
+    const T = Math.pow(10, loT + s * (hiT - loT));
+    curve.setAttribute("d", path(T));
+    fill.setAttribute("d", `${path(T)} L ${X1} ${Y0} L ${X0} ${Y0} Z`);
+    swatch.style.background = blackbodyColor(T);
+    tEl.textContent = T < 100 ? `${T.toFixed(1)} K` : `${Math.round(T).toLocaleString()} K`;
+    const peak = 2.898e-3 / T; // Wien, metres
+    noteEl.textContent =
+      peak > 1e-4 ? "the cosmic microwave background today"
+      : peak > 7e-7 ? "warm matter — glowing in infrared"
+      : peak > 4e-7 ? "a star like the Sun — visible light"
+      : "a hot, blue-white star — peaking in the ultraviolet";
+  }
+  slider.addEventListener("input", () => update(parseFloat(slider.value)));
+  update(0);
+}
+
+/* ---- DNA base-pairing builder ----
+   Click a base; its complement snaps into the opposite strand. A pairs
+   with T, G with C — read one strand and you know the other. */
+function enhanceHelix(fig: HTMLElement): void {
+  if (fig.dataset["enhanced"]) return;
+  fig.dataset["enhanced"] = "1";
+
+  const COMP: Record<string, string> = { A: "T", T: "A", G: "C", C: "G" };
+  const COL: Record<string, string> = { A: "#a9bcff", T: "#f2e6c4", G: "#9ee6c4", C: "#ff9ec4" };
+  let seq = ["A", "T", "G", "C", "T", "A"];
+
+  const cap = fig.querySelector("figcaption")?.outerHTML ?? "";
+  fig.innerHTML =
+    `<div class="if-stage dna-stage"><div class="dna-display" aria-live="polite"></div></div>` +
+    `<div class="if-controls">` +
+    `<div class="dna-keys">` +
+    ["A", "T", "G", "C"].map(x => `<button class="dna-key" type="button" data-b="${x}" style="--bc:${COL[x]}" aria-label="Add base ${x}">${x}</button>`).join("") +
+    `<button class="dna-key dna-clear" type="button">Clear</button></div>` +
+    `<div class="if-time">Click a base — its partner snaps into the opposite strand. <b style="color:#a9bcff">A</b>–<b style="color:#f2e6c4">T</b>, <b style="color:#9ee6c4">G</b>–<b style="color:#ff9ec4">C</b>.</div>` +
+    `</div>` + cap;
+  fig.classList.add("ifig");
+
+  const disp = fig.querySelector(".dna-display") as HTMLElement;
+  function render(): void {
+    disp.innerHTML = seq.length
+      ? seq.map(b =>
+          `<div class="dna-col"><span class="dna-b" style="color:${COL[b]}">${b}</span>` +
+          `<span class="dna-rung"></span>` +
+          `<span class="dna-b" style="color:${COL[COMP[b]!]}">${COMP[b]}</span></div>`).join("")
+      : `<div class="dna-empty">Build a strand →</div>`;
+  }
+  fig.querySelectorAll<HTMLButtonElement>(".dna-key[data-b]").forEach(k =>
+    k.addEventListener("click", () => { if (seq.length < 24) { seq.push(k.dataset["b"]!); render(); } }));
+  (fig.querySelector(".dna-clear") as HTMLButtonElement).addEventListener("click", () => { seq = []; render(); });
+  render();
+}
+
 export function initInteractiveFigures(root: ParentNode): void {
   root.querySelectorAll<HTMLElement>('figure[data-fig="decay"]').forEach(enhanceDecay);
   root.querySelectorAll<HTMLElement>('figure[data-fig="dslit"]').forEach(enhanceDoubleSlit);
   root.querySelectorAll<HTMLElement>('figure[data-fig="chirp"]').forEach(enhanceChirp);
+  root.querySelectorAll<HTMLElement>('figure[data-fig="cmb"]').forEach(enhanceCMB);
+  root.querySelectorAll<HTMLElement>('figure[data-fig="helix"]').forEach(enhanceHelix);
 }

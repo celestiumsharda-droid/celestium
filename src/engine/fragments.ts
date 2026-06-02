@@ -75,7 +75,7 @@ function dslitFigure(): string {
 /** DNA base-pairing ladder: complementary A–T and G–C rungs. */
 function helixFigure(): string {
   const xL = 150, xR = 570, top = 40, gap = 34;
-  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DNA ladder: the two backbones joined by complementary base pairs, A with T and G with C.">';
+  let s = '<figure data-fig="helix"><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DNA ladder: the two backbones joined by complementary base pairs, A with T and G with C.">';
   // backbones
   s += `<line x1="${xL}" y1="${top - 8}" x2="${xL}" y2="${top + gap * 6 + 8}" stroke="#dfe6ff" stroke-width="3" opacity=".7"/>`;
   s += `<line x1="${xR}" y1="${top - 8}" x2="${xR}" y2="${top + gap * 6 + 8}" stroke="#dfe6ff" stroke-width="3" opacity=".7"/>`;
@@ -172,7 +172,7 @@ function cmbFigure(): string {
     curve += `${i === 0 ? "M" : "L"} ${px(x).toFixed(1)} ${py(f).toFixed(1)} `;
   }
   const area = `${curve}L ${px(xMax).toFixed(1)} ${Y0} L ${px(0).toFixed(1)} ${Y0} Z`;
-  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The cosmic microwave background spectrum: measured points lying on a single-temperature blackbody curve.">';
+  let s = '<figure data-fig="cmb"><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The cosmic microwave background spectrum: measured points lying on a single-temperature blackbody curve.">';
   s += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#363c4a"/>`;
   s += `<path d="${area}" fill="rgba(169,188,255,.08)"/>`;
   s += `<path d="${curve}" fill="none" stroke="#a9bcff" stroke-width="2"/>`;
