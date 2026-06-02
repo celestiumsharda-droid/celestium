@@ -2,11 +2,9 @@ import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
 import { initSound, playClick } from "./sound";
-import { initCommandPalette } from "./command-palette";
 import { cardVisual } from "./card-visual";
 import { playIntro } from "./intro";
 import { attachSpotlight } from "./spotlight";
-import DISCOVERIES from "../data/discoveries";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -280,25 +278,45 @@ if (skySec && "IntersectionObserver" in window) {
 /* ---------- ambient sound (opt-in) ---------- */
 initSound($("sound"), { pad: true });
 
-/* ---------- explore grid ---------- */
+/* ---------- explore grid (deferred) ----------
+   The grid lives well below the fold and is the only thing on the home
+   that needs the full discovery dataset (~130KB of article bodies). We
+   dynamic-import it as the section approaches, so it never weighs on the
+   first paint or the main thread during the critical window. */
 const grid = $("grid");
-EXPLORE.forEach(g => {
-  const a = document.createElement("a");
-  a.className = "cell";
-  a.href = `/discoveries/${g.slug}/`;
-  const hi = DISCOVERIES[g.slug]?.heroImage;
-  const art = hi
-    ? `<img class="cat-photo" src="/img/${hi.base}-720.webp" srcset="/img/${hi.base}-720.webp 720w, /img/${hi.base}-1280.webp 1280w" sizes="(max-width:900px) 100vw, 420px" alt="" loading="lazy" decoding="async">`
-    : cardVisual(g.slug, g.field);
-  a.innerHTML =
-    `<div class="cell-art">${art}</div>` +
-    `<div class="cell-in">` +
-    `<div class="field">${g.field}</div><h3>${g.title}</h3>` +
-    `<div class="read">${g.cta} &nbsp;→</div>` +
-    `</div>`;
-  grid.appendChild(a);
-});
-attachSpotlight(grid, ".cell");
+let exploreBuilt = false;
+async function buildExplore() {
+  if (exploreBuilt) return;
+  exploreBuilt = true;
+  const DISCOVERIES = (await import("../data/discoveries")).default;
+  const frag = document.createDocumentFragment();
+  EXPLORE.forEach(g => {
+    const a = document.createElement("a");
+    a.className = "cell";
+    a.href = `/discoveries/${g.slug}/`;
+    const hi = DISCOVERIES[g.slug]?.heroImage;
+    const art = hi
+      ? `<img class="cat-photo" src="/img/${hi.base}-720.webp" srcset="/img/${hi.base}-720.webp 720w, /img/${hi.base}-1280.webp 1280w" sizes="(max-width:900px) 100vw, 420px" alt="" loading="lazy" decoding="async">`
+      : cardVisual(g.slug, g.field);
+    a.innerHTML =
+      `<div class="cell-art">${art}</div>` +
+      `<div class="cell-in">` +
+      `<div class="field">${g.field}</div><h3>${g.title}</h3>` +
+      `<div class="read">${g.cta} &nbsp;→</div>` +
+      `</div>`;
+    frag.appendChild(a);
+  });
+  grid.appendChild(frag);
+  attachSpotlight(grid, ".cell");
+}
+if (grid && "IntersectionObserver" in window) {
+  const exObs = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { buildExplore(); exObs.disconnect(); }
+  }), { rootMargin: "700px 0px" });
+  exObs.observe(grid);
+} else {
+  buildExplore();
+}
 
 /* ---------- mobile menu ---------- */
 const bg = $<HTMLButtonElement>("burger");
@@ -318,5 +336,14 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
   document.body.style.overflow = "";
 }));
 
-/* ---------- ⌘K command palette ---------- */
-initCommandPalette();
+/* ---------- ⌘K command palette (deferred off the critical path) ----------
+   Not needed for first paint, and it pulls in the discovery dataset — so we
+   load + initialise it once the browser goes idle (with a hard timeout so it
+   never waits too long). The nav search button appears a beat after load. */
+type IdleWindow = Window & {
+  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+};
+const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
+const iw = window as IdleWindow;
+if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 });
+else setTimeout(loadPalette, 1200);

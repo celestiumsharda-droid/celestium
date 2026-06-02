@@ -314,6 +314,71 @@ function buildGalaxy(): Stage {
   };
 }
 
+/* A real galaxy photograph, feathered into space. The source PNGs are
+   rectangular and carry a faint, non-black field; under additive blending
+   that rectangle is plainly visible and reads as a pasted image. We redraw
+   each photo onto a canvas, knock back the dim background, and feather the
+   edges to transparent with a radial mask — so what remains is just the
+   galaxy, dissolving into the dark like the procedural glows around it.
+   Canvas-only (no GLSL), so it's robust across drivers. */
+function galaxySprite(file: string, size: number, opacity = 1): THREE.Sprite {
+  const mat = new THREE.SpriteMaterial({
+    map: glowTexture(),          // soft placeholder until the photo decodes
+    color: 0xdfe6ff, transparent: true, opacity,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(size, size, 1);
+
+  const img = new Image();
+  img.decoding = "async";
+  img.onload = () => {
+    const S = 256;
+    const c = document.createElement("canvas");
+    c.width = c.height = S;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+
+    // contain-fit the photo, centred
+    const ar = img.width / img.height;
+    let dw = S, dh = S;
+    if (ar > 1) dh = S / ar; else dw = S * ar;
+    ctx.drawImage(img, (S - dw) / 2, (S - dh) / 2, dw, dh);
+
+    // Lift contrast: pull the faint background toward black and let the
+    // bright core/arms carry the light, so no dim rectangle survives.
+    const im = ctx.getImageData(0, 0, S, S);
+    const d = im.data;
+    for (let i = 0; i < d.length; i += 4) {
+      for (let k = 0; k < 3; k++) {
+        const v = d[i + k]! / 255;
+        // gentle gamma + black-point lift
+        d[i + k] = Math.max(0, (Math.pow(v, 1.35) - 0.06) / 0.94) * 255;
+      }
+    }
+    ctx.putImageData(im, 0, 0);
+
+    // feather the edges to transparent (kills the rectangle)
+    ctx.globalCompositeOperation = "destination-in";
+    const grad = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.5, "rgba(255,255,255,1)");
+    grad.addColorStop(0.78, "rgba(255,255,255,0.45)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    ctx.globalCompositeOperation = "source-over";
+
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    mat.map = t;
+    mat.color.set(0xffffff);
+    mat.needsUpdate = true;
+  };
+  img.src = `/textures/galaxies/${file}`;
+  return sp;
+}
+
 /* ----------------------------------------------------------------- */
 /* Stage 4 — The Local Group                                         */
 /* ----------------------------------------------------------------- */
@@ -324,13 +389,12 @@ function buildLocalGroup(): Stage {
   for (const gal of LOCAL_GROUP) {
     const px = gal.x * MLY, py = gal.y * MLY, pz = gal.z * MLY;
     if (gal.tex) {
-      // real galaxy photo as an additive sprite (black space adds nothing)
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: tex(`galaxies/${gal.tex}`), transparent: true, opacity: 1,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      const s = gal.size * 3.2;
-      sp.scale.set(s, s, 1);
+      // a faint halo seats the galaxy in space, then the feathered photo
+      const halo = glowSprite(gal.color, gal.size * 3.6, 0.28);
+      halo.position.set(px, py, pz);
+      g.add(halo);
+
+      const sp = galaxySprite(gal.tex, gal.size * 3.0, 1);
       sp.position.set(px, py, pz);
       g.add(sp);
     } else {
