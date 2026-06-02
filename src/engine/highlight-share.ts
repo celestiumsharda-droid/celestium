@@ -4,6 +4,8 @@
  * available, otherwise copies a formatted quote + link to the clipboard).
  */
 
+import { makeQuoteCard } from "./quote-card";
+
 const ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>';
 
@@ -35,9 +37,13 @@ export function initHighlightShare(): void {
   function check(): void {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { hide(); return; }
-    const text = sel.toString().replace(/\s+/g, " ").trim();
-    if (text.length < 12) { hide(); return; }
     const range = sel.getRangeAt(0);
+    // read from the range's content (textContent), not sel.toString(), so
+    // whitespace around the floated drop-cap isn't dropped ("A black" not "Ablack")
+    const tmp = document.createElement("div");
+    tmp.appendChild(range.cloneContents());
+    const text = (tmp.textContent || "").replace(/\s+/g, " ").trim();
+    if (text.length < 12) { hide(); return; }
     const node = range.commonAncestorContainer;
     const host = node.nodeType === 1 ? (node as Element) : node.parentElement;
     if (!host || !root.contains(host)) { hide(); return; }
@@ -66,14 +72,28 @@ export function initHighlightShare(): void {
     const url = location.href;
     const title = document.title.replace(/\s+—\s+Celestium\s*$/, "");
     const text = `“${quoteText}”\n— ${title} · Celestium`;
+    btn.classList.add("busy");
     try {
-      if (navigator.share) {
+      const blob = await makeQuoteCard(quoteText, title);
+      const file = blob ? new File([blob], "celestium-quote.png", { type: "image/png" }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text, url, title: "Celestium" });
+      } else if (file) {
+        const href = URL.createObjectURL(blob!);
+        const a = document.createElement("a");
+        a.href = href; a.download = "celestium-quote.png";
+        a.click();
+        URL.revokeObjectURL(href);
+        try { await navigator.clipboard.writeText(`${text}\n${url}`); } catch (_e) { /* clipboard blocked */ }
+        toast("Quote card saved · text copied");
+      } else if (navigator.share) {
         await navigator.share({ title: "Celestium", text, url });
       } else {
         await navigator.clipboard.writeText(`${text}\n${url}`);
         toast("Quote copied to clipboard");
       }
-    } catch (_e) { /* user cancelled / clipboard blocked */ }
+    } catch (_e) { /* user cancelled / blocked */ }
+    btn.classList.remove("busy");
     hide();
     window.getSelection()?.removeAllRanges();
   });
