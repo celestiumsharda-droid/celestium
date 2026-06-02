@@ -9,3 +9,11 @@ Article imagery — sources & licences:
 
 All resized to 720w / 1280w in AVIF, WebP and JPEG. Attribution is also
 shown in each figure caption on the page.
+
+Article hero illustrations (cinematic, AI-generated for Celestium):
+  gravitational-waves, weighing-the-universe, cosmic-background,
+  first-exoplanet, double-slit, age-of-earth, plate-tectonics,
+  double-helix, crispr, ancient-dna, penicillin — Illustration · Celestium.
+  The real evidence images (M87, LIGO, Bullet Cluster) remain in-article
+  as figures with their original credits.
+  featured, aurora — atmospheric illustrations · Celestium.

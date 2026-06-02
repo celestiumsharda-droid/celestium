@@ -514,7 +514,15 @@ section { position: relative; padding: 140px 0; }
 }
 
 /* ---- living sky ---- */
-#sky-sec { border-top: 1px solid var(--line-soft); }
+#sky-sec { border-top: 1px solid var(--line-soft); position: relative; isolation: isolate; }
+#sky-sec::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--void) 0%, transparent 26%, transparent 72%, var(--void) 100%),
+    url(/img/aurora-1280.webp) center 30%/cover no-repeat;
+  opacity: .26;
+}
+#sky-sec > * { position: relative; }
 .skygrid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
 .card {
   grid-column: span 4;
@@ -576,7 +584,15 @@ section { position: relative; padding: 140px 0; }
 }
 
 /* ---- explore grid ---- */
-#explore { border-top: 1px solid var(--line-soft); }
+#explore { border-top: 1px solid var(--line-soft); position: relative; isolation: isolate; }
+#explore::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--void) 0%, transparent 24%, transparent 60%, var(--void) 96%),
+    url(/img/featured-1280.webp) center top/cover no-repeat;
+  opacity: .18;
+}
+#explore > * { position: relative; }
 .grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 16px;

@@ -77,7 +77,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The night we <i>heard</i><br>two black holes collide.',
     dek: "A billion years ago two black holes spiralled together and shook spacetime itself. In September 2015 that tremor reached Earth and moved a mirror by less than the width of a proton.",
     hero: "wave",
-    heroImage: { base: "ligo", w: 1280, h: 853, alt: "Aerial view of the LIGO Hanford Observatory: two four-kilometre arms meeting at a right angle in the desert.", credit: "Caltech/MIT/LIGO Laboratory" },
+    heroImage: { base: "gravitational-waves", w: 1280, h: 720, alt: "Two black holes spiralling into a merger, bending the surrounding starlight as ripples of spacetime radiate outward.", credit: "Illustration · Celestium" },
     related: ["black-hole-image", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -128,7 +128,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'How we weighed<br>the <i>entire universe.</i>',
     dek: "We never put the cosmos on a scale. We watched how it moves and how its light bends — and discovered that 95% of what holds it together is something we have never seen.",
     hero: "web",
-    heroImage: { base: "bullet", w: 1280, h: 925, alt: "The Bullet Cluster: pink X-ray gas lagging behind two blue clumps of mass mapped by gravitational lensing.", credit: "X-ray: NASA/CXC · Lensing: NASA/STScI, ESO, Magellan · Public domain" },
+    heroImage: { base: "weighing-the-universe", w: 1280, h: 720, alt: "A vast cosmic web — golden galaxy clusters strung along faint blue-violet filaments of dark matter.", credit: "Illustration · Celestium" },
     related: ["black-hole-image", "gravitational-waves", "__scale"],
     depths: [
       [
@@ -177,7 +177,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The night we found<br><i>a world around another sun.</i>',
     dek: "For thousands of years we wondered if other suns had other planets. We could not see them. In October 1995 two astronomers found one anyway — not by seeing it, but by watching its star wobble.",
     hero: "wobble",
-    heroImage: { base: "hotjupiter", w: 1280, h: 853, alt: "Artist's impression of a hot-Jupiter exoplanet: a banded gas giant glowing from the heat of a nearby star.", credit: "Artist's impression · Public domain" },
+    heroImage: { base: "first-exoplanet", w: 1280, h: 720, alt: "A hot-Jupiter gas giant half-lit by its nearby star, its banded storm clouds glowing.", credit: "Illustration · Celestium" },
     related: ["weighing-the-universe", "black-hole-image", "__scale"],
     depths: [
       [
@@ -235,6 +235,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'Does a particle exist<br><i>before you look?</i>',
     dek: "Fire single particles at a pair of slits and they build a pattern that only makes sense if each one passed through both at once. Try to catch which slit, and the pattern vanishes. A century on, the experiment still refuses to let reality be ordinary.",
     hero: "wave",
+    heroImage: { base: "double-slit", w: 1280, h: 720, alt: "A quantum particle spreading into a wave of probability and blooming into interference fringes of light on black.", credit: "Illustration · Celestium" },
     related: ["gravitational-waves", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -284,6 +285,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'Reading four billion years<br><i>out of a rock.</i>',
     dek: "For most of history the Earth had no knowable age. Then radioactivity handed us a clock buried inside the rocks themselves — and a young chemist used it to weigh deep time to within one percent.",
     hero: "deep-field",
+    heroImage: { base: "age-of-earth", w: 1280, h: 720, alt: "An ancient zircon crystal glowing in dark primordial rock, holding billions of years of time.", credit: "Illustration · Celestium" },
     related: ["first-exoplanet", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -332,6 +334,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The shape that<br><i>copies itself.</i>',
     dek: "In 1953 the molecule of heredity turned out to be two strands wound into a spiral — and the instant its structure was clear, so was the secret it had been keeping: how life makes a copy of itself.",
     hero: "helix",
+    heroImage: { base: "double-helix", w: 1280, h: 720, alt: "A luminous DNA double helix unwinding to copy itself, suspended in darkness.", credit: "Illustration · Celestium" },
     related: ["age-of-earth", "first-exoplanet", "__scale"],
     depths: [
       [
@@ -379,6 +382,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'Reading the genomes<br><i>of the dead.</i>',
     dek: "DNA was thought to crumble into uselessness soon after death. Painstakingly, we learned to read it anyway — and the genomes of people gone for tens of thousands of years revealed that our own species is not as alone, or as pure, as we believed.",
     hero: "helix",
+    heroImage: { base: "ancient-dna", w: 1280, h: 720, alt: "An ancient human ancestor emerging from shadow as fragments of DNA dissolve into the dark.", credit: "Illustration · Celestium" },
     related: ["double-helix", "age-of-earth", "__scale"],
     depths: [
       [
@@ -425,6 +429,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The static that turned out to be<br><i>the Big Bang.</i>',
     dek: "Two engineers spent a year trying to scrub a faint hiss out of their antenna. They cleaned, they checked, they evicted the pigeons. The hiss would not go — because it was the cooling afterglow of the universe&#8217;s first light.",
     hero: "cmb",
+    heroImage: { base: "cosmic-background", w: 1280, h: 720, alt: "The infant universe as it first turned transparent — a soft, almost uniform glow of primordial light.", credit: "Illustration · Celestium" },
     related: ["weighing-the-universe", "black-hole-image", "__scale"],
     depths: [
       [
@@ -473,6 +478,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The discovery that<br><i>the ground is moving.</i>',
     dek: "A weather scientist noticed the continents fit together like torn pieces of paper, and proposed they drift. He was ridiculed for fifty years — until the seafloor itself was found to be keeping a record that proved him right.",
     hero: "seafloor",
+    heroImage: { base: "plate-tectonics", w: 1280, h: 720, alt: "Glowing magma erupting along a mid-ocean ridge as new seafloor spreads outward in the dark abyss.", credit: "Illustration · Celestium" },
     related: ["age-of-earth", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -523,6 +529,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The mould that<br><i>beat infection.</i>',
     dek: "A bacteriologist came back from holiday to a contaminated, ruined culture plate. Most people would have washed it. He looked closer — and found a mould that could kill the bacteria that, until then, routinely killed us.",
     hero: "culture",
+    heroImage: { base: "penicillin", w: 1280, h: 720, alt: "A petri dish with a Penicillium mould colony ringed by a clear zone where the bacteria have dissolved away.", credit: "Illustration · Celestium" },
     related: ["double-helix", "ancient-dna", "__scale"],
     depths: [
       [
@@ -573,6 +580,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'We learned to edit<br><i>the code of life.</i>',
     dek: "Bacteria have fought viruses for billions of years with a molecular memory that recognises and cuts enemy DNA. In 2012 two scientists realised that system could be reprogrammed — turning an immune defence into a tool that rewrites genes to order.",
     hero: "helix",
+    heroImage: { base: "crispr", w: 1280, h: 720, alt: "The Cas9 protein clasped around a DNA double helix at the instant of a precise cut.", credit: "Illustration · Celestium" },
     related: ["double-helix", "ancient-dna", "__scale"],
     depths: [
       [
