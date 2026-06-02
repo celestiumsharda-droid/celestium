@@ -4,6 +4,7 @@ import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } fro
 import { initSound, playClick } from "./sound";
 import { initCommandPalette } from "./command-palette";
 import { cardVisual } from "./card-visual";
+import { playIntro } from "./intro";
 import DISCOVERIES from "../data/discoveries";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
@@ -44,10 +45,11 @@ ttl.textContent = "";
 txt.split("").forEach((ch, i) => {
   const sp = document.createElement("span");
   sp.textContent = ch;
-  sp.style.animationDelay = (0.45 + i * 0.07) + "s";
+  sp.style.animationDelay = (0.05 + i * 0.06) + "s";
   ttl.appendChild(sp);
 });
-setTimeout(() => ttl.classList.add("go"), 100);
+// The cinematic intro lifts, then hands off to the hero letters.
+playIntro(() => ttl.classList.add("go"));
 
 /* ---------- perspective: 3D cosmic map ----------
    The Perspective section is a tall, pinned track. Page-scroll over it

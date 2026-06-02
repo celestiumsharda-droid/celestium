@@ -122,6 +122,40 @@ nav.solid {
 .btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); }
 .btn.fill:hover { background: var(--accent); border-color: var(--accent); }
 
+/* ---- cinematic intro (once per session) ---- */
+.intro {
+  position: fixed; inset: 0; z-index: 300;
+  background: radial-gradient(120% 120% at 50% 40%, #0a0d16, var(--void) 70%);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: opacity .76s ease, transform .76s cubic-bezier(.4,0,.2,1);
+  will-change: opacity, transform;
+}
+.intro.out { opacity: 0; transform: scale(1.08); pointer-events: none; }
+.intro-in { display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; padding: 24px; }
+.intro-mark { width: clamp(58px, 14vw, 78px); height: clamp(58px, 14vw, 78px); }
+.intro-mark ellipse { stroke-dasharray: 210; stroke-dashoffset: 210; }
+.intro.show .intro-mark ellipse { animation: introDraw 1.15s .1s forwards cubic-bezier(.3,.7,.3,1); }
+.intro-mark ellipse:nth-of-type(2) { animation-delay: .25s; }
+.intro-mark ellipse:nth-of-type(3) { animation-delay: .4s; }
+.intro-nuc, .intro-star { opacity: 0; }
+.intro.show .intro-nuc { animation: rise .6s .85s forwards; }
+.intro.show .intro-star { animation: rise .7s 1s forwards; }
+@keyframes introDraw { to { stroke-dashoffset: 0; } }
+.intro-word {
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(2rem, 8vw, 3.6rem); letter-spacing: .22em;
+  color: var(--ink); opacity: 0; transform: translateY(16px);
+  padding-left: .22em;
+}
+.intro.show .intro-word { animation: rise .9s .6s forwards cubic-bezier(.2,.7,.2,1); }
+.intro-sub {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .42em;
+  text-transform: uppercase; color: var(--accent); opacity: 0;
+}
+.intro.show .intro-sub { animation: rise .9s .9s forwards; }
+@media (prefers-reduced-motion: reduce) { .intro { display: none; } }
+
 .scrollcue {
   position: absolute; bottom: 34px; left: 50%;
   transform: translateX(-50%);
@@ -131,6 +165,9 @@ nav.solid {
   display: flex; flex-direction: column; align-items: center; gap: 14px;
   opacity: 0; animation: rise 1s 1.6s forwards;
 }
+/* the trailing letter-spacing widens the text box on the right; pull it
+   back so the glyphs sit centred over the line */
+.scrollcue > span:not(.ln) { margin-right: -.4em; }
 .scrollcue .ln {
   width: 1px; height: 46px;
   background: linear-gradient(var(--dim), transparent);
