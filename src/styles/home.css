@@ -258,45 +258,58 @@ section { position: relative; padding: 140px 0; }
 .cm-arrow { display: inline-block; animation: cmbob 2s infinite; }
 @keyframes cmbob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 @media (max-width: 620px) {
-  .persp-hud { padding: 14px; z-index: 2; }
-  /* heading clears the fixed nav */
-  .persp-hud .persp-head { max-width: 100%; padding-top: 54px; }
-  .persp-head h2 { font-size: 1.55rem; line-height: 1.08; }
-  .persp-hud .eyebrow { margin-bottom: 8px; font-size: 9px; }
-  .persp-hint { display: none; }
+  /* Give the map the screen. The big heading is dropped on phones — the
+     info sheet already names where you are — so the 3D scene fills the
+     upper two-thirds and is fully draggable. */
+  .persp-hud { padding: 0; z-index: 2; }
+  .persp-hud .persp-head { display: none; }
 
-  /* readability scrim: 3D scene reads in the upper area, controls below */
+  /* interaction cue, pinned over the map just below the nav */
+  .persp-hud::before {
+    content: "Drag to look · scroll to zoom out";
+    position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--mut); white-space: nowrap;
+    background: rgba(13,16,24,.5);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-edge); border-radius: 999px; padding: 7px 14px;
+    pointer-events: none; z-index: 3;
+  }
+
+  /* bottom scrim so the sheet reads; map stays clear up top */
   .persp-sticky::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60%;
-    background: linear-gradient(transparent, rgba(5,6,9,.55) 30%, rgba(5,6,9,.94) 70%);
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+    background: linear-gradient(transparent, rgba(5,6,9,.5) 34%, rgba(5,6,9,.96) 76%);
     pointer-events: none; z-index: 1;
   }
 
-  /* info sits above the 2-column button grid (≈200px tall) */
-  .persp-info { left: 16px; right: 16px; bottom: 230px; max-width: none; }
-  .persp-info .cm-live { margin-bottom: 8px; }
-  .persp-info .lvl { font-size: 10px; }
-  .persp-info h3 { font-size: 1.6rem; margin: .08em 0 .14em; }
-  .persp-info .cm-readout { font-size: 12px; margin-bottom: 8px; }
-  .persp-info p {
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; font-size: .9rem; line-height: 1.5;
+  /* compact bottom sheet — full description, docked above the chips */
+  .persp-info {
+    left: 12px; right: 12px; bottom: 84px; max-width: none;
+    padding: 14px 16px 15px; border-radius: 16px; z-index: 2;
   }
+  .persp-info .cm-live { margin-bottom: 6px; font-size: 9px; }
+  .persp-info .lvl { font-size: 9.5px; letter-spacing: .2em; }
+  .persp-info h3 { font-size: 1.4rem; margin: .05em 0 .12em; line-height: 1.05; }
+  .persp-info .cm-readout { font-size: 12px; margin-bottom: 7px; }
+  .persp-info p { font-size: .85rem; line-height: 1.5; }
 
-  /* TWO-COLUMN button grid — no horizontal scroll, equal spacing */
+  /* single horizontally-scrollable chip row — never wraps, always reachable */
   .persp-foot {
-    left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom));
-    display: block;
+    left: 0; right: 0; bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 0 12px; display: block; z-index: 2;
   }
   .persp-stages {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-    flex-wrap: initial; overflow: visible;
+    display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
   }
+  .persp-stages::-webkit-scrollbar { display: none; }
   .cm-chip {
-    min-height: 44px; padding: 8px; font-size: 10px; letter-spacing: .1em;
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    white-space: normal; line-height: 1.2;
+    flex: 0 0 auto; min-height: 40px; padding: 9px 15px;
+    font-size: 10px; letter-spacing: .12em;
+    white-space: nowrap; display: inline-flex; align-items: center;
   }
+  .persp-hint { display: none; }   /* replaced by the cue pill over the map */
 }
 
 /* Short / landscape viewports (e.g. a phone turned sideways): the desktop

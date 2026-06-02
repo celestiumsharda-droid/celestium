@@ -3,7 +3,6 @@ import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
 import { initSound, playClick } from "./sound";
 import { initCommandPalette } from "./command-palette";
-import { initTheme } from "./theme";
 import { cardVisual } from "./card-visual";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
@@ -244,6 +243,5 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
   document.body.style.overflow = "";
 }));
 
-/* ---------- ⌘K command palette + theme toggle ---------- */
+/* ---------- ⌘K command palette ---------- */
 initCommandPalette();
-initTheme();

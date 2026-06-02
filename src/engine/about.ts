@@ -7,7 +7,6 @@ import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
 import { initCommandPalette } from "./command-palette";
-import { initTheme } from "./theme";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
@@ -41,4 +40,3 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 
 initSound($("sound"), { pad: true });
 initCommandPalette();
-initTheme();

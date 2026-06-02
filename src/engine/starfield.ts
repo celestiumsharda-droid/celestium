@@ -64,18 +64,12 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     }
   }
 
-  // Star colour adapts to the theme so the field reads on light too.
-  const isLight = () => document.documentElement.dataset["theme"] === "light";
-  const starRGB = () => (isLight() ? "92,104,150" : "220,228,255");
-  const haloRGB = () => (isLight() ? "120,134,205" : "169,188,255");
-
   function paintStatic() {
     ctx!.clearRect(0, 0, W, H);
-    const rgb = starRGB();
     for (const s of stars) {
       ctx!.beginPath();
       ctx!.arc(s.x, s.y, s.r * (0.6 + s.z), 0, 6.29);
-      ctx!.fillStyle = `rgba(${rgb},${(0.18 + s.z * 0.7) * 0.85})`;
+      ctx!.fillStyle = `rgba(220,228,255,${(0.18 + s.z * 0.7) * 0.85})`;
       ctx!.fill();
     }
   }
@@ -84,8 +78,6 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     if (!alive) return;
     ctx!.clearRect(0, 0, W, H);
     const t = Date.now() / 1000;
-    const rgb = starRGB();
-    const halo = haloRGB();
     for (const s of stars) {
       let y = s.y - sc * s.z * 0.35;
       if (parallax) y = ((y % (H * 2)) + H * 2) % (H * 2);
@@ -93,12 +85,12 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
       const a = (0.18 + s.z * 0.7) * tw;
       ctx!.beginPath();
       ctx!.arc(s.x, y, s.r * (0.6 + s.z), 0, 6.29);
-      ctx!.fillStyle = `rgba(${rgb},${a})`;
+      ctx!.fillStyle = `rgba(220,228,255,${a})`;
       ctx!.fill();
       if (s.z > 0.93) {
         ctx!.beginPath();
         ctx!.arc(s.x, y, s.r * 2.4, 0, 6.29);
-        ctx!.fillStyle = `rgba(${halo},${a * 0.12})`;
+        ctx!.fillStyle = `rgba(169,188,255,${a * 0.12})`;
         ctx!.fill();
       }
     }

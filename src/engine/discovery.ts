@@ -5,7 +5,6 @@ import RELATED_INDEX from "./related-index";
 import { expandFragments } from "./fragments";
 import { sourcesHTML } from "./sources";
 import { initCommandPalette } from "./command-palette";
-import { initTheme } from "./theme";
 import { initSound, playClick } from "./sound";
 import type { Discovery } from "./types";
 
@@ -370,6 +369,5 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
 /* ---------- ambient sound (opt-in) ---------- */
 initSound($("sound"), { pad: true });
 
-/* ---------- ⌘K command palette + theme toggle ---------- */
+/* ---------- ⌘K command palette ---------- */
 initCommandPalette();
-initTheme();
