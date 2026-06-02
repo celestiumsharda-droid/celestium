@@ -9,13 +9,14 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
-import { initCommandPalette, randomDiscoveryHref } from "./command-palette";
-import { cardVisual } from "./card-visual";
 import { attachSpotlight } from "./spotlight";
-import DISCOVERIES from "../data/discoveries";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+};
 
 enableViewTransitions();
 mountStarfield($<HTMLCanvasElement>("sky"), { parallax: true });
@@ -27,76 +28,22 @@ addEventListener("scroll", () => {
   prog.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
 }, { passive: true });
 
-/* curated cosmic-to-human order */
-const ORDER = [
-  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background", "expanding-universe",
-  "first-exoplanet", "double-slit", "periodic-table", "age-of-earth", "plate-tectonics",
-  "double-helix", "crispr", "ancient-dna", "penicillin", "vaccination",
-];
-
-/* ---- build cards ---- */
+/* ---- the catalogue ----
+   In production the cards, chips, and count are pre-rendered into the HTML
+   (scripts/build-catalog.ts) so there is no layout shift and they paint
+   immediately. Here we just hydrate: collect the nodes and wire filtering.
+   In dev (no pre-render) we build them client-side from the data. */
 const grid = $("catalog");
-interface CardRef { el: HTMLAnchorElement; field: string; q: string; }
-const cards: CardRef[] = [];
-const flat = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim();
-
-ORDER.forEach((slug, i) => {
-  const d = DISCOVERIES[slug];
-  if (!d) return;
-  const title = d.title.replace(/<br\s*\/?>/g, " ");
-  const a = document.createElement("a");
-  a.className = "cat-card glass-soft glass-sheen";
-  a.href = `/discoveries/${slug}/`;
-  const vis = d.heroImage
-    ? `<img class="cat-photo" src="/img/${d.heroImage.base}-720.webp" srcset="/img/${d.heroImage.base}-720.webp 720w, /img/${d.heroImage.base}-1280.webp 1280w" sizes="(max-width:600px) 100vw, 380px" alt="" loading="lazy" decoding="async">`
-    : cardVisual(slug, d.field);
-  a.innerHTML =
-    `<div class="cat-visual">${vis}</div>` +
-    `<div class="cat-body">` +
-    `<div class="cat-top"><span class="cat-num">${String(i + 1).padStart(2, "0")}</span>` +
-    `<span class="cat-field">${d.field}</span></div>` +
-    `<h2 class="cat-title">${title}</h2>` +
-    `<p class="cat-dek">${d.dek}</p>` +
-    `<div class="cat-foot"><span>${d.era}</span><span class="cat-read">Read &nbsp;&#8594;</span></div>` +
-    `</div>`;
-  grid.appendChild(a);
-  cards.push({ el: a, field: d.field, q: (flat(title) + " " + d.field + " " + flat(d.dek)).toLowerCase() });
-});
-
-attachSpotlight(grid, ".cat-card");
-
-/* ---- discipline filter chips ---- */
 const filtersEl = $("cat-filters");
-const fields = ["All", ...Array.from(new Set(ORDER.map(s => DISCOVERIES[s]?.field).filter(Boolean) as string[]))];
-let activeField = "All";
-let query = "";
-
-const chips = fields.map(f => {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "cat-chip" + (f === "All" ? " on" : "");
-  b.textContent = f;
-  b.setAttribute("aria-pressed", f === "All" ? "true" : "false");
-  b.addEventListener("click", () => {
-    activeField = f;
-    chips.forEach(c => { const on = c.textContent === f; c.classList.toggle("on", on); c.setAttribute("aria-pressed", on ? "true" : "false"); });
-    apply();
-  });
-  filtersEl.appendChild(b);
-  return b;
-});
-
-/* ---- search ---- */
 const q = $<HTMLInputElement>("cat-q");
 const countEl = $("cat-count");
 const emptyEl = $("cat-empty");
-q.addEventListener("input", () => { query = q.value.trim().toLowerCase(); apply(); });
 
-// "/" focuses search (unless already typing)
-addEventListener("keydown", e => {
-  const t = e.target as HTMLElement | null;
-  if (e.key === "/" && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { e.preventDefault(); q.focus(); }
-});
+interface CardRef { el: HTMLAnchorElement; field: string; q: string; }
+let cards: CardRef[] = [];
+let chips: HTMLButtonElement[] = [];
+let activeField = "All";
+let query = "";
 
 function apply() {
   let shown = 0;
@@ -110,7 +57,47 @@ function apply() {
     ? `${shown} discoveries`
     : `${shown} of ${cards.length} ${shown === 1 ? "discovery" : "discoveries"}`;
 }
-apply();
+
+(async function hydrateCatalogue() {
+  // Dev / no SSR: render the cards (and chips/count) from the data.
+  if (!grid.querySelector(".cat-card")) {
+    const [{ default: DISCOVERIES }, { ORDER, catalogCardHTML }] = await Promise.all([
+      import("../data/discoveries"),
+      import("./catalog-card"),
+    ]);
+    const present = ORDER.filter(s => DISCOVERIES[s]);
+    grid.innerHTML = present.map((slug, i) => catalogCardHTML(slug, DISCOVERIES[slug]!, i)).join("");
+    if (!filtersEl.querySelector(".cat-chip")) {
+      const fields = ["All", ...Array.from(new Set(present.map(s => DISCOVERIES[s]!.field)))];
+      filtersEl.innerHTML = fields
+        .map(f => `<button type="button" class="cat-chip${f === "All" ? " on" : ""}" aria-pressed="${f === "All" ? "true" : "false"}">${f}</button>`)
+        .join("");
+    }
+    if (!countEl.textContent) countEl.textContent = `${present.length} discoveries`;
+  }
+
+  cards = Array.from(grid.querySelectorAll<HTMLAnchorElement>(".cat-card")).map(el => ({
+    el, field: el.dataset.field || "", q: el.dataset.q || "",
+  }));
+  chips = Array.from(filtersEl.querySelectorAll<HTMLButtonElement>(".cat-chip"));
+
+  attachSpotlight(grid, ".cat-card");
+
+  chips.forEach(b => b.addEventListener("click", () => {
+    activeField = b.textContent || "All";
+    chips.forEach(c => { const on = c === b; c.classList.toggle("on", on); c.setAttribute("aria-pressed", on ? "true" : "false"); });
+    apply();
+  }));
+
+  q.addEventListener("input", () => { query = q.value.trim().toLowerCase(); apply(); });
+  apply();
+})();
+
+// "/" focuses search (unless already typing)
+addEventListener("keydown", e => {
+  const t = e.target as HTMLElement | null;
+  if (e.key === "/" && !(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) { e.preventDefault(); q.focus(); }
+});
 
 /* mobile menu */
 const bg = $("burger");
@@ -132,8 +119,14 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 /* ambient sound (opt-in) */
 initSound($("sound"), { pad: true });
 
-/* surprise me → a random discovery */
-$("cat-surprise").addEventListener("click", () => { location.href = randomDiscoveryHref(); });
+/* surprise me → a random card from the catalogue */
+$("cat-surprise").addEventListener("click", () => {
+  const all = grid.querySelectorAll<HTMLAnchorElement>(".cat-card");
+  if (all.length) location.href = all[Math.floor(Math.random() * all.length)]!.href;
+});
 
-/* ⌘K command palette */
-initCommandPalette();
+/* ⌘K command palette — deferred off the critical path (it pulls the dataset) */
+const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
+const iw = window as IdleWindow;
+if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 });
+else setTimeout(loadPalette, 1200);

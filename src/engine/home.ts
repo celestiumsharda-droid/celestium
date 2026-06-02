@@ -149,7 +149,13 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
     syncChips(z);
   }
 
-  // Lazy-load Three.js + the map module when the section is close.
+  // Lazy-load Three.js + the map module. The perspective section sits one
+  // screen below the hero, so we deliberately do NOT preload it at first
+  // paint (that's ~0.5MB of Three.js parsing on the main thread, the home's
+  // biggest blocking cost). Instead it loads the moment the section enters
+  // the viewport — i.e. as soon as the visitor begins to scroll — while the
+  // static fallback holds the frame until then. rootMargin 0 keeps it off
+  // the initial-load critical path.
   const loadIO = new IntersectionObserver(async entries => {
     if (!entries.some(e => e.isIntersecting) || map || loading) return;
     loading = true;
@@ -168,7 +174,7 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
       console.warn("Cosmic map unavailable; showing fallback.", err);
       loading = false; // allow a retry on a later intersection
     }
-  }, { rootMargin: "400px 0px" });
+  }, { rootMargin: "0px 0px" });
   loadIO.observe(track);
 
   addEventListener("scroll", onScrollZoom, { passive: true });
