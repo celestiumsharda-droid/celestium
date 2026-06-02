@@ -98,6 +98,22 @@ for (const slug of slugs) {
     .replace('<div class="lvltag" id="lvltag">The Glance</div>', `<div class="lvltag" id="lvltag">${GLANCE_TAG}</div>`)
     .replace('<div class="body" id="abody"></div>', `<div class="body" id="abody">${glanceBody}</div>`);
 
+  // Server-render the full-bleed hero photo when one exists (LCP + crawlers).
+  if (d.heroImage) {
+    const im = d.heroImage;
+    const pic =
+      "<picture>" +
+      `<source type="image/avif" srcset="/img/${im.base}-720.avif 720w, /img/${im.base}-1280.avif 1280w" sizes="100vw">` +
+      `<source type="image/webp" srcset="/img/${im.base}-720.webp 720w, /img/${im.base}-1280.webp 1280w" sizes="100vw">` +
+      `<img src="/img/${im.base}-1280.jpg" srcset="/img/${im.base}-720.jpg 720w, /img/${im.base}-1280.jpg 1280w" sizes="100vw" width="${im.w}" height="${im.h}" alt="${esc(im.alt)}" decoding="async" fetchpriority="high">` +
+      "</picture>" +
+      `<div class="ahero-credit">${esc(im.credit)}</div>`;
+    html = html.replace(
+      '<div class="ahero-media is-motif" id="heroart" aria-hidden="true"></div>',
+      `<div class="ahero-media is-photo" id="heroart" aria-hidden="true">${pic}</div>`,
+    );
+  }
+
   // Server-render the reference list (crawler-visible, no-JS).
   const srcHTML = sourcesHTML(slug);
   if (srcHTML) {

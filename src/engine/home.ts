@@ -4,6 +4,7 @@ import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } fro
 import { initSound, playClick } from "./sound";
 import { initCommandPalette } from "./command-palette";
 import { cardVisual } from "./card-visual";
+import DISCOVERIES from "../data/discoveries";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
 import TIMELINE from "../data/timeline";
@@ -216,8 +217,12 @@ EXPLORE.forEach(g => {
   const a = document.createElement("a");
   a.className = "cell";
   a.href = `/discoveries/${g.slug}/`;
+  const hi = DISCOVERIES[g.slug]?.heroImage;
+  const art = hi
+    ? `<img class="cat-photo" src="/img/${hi.base}-720.webp" srcset="/img/${hi.base}-720.webp 720w, /img/${hi.base}-1280.webp 1280w" sizes="(max-width:900px) 100vw, 420px" alt="" loading="lazy" decoding="async">`
+    : cardVisual(g.slug, g.field);
   a.innerHTML =
-    `<div class="cell-art">${cardVisual(g.slug, g.field)}</div>` +
+    `<div class="cell-art">${art}</div>` +
     `<div class="cell-in">` +
     `<div class="field">${g.field}</div><h3>${g.title}</h3>` +
     `<div class="read">${g.cta} &nbsp;→</div>` +

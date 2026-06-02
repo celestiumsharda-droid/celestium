@@ -208,6 +208,21 @@ switch (D.hero) {
     ha.innerHTML = '<div class="v-bh"><div class="disk"></div><div class="ring"></div><div class="core"></div></div>';
 }
 
+// A real photograph, when present, replaces the motif as a full-bleed banner.
+if (D.heroImage) {
+  const im = D.heroImage;
+  ha.className = "ahero-media is-photo";
+  ha.innerHTML =
+    "<picture>" +
+    `<source type="image/avif" srcset="/img/${im.base}-720.avif 720w, /img/${im.base}-1280.avif 1280w" sizes="100vw">` +
+    `<source type="image/webp" srcset="/img/${im.base}-720.webp 720w, /img/${im.base}-1280.webp 1280w" sizes="100vw">` +
+    `<img src="/img/${im.base}-1280.jpg" srcset="/img/${im.base}-720.jpg 720w, /img/${im.base}-1280.jpg 1280w" sizes="100vw" width="${im.w}" height="${im.h}" alt="${im.alt}" decoding="async">` +
+    "</picture>" +
+    `<div class="ahero-credit">${im.credit}</div>`;
+} else {
+  ha.className = "ahero-media is-motif";
+}
+
 /* ---------- depth render ---------- */
 const TAGS = [
   "The Glance — the essence in twenty seconds",

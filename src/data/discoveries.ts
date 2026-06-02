@@ -20,6 +20,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'We took a photograph<br>of <i>the unphotographable.</i>',
     dek: "A black hole emits no light by definition. In 2019, an Earth-sized instrument returned the first direct image of one anyway — and it looked exactly like a century-old equation said it would.",
     hero: "bh",
+    heroImage: { base: "m87", w: 1280, h: 1280, alt: "The Event Horizon Telescope's 2019 image of M87*: a bright orange ring of light around a dark central shadow.", credit: "EHT Collaboration · CC BY 4.0" },
     related: ["gravitational-waves", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -76,6 +77,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The night we <i>heard</i><br>two black holes collide.',
     dek: "A billion years ago two black holes spiralled together and shook spacetime itself. In September 2015 that tremor reached Earth and moved a mirror by less than the width of a proton.",
     hero: "wave",
+    heroImage: { base: "ligo", w: 1280, h: 853, alt: "Aerial view of the LIGO Hanford Observatory: two four-kilometre arms meeting at a right angle in the desert.", credit: "Caltech/MIT/LIGO Laboratory" },
     related: ["black-hole-image", "weighing-the-universe", "__scale"],
     depths: [
       [
@@ -126,6 +128,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'How we weighed<br>the <i>entire universe.</i>',
     dek: "We never put the cosmos on a scale. We watched how it moves and how its light bends — and discovered that 95% of what holds it together is something we have never seen.",
     hero: "web",
+    heroImage: { base: "bullet", w: 1280, h: 925, alt: "The Bullet Cluster: pink X-ray gas lagging behind two blue clumps of mass mapped by gravitational lensing.", credit: "X-ray: NASA/CXC · Lensing: NASA/STScI, ESO, Magellan · Public domain" },
     related: ["black-hole-image", "gravitational-waves", "__scale"],
     depths: [
       [
@@ -174,6 +177,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The night we found<br><i>a world around another sun.</i>',
     dek: "For thousands of years we wondered if other suns had other planets. We could not see them. In October 1995 two astronomers found one anyway — not by seeing it, but by watching its star wobble.",
     hero: "wobble",
+    heroImage: { base: "hotjupiter", w: 1280, h: 853, alt: "Artist's impression of a hot-Jupiter exoplanet: a banded gas giant glowing from the heat of a nearby star.", credit: "Artist's impression · Public domain" },
     related: ["weighing-the-universe", "black-hole-image", "__scale"],
     depths: [
       [

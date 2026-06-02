@@ -47,6 +47,18 @@ export interface Discovery {
   /** Optional override for the social-card image. Otherwise the
    *  auto-generated per-article OG image is used. */
   ogImage?: string;
+  /** Optional full-bleed hero photograph. When present, a responsive
+   *  `/img/<base>-{720,1280}.{avif,webp,jpg}` set is shown as the
+   *  article's cinematic banner. When absent, the `hero` motif is used. */
+  heroImage?: {
+    base: string;
+    /** Native pixel size of the source, for layout (avoids reflow). */
+    w: number;
+    h: number;
+    alt: string;
+    /** Short credit line, shown over the image. */
+    credit: string;
+  };
 }
 
 export type DiscoveryMap = Record<string, Discovery>;

@@ -46,8 +46,11 @@ ORDER.forEach((slug, i) => {
   const a = document.createElement("a");
   a.className = "cat-card glass-soft glass-sheen";
   a.href = `/discoveries/${slug}/`;
+  const vis = d.heroImage
+    ? `<img class="cat-photo" src="/img/${d.heroImage.base}-720.webp" srcset="/img/${d.heroImage.base}-720.webp 720w, /img/${d.heroImage.base}-1280.webp 1280w" sizes="(max-width:600px) 100vw, 380px" alt="" loading="lazy" decoding="async">`
+    : cardVisual(slug, d.field);
   a.innerHTML =
-    `<div class="cat-visual">${cardVisual(slug, d.field)}</div>` +
+    `<div class="cat-visual">${vis}</div>` +
     `<div class="cat-body">` +
     `<div class="cat-top"><span class="cat-num">${String(i + 1).padStart(2, "0")}</span>` +
     `<span class="cat-field">${d.field}</span></div>` +
