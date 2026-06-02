@@ -28,7 +28,7 @@ function onScroll() {
   const sc = scrollY;
   nav.classList.toggle("solid", sc > 80);
   const h = document.documentElement.scrollHeight - innerHeight;
-  prog.style.width = (h > 0 ? (sc / h) * 100 : 0) + "%";
+  prog.style.transform = `scaleX(${h > 0 ? sc / h : 0})`;
 }
 addEventListener("scroll", onScroll, { passive: true });
 onScroll();
@@ -79,15 +79,19 @@ txt.split("").forEach((ch, i) => {
 playIntro(() => ttl.classList.add("go"));
 
 // Magnetic hero buttons — they lean gently toward the cursor (desktop).
+// The rest-position rect is cached on enter, so pointermove only writes a
+// transform (no per-frame layout read).
 if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: reduce)").matches) {
   document.querySelectorAll<HTMLElement>(".herocta .btn").forEach(btn => {
+    let r: DOMRect | null = null;
+    btn.addEventListener("pointerenter", () => { r = btn.getBoundingClientRect(); });
     btn.addEventListener("pointermove", (e: PointerEvent) => {
-      const r = btn.getBoundingClientRect();
+      if (!r) r = btn.getBoundingClientRect();
       const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
       const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
       btn.style.transform = `translate(${(dx * 7).toFixed(1)}px, ${(dy * 7).toFixed(1)}px)`;
     });
-    btn.addEventListener("pointerleave", () => { btn.style.transform = ""; });
+    btn.addEventListener("pointerleave", () => { btn.style.transform = ""; r = null; });
   });
 }
 
@@ -133,8 +137,11 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
   let map: CosmicMap | null = null;
   let loading = false;
 
+  let activeChip = -1;
   function syncChips(z: number) {
     const active = Math.round(z);
+    if (active === activeChip) return; // skip DOM writes when nothing changed
+    activeChip = active;
     chips.forEach((c, i) => c.classList.toggle("on", i === active));
   }
 

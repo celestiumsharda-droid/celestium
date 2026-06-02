@@ -577,6 +577,10 @@ section { position: relative; padding: 140px 0; }
 @media (max-width: 900px) { .card, .card.wide { grid-column: span 12; } }
 .card .lab { font-family: var(--mono); font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--dim); }
 .card .big { font-family: var(--display); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 300; margin: 14px 0 6px; line-height: 1; }
+/* gentle "thinking" pulse while a live-sky card is still fetching; the JS
+   replaces the card body on load, so the pulse stops the moment data lands */
+.card .big.skel { color: var(--mut); animation: skelPulse 1.5s ease-in-out infinite; }
+@keyframes skelPulse { 0%, 100% { opacity: .45; } 50% { opacity: .85; } }
 .card .sub { color: var(--mut); font-size: .95rem; }
 .clock { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .feed { list-style: none; display: flex; flex-direction: column; gap: 18px; margin-top: 18px; }

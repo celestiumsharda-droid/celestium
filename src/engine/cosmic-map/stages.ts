@@ -326,7 +326,7 @@ function buildLocalGroup(): Stage {
     if (gal.tex) {
       // real galaxy photo as an additive sprite (black space adds nothing)
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: tex(gal.tex), transparent: true, opacity: 1,
+        map: tex(`galaxies/${gal.tex}`), transparent: true, opacity: 1,
         blending: THREE.AdditiveBlending, depthWrite: false,
       }));
       const s = gal.size * 3.2;

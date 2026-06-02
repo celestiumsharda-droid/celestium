@@ -18,7 +18,7 @@ mountStarfield($<HTMLCanvasElement>("sky"), { parallax: true });
 const prog = $("prog");
 addEventListener("scroll", () => {
   const h = document.documentElement.scrollHeight - innerHeight;
-  prog.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+  prog.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
 }, { passive: true });
 
 /* mobile menu */
