@@ -1,0 +1,15 @@
+{
+  "name": "Celestium — A pinnacle of science",
+  "short_name": "Celestium",
+  "description": "Landmark science, read at the depth you choose — a cosmic timeline, a map of the universe, and discoveries told at three depths.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050609",
+  "theme_color": "#050609",
+  "categories": ["education", "science", "news"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

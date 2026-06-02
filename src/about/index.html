@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Celestium is made — Celestium</title>
+<meta name="description" content="Celestium is a science publication built to be felt — landmark discoveries told at three depths, every claim cited to the primary literature. How and why we make it.">
+<meta name="theme-color" content="#050609">
+<link rel="manifest" href="/manifest.webmanifest">
+<script>try{if(localStorage.getItem("celestium:theme")==="light")document.documentElement.dataset.theme="light";}catch(e){}</script>
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://celestium.celestium-sharda.workers.dev/about/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Celestium">
+<meta property="og:title" content="How Celestium is made">
+<meta property="og:description" content="A pinnacle of science — built to be felt. The philosophy, the method, and the standards behind Celestium.">
+<meta property="og:url" content="https://celestium.celestium-sharda.workers.dev/about/">
+<meta property="og:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How Celestium is made">
+<meta name="twitter:description" content="The philosophy, the method, and the standards behind Celestium.">
+<meta name="twitter:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3Cpath d='M74 20 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='%23f2e6c4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,300..600;9..144,1,300..500&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles/discovery.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"How Celestium is made","url":"https://celestium.celestium-sharda.workers.dev/about/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"Celestium","url":"https://celestium.celestium-sharda.workers.dev/"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div id="prog" aria-hidden="true"></div>
+
+<nav>
+  <a class="brand" href="/">
+    <svg class="mark" viewBox="0 0 100 100" fill="none" stroke="#f3f5fb" stroke-width="3">
+      <ellipse cx="50" cy="50" rx="40" ry="16"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(60 50 50)"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(120 50 50)"/>
+      <circle cx="50" cy="50" r="6" fill="#f3f5fb" stroke="none"/>
+      <path d="M76 16 l3 7 7 1 -5 5 1 7 -6-3 -6 3 1-7 -5-5 7-1z" fill="#f2e6c4" stroke="none"/>
+    </svg>
+    CELESTIUM
+  </a>
+  <a class="back" href="/"><span>&#8592;</span>Home</a>
+  <button id="sound" class="soundtoggle" type="button" aria-label="Enable ambient sound" aria-pressed="false"></button>
+  <button id="burger" aria-label="Menu"><span></span><span></span></button>
+</nav>
+<div id="menu">
+  <a href="/">Home</a>
+  <a href="/#scale">Perspective</a>
+  <a href="/#timeline">Timeline</a>
+  <a href="/discoveries/">Discoveries</a>
+  <a href="/about/">About</a>
+</div>
+
+<main id="main">
+  <header class="cat-hero">
+    <p class="kick">About Celestium</p>
+    <h1>A pinnacle of science,<br><i>built to be felt.</i></h1>
+    <p class="dek">Most science writing forces a choice: too shallow to satisfy, or too dense to enter. Celestium refuses it. Every discovery is written three times over, from one fact set, so you can read at the altitude you choose — and every claim traces back to the work that earned it.</p>
+  </header>
+
+  <article class="about-body">
+    <h2>Why it exists</h2>
+    <p><span class="lead">T</span>he universe is the most astonishing thing there is, and the story of how we came to understand it is the best story we have. Yet that story usually reaches people as a headline stripped of its evidence, or a textbook stripped of its wonder. Celestium is an attempt at the third thing: to hold the awe and the rigour in the same hand, and to make the act of understanding feel like what it is — a privilege.</p>
+
+    <div class="pull">We wanted a place to stand beneath the whole of what we know, and feel both how small and how staggering our understanding has become.<cite>The premise</cite></div>
+
+    <h2>Read at your altitude</h2>
+    <p>Every discovery here is published at three depths, generated from a single, shared set of facts:</p>
+    <p><strong>The Glance</strong> — the essence in twenty seconds, for when you want the shape of the idea and nothing more. <strong>The Curious Read</strong> — the story with its mechanism, for a quiet five minutes. <strong>The Deep Dive</strong> — the full physics and, crucially, the safeguards: how the result was checked, and why it is believed.</p>
+    <p>You switch at any time, and you keep your place in the idea rather than the prose. The depth is yours to set; the facts do not change beneath you.</p>
+
+    <h2>How we know it is real</h2>
+    <p>Every Celestium discovery carries a &#8220;How we know it is real&#8221; passage and a list of its primary sources — the actual papers the result rests on, from Penzias and Wilson in 1965 to Doudna and Charpentier in 2012. We retell peer-reviewed science for a general audience; where a claim depends on a specific result, the original work is named so you can read it at the source.</p>
+    <div class="know"><div class="kh">Our standard</div><p>A claim is only as good as the evidence that survives scrutiny. We favour results confirmed by independent methods, note where uncertainty remains, and try never to present a hypothesis as a settled fact. When we simplify, we aim to simplify without distorting.</p></div>
+
+    <h2>The craft</h2>
+    <p>Restraint is the brand. A near-black field, a single cold accent and a single warm one, generous negative space, and type that does the talking. The interactive pieces — a real-time map of the universe from your doorstep to the cosmic web, a black hole rendered the way light actually bends around one, a live readout of the sky above you — are there to make a true thing felt, never to decorate.</p>
+
+    <h2>What comes next</h2>
+    <p>The catalogue grows. New discoveries, deeper interactives, and more of the living sky. If a result has changed how we see ourselves in the cosmos, it belongs here — told carefully, cited honestly, and made beautiful.</p>
+
+    <a class="aboutcta" href="/discoveries/">Read the discoveries &nbsp;&#8594;</a>
+  </article>
+
+  <footer>
+    <div class="fw">
+      <div class="big">A pinnacle of <i>science.</i></div>
+      <a href="/">&#8592; Back to Celestium</a>
+    </div>
+    <div class="legal">© 2026 CELESTIUM — The universe, examined.</div>
+  </footer>
+</main>
+
+<script type="module" src="/engine/about.ts"></script>
+</body>
+</html>
