@@ -142,30 +142,31 @@
         <div class="bh" id="bh" aria-hidden="true">
           <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <radialGradient id="bhglow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#a9bcff" stop-opacity=".24"/>
-                <stop offset="42%" stop-color="#f2e6c4" stop-opacity=".07"/>
-                <stop offset="74%" stop-color="#0a0c12" stop-opacity="0"/>
+              <!-- the glowing emission ring: transparent shadow, hot bright ring, soft fade -->
+              <radialGradient id="bhdonut" cx="50%" cy="50%" r="50%">
+                <stop offset="0%"  stop-color="#000000" stop-opacity="0"/>
+                <stop offset="33%" stop-color="#000000" stop-opacity="0"/>
+                <stop offset="40%" stop-color="#f2d6a0" stop-opacity=".85"/>
+                <stop offset="47%" stop-color="#fff3d6" stop-opacity="1"/>
+                <stop offset="57%" stop-color="#e7a657" stop-opacity=".7"/>
+                <stop offset="73%" stop-color="#7a4516" stop-opacity="0"/>
               </radialGradient>
-              <linearGradient id="bhdisk" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#4f5fa6"/>
-                <stop offset="20%" stop-color="#a9bcff"/>
-                <stop offset="48%" stop-color="#fff6d8"/>
-                <stop offset="70%" stop-color="#f2e6c4"/>
-                <stop offset="100%" stop-color="#7a6a3e"/>
-              </linearGradient>
-              <filter id="bhsoft" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2"/></filter>
-              <filter id="bhring" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.6"/></filter>
+              <!-- doppler beaming: the lower-right of the ring blazes brightest -->
+              <radialGradient id="bhboost" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fff6e2" stop-opacity=".9"/>
+                <stop offset="100%" stop-color="#fff6e2" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="bhblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.2"/></filter>
+              <filter id="bhring2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.5"/></filter>
             </defs>
-            <circle cx="160" cy="160" r="156" fill="url(#bhglow)"/>
-            <!-- far side of the disk, lensed up and over the top (behind the hole) -->
-            <path class="bh-ring" d="M 22 160 A 138 46 0 0 1 298 160" fill="none" stroke="url(#bhdisk)" stroke-width="22" stroke-linecap="round" filter="url(#bhsoft)" opacity="0"/>
-            <!-- the shadow + bright photon ring -->
-            <circle cx="160" cy="160" r="49" fill="none" stroke="#fff8e6" stroke-width="6" filter="url(#bhring)"/>
-            <circle cx="160" cy="160" r="49" fill="#000"/>
-            <circle cx="160" cy="160" r="49" fill="none" stroke="#fff8e6" stroke-width="1.6"/>
-            <!-- near side of the disk, passing in front of the hole -->
-            <path class="bh-ring" d="M 22 160 A 138 46 0 0 0 298 160" fill="none" stroke="url(#bhdisk)" stroke-width="22" stroke-linecap="round" filter="url(#bhsoft)" opacity="0"/>
+            <g class="bh-ring" opacity="0">
+              <circle cx="160" cy="160" r="150" fill="url(#bhdonut)" filter="url(#bhblur)"/>
+              <ellipse cx="178" cy="206" rx="82" ry="48" fill="url(#bhboost)" filter="url(#bhblur)"/>
+            </g>
+            <!-- the shadow + bright photon ring (always visible) -->
+            <circle cx="160" cy="160" r="55" fill="none" stroke="#fff6e0" stroke-width="3.5" filter="url(#bhring2)"/>
+            <circle cx="160" cy="160" r="55" fill="#000"/>
+            <circle cx="160" cy="160" r="55" fill="none" stroke="#ffe8c0" stroke-width="1.2" opacity=".8"/>
           </svg>
         </div>
       </div>
