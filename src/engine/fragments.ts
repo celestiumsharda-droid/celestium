@@ -277,7 +277,33 @@ function cas9Figure(): string {
   return s;
 }
 
+/** The GW150914 chirp — a rising-frequency, rising-amplitude waveform
+ *  that spikes at the merger and rings down. Enhanced to play as sound. */
+function chirpFigure(): string {
+  const H = 180, mid = H / 2;
+  let path = "";
+  let phase = 0, prevT = 0;
+  for (let x = 26; x <= 694; x += 2) {
+    const t = (x - 26) / 668;                  // 0..1
+    const freq = 6 + Math.pow(t, 2.1) * 150;   // accelerating
+    phase += freq * (t - prevT); prevT = t;
+    const ring = t < 0.86 ? 1 : Math.max(0, 1 - (t - 0.86) / 0.16);
+    const amp = (8 + t * 58) * ring;
+    const y = mid + Math.sin(phase) * amp;
+    path += `${x === 26 ? "M" : "L"} ${x} ${y.toFixed(1)} `;
+  }
+  let s = '<figure data-fig="chirp"><svg viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The waveform of GW150914: a rising-frequency chirp that peaks at the merger and rings down.">';
+  s += `<line x1="26" y1="${mid}" x2="694" y2="${mid}" stroke="#363c4a" stroke-dasharray="2 5"/>`;
+  s += `<path d="${path}" fill="none" stroke="#a9bcff" stroke-width="2"/>`;
+  s += `<text x="120" y="172" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" letter-spacing="2">INSPIRAL</text>`;
+  s += `<text x="600" y="40" fill="#f2e6c4" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="middle" letter-spacing="2">MERGER</text>`;
+  s += `<text x="676" y="172" fill="#828b9e" font-family="IBM Plex Mono,monospace" font-size="10" text-anchor="end" letter-spacing="2">RINGDOWN</text>`;
+  s += "</svg><figcaption>The shape of the first detection, GW150914: frequency and amplitude both climb as the black holes spiral in, spike at the merger, then ring down. Played as sound it is a rising &#8220;whoop.&#8221;</figcaption></figure>";
+  return s;
+}
+
 const FRAGMENTS: Record<FragmentToken, string> = {
+  "__CHIRP__": chirpFigure(),
   "__STATS_EHT__":
     '<div class="stats"><div><div class="v">8</div><div class="l">Observatories linked across the globe</div></div><div><div class="v">~5 PB</div><div class="l">Data — too big for the internet, flown on drives</div></div><div><div class="v">55M ly</div><div class="l">Distance to M87&#42;, the first target</div></div></div>',
   "__STATS_LIGO__":

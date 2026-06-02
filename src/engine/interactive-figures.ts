@@ -168,7 +168,75 @@ function enhanceDoubleSlit(fig: HTMLElement): void {
   fire(220);
 }
 
+/* ---- gravitational-wave chirp: hear two black holes merge ----
+   Synthesises the rising-pitch "whoop" of GW150914 with the Web Audio
+   API on a user gesture, and pulses the waveform while it plays. */
+const PLAY_ICON =
+  '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+function enhanceChirp(fig: HTMLElement): void {
+  if (fig.dataset["enhanced"]) return;
+  fig.dataset["enhanced"] = "1";
+
+  const cap = fig.querySelector("figcaption");
+  const controls = document.createElement("div");
+  controls.className = "if-controls if-chirp";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "if-btn if-play";
+  btn.innerHTML = `${PLAY_ICON}<span>Hear the chirp</span>`;
+  controls.appendChild(btn);
+  if (cap) fig.insertBefore(controls, cap); else fig.appendChild(controls);
+  fig.classList.add("ifig");
+
+  let actx: AudioContext | null = null;
+  let playing = false;
+  const label = btn.querySelector("span")!;
+
+  btn.addEventListener("click", () => {
+    if (playing) return;
+    playing = true;
+    fig.classList.remove("chirp-playing"); void fig.offsetWidth; // restart anim
+    fig.classList.add("chirp-playing");
+    label.textContent = "Playing…";
+    try {
+      actx = actx ?? new AudioContext();
+      if (actx.state === "suspended") void actx.resume();
+      const dur = 0.95;
+      const now = actx.currentTime;
+      const N = 120;
+      const f = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        const t = i / (N - 1);
+        f[i] = t < 0.86 ? 38 + Math.pow(t / 0.86, 2.3) * (300 - 38) : 300 - ((t - 0.86) / 0.14) * 120;
+      }
+      const gain = actx.createGain();
+      gain.connect(actx.destination);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + dur * 0.84);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      const oscs = [0, 6].map(detune => {
+        const o = actx!.createOscillator();
+        o.type = "sine"; o.detune.value = detune;
+        o.frequency.setValueCurveAtTime(f, now, dur);
+        o.connect(gain); o.start(now); o.stop(now + dur);
+        return o;
+      });
+      oscs[0]!.onended = () => {
+        playing = false;
+        fig.classList.remove("chirp-playing");
+        label.textContent = "Hear it again";
+      };
+    } catch (_e) {
+      playing = false;
+      fig.classList.remove("chirp-playing");
+      label.textContent = "Hear the chirp";
+    }
+  });
+}
+
 export function initInteractiveFigures(root: ParentNode): void {
   root.querySelectorAll<HTMLElement>('figure[data-fig="decay"]').forEach(enhanceDecay);
   root.querySelectorAll<HTMLElement>('figure[data-fig="dslit"]').forEach(enhanceDoubleSlit);
+  root.querySelectorAll<HTMLElement>('figure[data-fig="chirp"]').forEach(enhanceChirp);
 }

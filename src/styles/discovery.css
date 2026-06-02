@@ -537,6 +537,17 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 .if-toggle input:checked + .if-sw { background: var(--accent-dim); }
 .if-toggle input:checked + .if-sw::after { transform: translateX(17px); background: var(--accent); }
 .if-toggle input:focus-visible + .if-sw { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* gravitational-wave chirp player */
+.if-chirp { margin-top: 16px; display: flex; justify-content: center; }
+.if-play { display: inline-flex; align-items: center; gap: 9px; }
+.if-play svg { width: 13px; height: 13px; }
+figure[data-fig="chirp"] svg path { transition: filter .3s; }
+figure[data-fig="chirp"].chirp-playing svg path { animation: chirpglow .95s ease-out; }
+@keyframes chirpglow {
+  0% { filter: drop-shadow(0 0 0 transparent); }
+  45% { filter: drop-shadow(0 0 8px rgba(169,188,255,.7)); }
+  100% { filter: drop-shadow(0 0 0 transparent); }
+}
 
 /* Sources & further reading — the primary literature, set like a
    journal reference list. The credibility floor of a science page. */

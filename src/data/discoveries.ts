@@ -83,6 +83,7 @@ const DISCOVERIES: DiscoveryMap = {
       [
         '<p><span class="lead">E</span>instein predicted that violent events should send ripples through spacetime — gravitational waves — stretching and squeezing space as they pass. They are so faint he doubted they could ever be detected. On 14 September 2015 two detectors in the United States caught one: the merger of two black holes about 1.3 billion light-years away. The wave changed each detector’s 4-kilometre arms by about a ten-thousandth the width of a proton. It opened an entirely new way to observe the universe — by listening instead of looking.</p>',
         '__FIG_LIGO__',
+        '__CHIRP__',
         '<div class="know"><div class="kh">Why it matters</div><p>Every telescope in history collected light. This was the first time humanity sensed the universe through gravity itself — and confirmed a 1916 prediction in the same instant.</p></div>'
       ],
       [
@@ -93,6 +94,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<h2>An instrument that measures almost nothing</h2>',
         '<p>LIGO answers this with two L-shaped detectors, in Washington and Louisiana, each with arms four kilometres long. A laser is split down both arms, bounced off suspended mirrors, and recombined. A passing gravitational wave lengthens one arm while shortening the other, and the recombined light shifts. The change being measured is around a ten-thousandth the diameter of a proton.</p>',
         '__FIG_LIGO__',
+        '__CHIRP__',
         '__STATS_LIGO__',
         '<div class="know"><div class="kh">How we know it is real</div><p>Two detectors 3,000 km apart saw the same waveform about seven milliseconds apart — the light-travel time between them. The signal also matched, in exquisite detail, the waveform Einstein’s equations predict for two merging black holes. Noise does not do that twice, in step, on opposite sides of a continent.</p></div>',
         '<h2>14 September 2015</h2>',
@@ -108,6 +110,7 @@ const DISCOVERIES: DiscoveryMap = {
         '<p>Each LIGO observatory is a Michelson interferometer with two perpendicular 4-km arms. A laser is split into both; it reflects between suspended mirrors many times, effectively lengthening the path, then recombines at a detector. With no wave present the arms are tuned so the recombined light nearly cancels. A gravitational wave stretches one arm and shrinks the other in alternation, unbalancing that cancellation in a pattern that traces the wave itself.</p>',
         '<p>The mirrors hang on multi-stage pendulums isolating them from ground tremor; the beam travels in one of the largest vacuum systems on Earth; the laser is stabilised to extraordinary precision. Even so, the instrument is swamped by seismic, thermal and quantum noise. The signal is not so much "seen" as statistically extracted.</p>',
         '__FIG_LIGO__',
+        '__CHIRP__',
         '__STATS_LIGO__',
         '<h2>Pulling a signal out of noise</h2>',
         '<p>The recovery technique is matched filtering: vast banks of theoretical waveforms — computed from general relativity for every plausible pair of masses and spins — are slid against the data, hunting for a match buried in the noise. A real astrophysical event must also appear in both widely separated detectors, with a time offset no larger than the light-travel time between them.</p>',
