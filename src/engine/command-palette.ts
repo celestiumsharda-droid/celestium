@@ -14,12 +14,21 @@ interface Item { title: string; sub: string; href: string; q: string; kind: "art
 const flat = (s: string) =>
   s.replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ").replace(/\s+/g, " ").trim();
 
+const ORDER = [
+  "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
+  "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
+  "double-helix", "crispr", "ancient-dna", "penicillin",
+];
+
+/** A random discovery URL — powers "Surprise me" everywhere. */
+export function randomDiscoveryHref(): string {
+  const valid = ORDER.filter(s => DISCOVERIES[s]);
+  const slug = valid[Math.floor(Math.random() * valid.length)] ?? "black-hole-image";
+  return `/discoveries/${slug}/`;
+}
+
 function buildItems(): Item[] {
-  const order = [
-    "black-hole-image", "gravitational-waves", "weighing-the-universe", "cosmic-background",
-    "first-exoplanet", "double-slit", "age-of-earth", "plate-tectonics",
-    "double-helix", "crispr", "ancient-dna", "penicillin",
-  ];
+  const order = ORDER;
   const items: Item[] = [];
   for (const slug of order) {
     const d = DISCOVERIES[slug];
@@ -28,6 +37,7 @@ function buildItems(): Item[] {
     items.push({ title, sub: d.field, href: `/discoveries/${slug}/`, kind: "article", q: (title + " " + d.field + " " + flat(d.dek)).toLowerCase() });
   }
   const pages: Item[] = [
+    { title: "Surprise me", sub: "Open a random discovery", href: "#random", kind: "page", q: "surprise me random shuffle lucky any discovery roll dice" },
     { title: "All discoveries", sub: "The series index", href: "/discoveries/", kind: "page", q: "all discoveries series index browse" },
     { title: "Home", sub: "The front page", href: "/", kind: "page", q: "home front cover" },
     { title: "The universe map", sub: "You are here", href: "/#scale", kind: "page", q: "universe map perspective scale you are here zoom" },
@@ -108,7 +118,7 @@ export function initCommandPalette(): void {
     const it = shown[i];
     if (!it) return;
     close();
-    location.href = it.href;
+    location.href = it.href === "#random" ? randomDiscoveryHref() : it.href;
   }
 
   function open() {

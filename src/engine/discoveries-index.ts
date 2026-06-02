@@ -9,7 +9,7 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
-import { initCommandPalette } from "./command-palette";
+import { initCommandPalette, randomDiscoveryHref } from "./command-palette";
 import { cardVisual } from "./card-visual";
 import { attachSpotlight } from "./spotlight";
 import DISCOVERIES from "../data/discoveries";
@@ -131,6 +131,9 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 
 /* ambient sound (opt-in) */
 initSound($("sound"), { pad: true });
+
+/* surprise me → a random discovery */
+$("cat-surprise").addEventListener("click", () => { location.href = randomDiscoveryHref(); });
 
 /* ⌘K command palette */
 initCommandPalette();
