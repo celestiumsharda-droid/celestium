@@ -6,6 +6,7 @@
  */
 
 import SOURCES from "../data/sources";
+import { t } from "./i18n";
 
 const esc = (s: string) =>
   s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -23,7 +24,7 @@ export function sourcesHTML(slug: string): string {
     )
     .join("");
   return (
-    `<h2 class="srch">Sources &amp; further reading</h2>` +
+    `<h2 class="srch">${esc(t("sources.heading"))}</h2>` +
     `<ol class="srclist">${items}</ol>` +
     `<p class="srcnote">Celestium retells peer-reviewed science for a general audience. Where a claim rests on a specific result, the primary work is cited above — read it at the source.</p>`
   );

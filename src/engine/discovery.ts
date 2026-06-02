@@ -7,6 +7,7 @@ import { sourcesHTML } from "./sources";
 import { initCommandPalette } from "./command-palette";
 import { initHighlightShare } from "./highlight-share";
 import { initInteractiveFigures } from "./interactive-figures";
+import { t } from "./i18n";
 import { initSound, playClick } from "./sound";
 import type { Discovery } from "./types";
 
@@ -227,10 +228,10 @@ if (D.heroImage) {
 
 /* ---------- depth render ---------- */
 const TAGS = [
-  "The Glance — the essence in twenty seconds",
-  "The Curious Read — the story, with the mechanism",
-  "The Deep Dive — the full physics and the safeguards",
-] as const;
+  t("depth.glance.tag"),
+  t("depth.curious.tag"),
+  t("depth.deep.tag"),
+];
 
 const body = $("abody");
 const lt = $("lvltag");
@@ -238,7 +239,7 @@ const seg = $("seg");
 body.style.transition = "opacity .35s";
 
 // Dynamic, per-article reading time on each depth button.
-const DEPTH_NAMES = ["Glance", "Curious", "Deep"] as const;
+const DEPTH_NAMES = [t("depth.glance"), t("depth.curious"), t("depth.deep")];
 function readTime(l: number): string {
   const words = expandFragments(D.depths[l] ?? [])
     .replace(/<[^>]+>/g, " ").replace(/&[^;]+;/g, " ")
