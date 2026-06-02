@@ -47,7 +47,7 @@ function photo(
 
 /** Double-slit schematic: source → two slits → fringes on a screen. */
 function dslitFigure(): string {
-  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A coherent source passes through two slits and forms interference fringes on a screen.">';
+  let s = '<figure data-fig="dslit"><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A coherent source passes through two slits and forms interference fringes on a screen.">';
   // source + wavefronts
   s += '<circle cx="70" cy="150" r="5" fill="#a9bcff"/>';
   for (let i = 1; i <= 3; i++) s += `<path d="M ${70 + i*34} 110 A 60 60 0 0 1 ${70 + i*34} 190" fill="none" stroke="rgba(169,188,255,${0.5 - i*0.1})" stroke-width="1"/>`;

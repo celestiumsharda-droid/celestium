@@ -90,6 +90,85 @@ function enhanceDecay(fig: HTMLElement): void {
   update(1);
 }
 
+/* ---- double-slit fringe builder ----
+   Fire single particles and watch the interference pattern emerge dot by
+   dot. Switch on a which-slit detector and it collapses to two plain
+   bands — the heart of the experiment, made tactile. */
+function enhanceDoubleSlit(fig: HTMLElement): void {
+  if (fig.dataset["enhanced"]) return;
+  fig.dataset["enhanced"] = "1";
+
+  const W = 720, H = 260;
+  let detector = false;
+  let count = 0;
+
+  const cap = fig.querySelector("figcaption")?.outerHTML ?? "";
+  fig.innerHTML =
+    `<div class="if-stage"><canvas class="if-canvas" width="${W}" height="${H}" role="img" aria-label="A detection screen where single particles accumulate into an interference pattern."></canvas></div>` +
+    `<div class="if-controls">` +
+    `<div class="if-row">` +
+    `<button class="if-btn if-fire" type="button">Fire 300 particles</button>` +
+    `<label class="if-toggle"><input type="checkbox" class="if-det"><span class="if-sw"></span>Watch which slit</label>` +
+    `</div>` +
+    `<div class="if-time"><span class="if-count">0</span> particles &nbsp;·&nbsp; <span class="if-mode">both slits open — they interfere</span></div>` +
+    `</div>` + cap;
+  fig.classList.add("ifig");
+
+  const canvas = fig.querySelector(".if-canvas") as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d")!;
+  const countEl = fig.querySelector(".if-count") as HTMLElement;
+  const modeEl = fig.querySelector(".if-mode") as HTMLElement;
+  const detEl = fig.querySelector(".if-det") as HTMLInputElement;
+  const fireBtn = fig.querySelector(".if-fire") as HTMLButtonElement;
+
+  function clearScreen(): void {
+    ctx.fillStyle = "#07080d";
+    ctx.fillRect(0, 0, W, H);
+    count = 0;
+    countEl.textContent = "0";
+  }
+  // probability of a hit at normalized position xn ∈ [-1, 1]
+  function prob(xn: number): number {
+    if (detector) {
+      const a = Math.exp(-Math.pow((xn - 0.34) / 0.17, 2));
+      const b = Math.exp(-Math.pow((xn + 0.34) / 0.17, 2));
+      return (a + b) / 1;
+    }
+    const env = Math.exp(-(xn * xn) / 0.42);          // single-slit envelope
+    const fr = Math.pow(Math.cos(xn * Math.PI * 5.2), 2); // two-slit interference
+    return fr * env;
+  }
+  function fire(n: number): void {
+    for (let i = 0; i < n; i++) {
+      let xn = 0, p = 0, tries = 0;
+      do { xn = Math.random() * 2 - 1; p = prob(xn); tries++; } while (Math.random() > p && tries < 40);
+      const x = W / 2 + xn * (W / 2 - 24);
+      const y = 14 + Math.random() * (H - 28);
+      const r = Math.random() * 1.1 + 0.5;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 6.29);
+      ctx.fillStyle = `rgba(242,230,196,${(0.45 + Math.random() * 0.45).toFixed(2)})`;
+      ctx.fill();
+      count++;
+    }
+    countEl.textContent = String(count);
+  }
+
+  fireBtn.addEventListener("click", () => fire(300));
+  detEl.addEventListener("change", () => {
+    detector = detEl.checked;
+    modeEl.textContent = detector
+      ? "detector on — the interference is gone"
+      : "both slits open — they interfere";
+    clearScreen();
+    fire(300);
+  });
+
+  clearScreen();
+  fire(220);
+}
+
 export function initInteractiveFigures(root: ParentNode): void {
   root.querySelectorAll<HTMLElement>('figure[data-fig="decay"]').forEach(enhanceDecay);
+  root.querySelectorAll<HTMLElement>('figure[data-fig="dslit"]').forEach(enhanceDoubleSlit);
 }
