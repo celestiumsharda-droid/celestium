@@ -5,6 +5,8 @@ import RELATED_INDEX from "./related-index";
 import { expandFragments } from "./fragments";
 import { sourcesHTML } from "./sources";
 import { initCommandPalette } from "./command-palette";
+import { initHighlightShare } from "./highlight-share";
+import { initInteractiveFigures } from "./interactive-figures";
 import { initSound, playClick } from "./sound";
 import type { Discovery } from "./types";
 
@@ -268,6 +270,7 @@ function renderDepth(l: number) {
       n++;
     });
     revealBlocks(body);
+    initInteractiveFigures(body);
     onScroll();
   }, 180);
 }
@@ -294,6 +297,7 @@ seg.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
 // wire up the scroll-reveal for the pre-rendered blocks.
 if (body.innerHTML.trim()) {
   revealBlocks(body);
+  initInteractiveFigures(body);
 } else {
   renderDepth(0);
 }
@@ -384,5 +388,6 @@ mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("cli
 /* ---------- ambient sound (opt-in) ---------- */
 initSound($("sound"), { pad: true });
 
-/* ---------- ⌘K command palette ---------- */
+/* ---------- ⌘K command palette + highlight-to-share ---------- */
 initCommandPalette();
+initHighlightShare();

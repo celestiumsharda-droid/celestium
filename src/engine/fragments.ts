@@ -140,7 +140,7 @@ function decayFigure(): string {
     parent += `${i === 0 ? "M" : "L"} ${px(t).toFixed(1)} ${py(f).toFixed(1)} `;
     daughter += `${i === 0 ? "M" : "L"} ${px(t).toFixed(1)} ${py(1 - f).toFixed(1)} `;
   }
-  let s = '<figure><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A radioactive decay curve: parent atoms halve every half-life as daughter atoms accumulate.">';
+  let s = '<figure data-fig="decay"><svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A radioactive decay curve: parent atoms halve every half-life as daughter atoms accumulate.">';
   // axes
   s += `<line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="#363c4a"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#363c4a"/>`;
   // half-life markers

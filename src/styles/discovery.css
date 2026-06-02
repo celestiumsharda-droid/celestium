@@ -448,6 +448,66 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
   .nextseries .ns-arrow { display: none; }
 }
 
+/* highlight-to-share — appears over a text selection */
+.hl-share {
+  position: absolute; z-index: 90;
+  transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink); cursor: pointer;
+  padding: 9px 14px; border-radius: 999px;
+  background: var(--glass-tint-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec);
+  animation: hlpop .18s ease;
+}
+.hl-share[hidden] { display: none; }
+.hl-share svg { width: 15px; height: 15px; color: var(--accent); }
+.hl-share:hover { border-color: rgba(255,255,255,.22); }
+@keyframes hlpop { from { opacity: 0; transform: translateX(-50%) translateY(4px) scale(.94); } to { opacity: 1; } }
+.hl-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(16px);
+  z-index: 120; opacity: 0; pointer-events: none;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--ink);
+  padding: 12px 20px; border-radius: 999px;
+  background: var(--glass-tint-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow);
+  transition: opacity .3s, transform .3s;
+}
+.hl-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* interactive (scrubbable) figures */
+.ifig .if-stage svg { width: 100%; height: auto; display: block; }
+.if-controls { margin-top: 6px; }
+.if-bars { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.if-track { height: 9px; border-radius: 999px; background: rgba(255,255,255,.04); overflow: hidden; border: 1px solid var(--glass-edge); }
+.if-fill { display: block; height: 100%; border-radius: 999px; transition: width .06s linear; }
+.if-pf { background: linear-gradient(90deg, #5a6bb0, #a9bcff); }
+.if-df { background: linear-gradient(90deg, #b8975a, #f2e6c4); }
+.if-lab { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin-top: 7px; }
+.if-lab b { color: var(--ink); font-weight: 500; font-size: 13px; }
+.if-slider {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--star));
+  outline-offset: 6px; cursor: pointer;
+}
+.if-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #fff, #d7dbe6);
+  box-shadow: 0 2px 12px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.2); cursor: grab;
+}
+.if-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+.if-slider::-moz-range-thumb {
+  width: 22px; height: 22px; border: none; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.5); cursor: grab;
+}
+.if-time { text-align: center; margin-top: 15px; font-family: var(--mono); font-size: 12px; letter-spacing: .05em; color: var(--mut); }
+.if-time .if-hl { color: var(--ink); font-weight: 500; }
+.if-time .if-yr { color: var(--star); }
+
 /* Sources & further reading — the primary literature, set like a
    journal reference list. The credibility floor of a science page. */
 .sources { max-width: 760px; margin: 56px auto 0; padding: 42px 40px 4px; border-top: 1px solid var(--line-soft); }
