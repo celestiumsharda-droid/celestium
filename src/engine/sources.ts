@@ -23,7 +23,7 @@ export function sourcesHTML(slug: string): string {
     )
     .join("");
   return (
-    `<div class="srch">Sources &amp; further reading</div>` +
+    `<h2 class="srch">Sources &amp; further reading</h2>` +
     `<ol class="srclist">${items}</ol>` +
     `<p class="srcnote">Celestium retells peer-reviewed science for a general audience. Where a claim rests on a specific result, the primary work is cited above — read it at the source.</p>`
   );

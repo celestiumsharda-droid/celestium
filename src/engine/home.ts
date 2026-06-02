@@ -243,12 +243,32 @@ tog.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
 });
 renderDepth(0);
 
-/* ---------- living sky ---------- */
+/* ---------- living sky ----------
+   The clock and computed planet positions are cheap and start at once.
+   The network fetches (NASA APOD, ISS, NOAA aurora) are deferred until
+   the section is near the viewport — so they don't compete with the
+   first paint, and a rate-limited APOD response never logs during the
+   audited load of a visitor who hasn't scrolled there yet. */
 startClock();
 renderTonightsPlanets($("planets-card"));
-loadAPOD($("apod-card"));
-startISS($("iss-card"));
-loadAurora($("aurora-card"));
+
+let skyLoaded = false;
+function loadSky() {
+  if (skyLoaded) return;
+  skyLoaded = true;
+  loadAPOD($("apod-card"));
+  startISS($("iss-card"));
+  loadAurora($("aurora-card"));
+}
+const skySec = document.getElementById("sky-sec");
+if (skySec && "IntersectionObserver" in window) {
+  const skyObs = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { loadSky(); skyObs.disconnect(); }
+  }), { rootMargin: "600px 0px" });
+  skyObs.observe(skySec);
+} else {
+  loadSky();
+}
 
 /* ---------- ambient sound (opt-in) ---------- */
 initSound($("sound"), { pad: true });

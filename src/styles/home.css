@@ -260,7 +260,7 @@ section { position: relative; padding: 140px 0; }
 }
 @keyframes pulse { 50% { transform: scale(1.6); opacity: .45; } }
 .persp-info .lvl { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); }
-.persp-info h3 { font-size: clamp(1.8rem, 4vw, 3rem); margin: .2em 0 .26em; }
+.persp-info .cm-name { font-size: clamp(1.8rem, 4vw, 3rem); margin: .2em 0 .26em; }
 .persp-info .cm-readout { font-family: var(--mono); font-size: 13px; color: var(--star); margin-bottom: 16px; letter-spacing: .04em; }
 .persp-info p { color: var(--mut); font-size: 1rem; line-height: 1.6; }
 
@@ -326,7 +326,7 @@ section { position: relative; padding: 140px 0; }
   }
   .persp-info .cm-live { margin-bottom: 6px; font-size: 9px; }
   .persp-info .lvl { font-size: 9.5px; letter-spacing: .2em; }
-  .persp-info h3 { font-size: 1.4rem; margin: .05em 0 .12em; line-height: 1.05; }
+  .persp-info .cm-name { font-size: 1.4rem; margin: .05em 0 .12em; line-height: 1.05; }
   .persp-info .cm-readout { font-size: 12px; margin-bottom: 7px; }
   .persp-info p { font-size: .85rem; line-height: 1.5; }
 
@@ -358,7 +358,7 @@ section { position: relative; padding: 140px 0; }
     max-width: min(44ch, 54vw); padding: 12px 16px;
   }
   .persp-info .cm-live { margin-bottom: 6px; }
-  .persp-info h3 { font-size: 1.3rem; margin: .08em 0 .12em; }
+  .persp-info .cm-name { font-size: 1.3rem; margin: .08em 0 .12em; }
   .persp-info .cm-readout { font-size: 11px; margin-bottom: 6px; }
   .persp-info p {
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -463,9 +463,12 @@ section { position: relative; padding: 140px 0; }
   min-height: 88vh;
   display: flex; flex-direction: column; justify-content: center;
   padding: 0 60px;
-  opacity: .16; transition: .6s;
+  /* de-emphasise inactive steps with blur + a slight scale only — text
+     stays at full opacity so its colour contrast always passes AA. */
+  filter: blur(3.5px); transform: scale(.985);
+  transition: filter .6s, transform .6s;
 }
-.step.on { opacity: 1; }
+.step.on { filter: none; transform: none; }
 .step .k { font-family: var(--mono); font-size: 11px; letter-spacing: .34em; color: var(--accent); text-transform: uppercase; margin-bottom: 18px; }
 .step h3 { font-size: clamp(1.8rem, 3.6vw, 3rem); margin-bottom: 18px; }
 .step p { color: var(--mut); font-size: 1.08rem; max-width: 46ch; }
