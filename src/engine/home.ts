@@ -5,6 +5,7 @@ import { initSound, playClick } from "./sound";
 import { initCommandPalette } from "./command-palette";
 import { cardVisual } from "./card-visual";
 import { playIntro } from "./intro";
+import { attachSpotlight } from "./spotlight";
 import DISCOVERIES from "../data/discoveries";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
@@ -231,6 +232,7 @@ EXPLORE.forEach(g => {
     `</div>`;
   grid.appendChild(a);
 });
+attachSpotlight(grid, ".cell");
 
 /* ---------- mobile menu ---------- */
 const bg = $<HTMLButtonElement>("burger");

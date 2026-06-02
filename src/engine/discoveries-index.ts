@@ -11,6 +11,7 @@ import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
 import { initCommandPalette } from "./command-palette";
 import { cardVisual } from "./card-visual";
+import { attachSpotlight } from "./spotlight";
 import DISCOVERIES from "../data/discoveries";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -61,6 +62,8 @@ ORDER.forEach((slug, i) => {
   grid.appendChild(a);
   cards.push({ el: a, field: d.field, q: (flat(title) + " " + d.field + " " + flat(d.dek)).toLowerCase() });
 });
+
+attachSpotlight(grid, ".cat-card");
 
 /* ---- discipline filter chips ---- */
 const filtersEl = $("cat-filters");

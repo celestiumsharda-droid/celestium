@@ -395,6 +395,14 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
   transition: transform .5s cubic-bezier(.2,.7,.2,1), border-color .5s, box-shadow .5s;
 }
 .cat-card[hidden] { display: none; }
+.cat-card { --mx: 50%; --my: 50%; }
+.cat-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  border-radius: inherit; mix-blend-mode: screen;
+  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(169,188,255,.16), transparent 60%);
+  opacity: 0; transition: opacity .4s;
+}
+.cat-card:hover::after { opacity: 1; }
 .cat-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,.2); box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-spec); }
 .cat-visual { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-bottom: 1px solid var(--glass-edge); }
 .cat-visual svg, .cat-visual .cat-photo { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }

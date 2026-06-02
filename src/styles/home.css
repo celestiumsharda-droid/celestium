@@ -157,8 +157,7 @@ nav.solid {
 @media (prefers-reduced-motion: reduce) { .intro { display: none; } }
 
 .scrollcue {
-  position: absolute; bottom: 34px; left: 50%;
-  transform: translateX(-50%);
+  position: absolute; bottom: 34px; left: 0; right: 0;
   font-family: var(--mono); font-size: 10px;
   letter-spacing: .4em; text-transform: uppercase;
   color: var(--dim);
@@ -167,7 +166,7 @@ nav.solid {
 }
 /* the trailing letter-spacing widens the text box on the right; pull it
    back so the glyphs sit centred over the line */
-.scrollcue > span:not(.ln) { margin-right: -.4em; }
+.scrollcue > span:not(.ln) { margin-right: -.4em; text-align: center; }
 .scrollcue .ln {
   width: 1px; height: 46px;
   background: linear-gradient(var(--dim), transparent);
@@ -667,6 +666,15 @@ section { position: relative; padding: 140px 0; }
 .cell:hover .cell-art { opacity: .85; }
 .cell:hover .cell-art svg, .cell:hover .cell-art .cat-photo { transform: scale(1.05); }
 .cell-in { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+/* cursor spotlight */
+.cell { --mx: 50%; --my: 50%; }
+.cell::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  border-radius: inherit; mix-blend-mode: screen;
+  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(169,188,255,.18), transparent 60%);
+  opacity: 0; transition: opacity .4s;
+}
+.cell:hover::after { opacity: 1; }
 .cell .field { font-family: var(--mono); font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); }
 .cell h3 { font-size: 1.55rem; margin: 20px 0; color: var(--mut); transition: .4s; line-height: 1.2; }
 .cell:hover h3 { color: var(--ink); }
