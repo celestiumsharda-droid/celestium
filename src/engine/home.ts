@@ -202,6 +202,33 @@ TIMELINE.forEach((e, i) => {
   rail.appendChild(r);
 });
 
+/* Enhance the timeline into the spiral flight — unless reduced motion or no
+   canvas, where the list above stays as the (accessible) experience. */
+(() => {
+  const section = document.getElementById("timeline");
+  const tlTrack = document.getElementById("tl-track");
+  const tlCanvas = document.getElementById("tl-canvas") as HTMLCanvasElement | null;
+  if (!section || !tlTrack || !tlCanvas || reduceMotion || !tlCanvas.getContext) return;
+  const io = new IntersectionObserver(async entries => {
+    if (!entries.some(e => e.isIntersecting)) return;
+    io.disconnect();
+    try {
+      const m = await import("./timeline");
+      section.classList.add("spiral");
+      m.mountTimeline({
+        canvas: tlCanvas,
+        track: tlTrack,
+        card: document.getElementById("tl-card")!,
+        gap: document.getElementById("tl-gap")!,
+        data: TIMELINE,
+      });
+    } catch (err) {
+      console.warn("Timeline spiral unavailable; keeping the list.", err);
+    }
+  }, { rootMargin: "400px 0px" });
+  io.observe(section);
+})();
+
 /* ---------- scrollytelling ---------- */
 const steps = $("steps");
 STORY.forEach(s => {

@@ -125,14 +125,43 @@
     </div>
   </section>
 
-  <!-- TIMELINE -->
+  <!-- TIMELINE — "two clocks, one story": a scroll-flight along a spiral of deep time -->
   <section id="timeline">
-    <div class="wrap">
+    <!-- motion: the pinned spiral (enhanced in by JS via #timeline.spiral) -->
+    <div class="tl-track" id="tl-track">
+      <div class="tl-sticky">
+        <canvas id="tl-canvas" aria-hidden="true"></canvas>
+        <div class="tl-grad" aria-hidden="true"></div>
+        <div class="tl-hud">
+          <div class="tl-head">
+            <p class="eyebrow">The discovery series</p>
+            <h2>Two clocks,<br>one story.</h2>
+          </div>
+          <div class="tl-card" id="tl-card"></div>
+          <div class="tl-gap" id="tl-gap" aria-hidden="true">
+            <div class="gap-axis">
+              <span class="gap-tick" style="left:0"></span>
+              <span class="gap-tick" style="left:100%"></span>
+              <div class="gap-fill"></div>
+              <span class="gap-marker gap-happened"></span>
+              <span class="gap-marker gap-knew"></span>
+            </div>
+            <div class="gap-labels">
+              <div class="gap-l"><span class="gap-cap">It happened</span><span class="gap-hl">—</span></div>
+              <div class="gap-l gap-l-k"><span class="gap-cap">We understood</span><span class="gap-kl">—</span></div>
+            </div>
+          </div>
+          <div class="tl-hint" aria-hidden="true"><span class="cm-arrow">↓</span> Scroll to travel through time</div>
+        </div>
+      </div>
+    </div>
+    <!-- reduced-motion / no-JS / screen-reader fallback: the classic list -->
+    <div class="wrap tl-list-wrap">
       <div class="shead reveal">
         <h2>Two clocks,<br>one story.</h2>
         <p>Every entry sits on cosmic time — <em>when it happened</em> — and carries the human moment we finally understood it. Tap any node.</p>
       </div>
-      <div class="tlrail reveal" id="tlrail"></div>
+      <div class="tlrail" id="tlrail"></div>
     </div>
   </section>
 

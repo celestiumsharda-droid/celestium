@@ -97,6 +97,10 @@ export interface TimelineEntry {
   b: string;
   /** "How we know" footnote shown after the body. May contain `<b>`. */
   d: string;
+  /** Years before present that it happened (drives the cosmic "clock"). */
+  ya: number;
+  /** Calendar year we understood/confirmed it (drives the discovery "clock"). */
+  knew: number;
   /** Slug of the corresponding discovery article, if any. */
   id?: string;
 }
