@@ -106,18 +106,20 @@ const fEye: Gen = silhouette(111, 92, (cx, S) => {
   cx.fillStyle = "#000"; cx.beginPath(); cx.arc(c, c, S * 0.075, 0, TAU); cx.fill(); // pupil
 });
 
-const fBrain: Gen = silhouette(127, 96, (cx, S) => {
-  const c = S / 2;
-  cx.beginPath(); cx.ellipse(c, c + S * 0.02, S * 0.34, S * 0.27, 0, 0, TAU); cx.fill();
-  // gyri bumps around the top
-  const r = mkRnd(5);
-  for (let k = 0; k < 26; k++) { const ang = Math.PI + (k / 25) * Math.PI; const rx = Math.cos(ang) * S * 0.33, ry = Math.sin(ang) * S * 0.26; cx.beginPath(); cx.arc(c + rx, c + S * 0.02 + ry, S * 0.05 + r() * S * 0.02, 0, TAU); cx.fill(); }
-  // cerebellum + stem
-  cx.beginPath(); cx.ellipse(c, c + S * 0.26, S * 0.12, S * 0.09, 0, 0, TAU); cx.fill();
-  cx.fillRect(c - S * 0.025, c + S * 0.28, S * 0.05, S * 0.12);
-  // central fissure (carve a thin gap)
-  cx.globalCompositeOperation = "destination-out"; cx.lineWidth = S * 0.012; cx.strokeStyle = "#000";
-  cx.beginPath(); cx.moveTo(c, c - S * 0.24); cx.bezierCurveTo(c + S * 0.03, c - S * 0.1, c - S * 0.03, c + S * 0.05, c, c + S * 0.2); cx.stroke();
+const fBrain: Gen = silhouette(127, 98, (cx, S) => {
+  const c = S / 2, r = mkRnd(5);
+  // two bumpy hemispheres (the iconic top-down brain)
+  for (const side of [-1, 1]) {
+    const hx = c + side * S * 0.155;
+    cx.beginPath(); cx.ellipse(hx, c, S * 0.18, S * 0.29, 0, 0, TAU); cx.fill();
+    for (let k = 0; k < 20; k++) { const ang = (k / 20) * TAU; const rx = Math.cos(ang) * S * 0.17, ry = Math.sin(ang) * S * 0.28; cx.beginPath(); cx.arc(hx + rx, c + ry, S * 0.045 + r() * S * 0.016, 0, TAU); cx.fill(); }
+  }
+  // cerebellum + stem at the base
+  cx.beginPath(); cx.ellipse(c, c + S * 0.30, S * 0.1, S * 0.065, 0, 0, TAU); cx.fill();
+  cx.fillRect(c - S * 0.02, c + S * 0.33, S * 0.04, S * 0.08);
+  // carve the central longitudinal fissure
+  cx.globalCompositeOperation = "destination-out";
+  cx.fillRect(c - S * 0.014, c - S * 0.3, S * 0.028, S * 0.58);
   cx.globalCompositeOperation = "source-over";
 });
 
@@ -169,9 +171,10 @@ ${SNOISE}
 void main(){
   float m = smoothstep(0.0, 1.0, uMix);
   vec3 p = mix(position, aTo, m);
-  // particles swarm during the transition (noise peaks mid-morph)
+  // particles swarm during the transition (noise peaks mid-morph), then
+  // settle to near-zero so the held form is crisp
   float trans = sin(m * 3.14159265);
-  float amp = trans * 9.0 + 0.25;
+  float amp = trans * 12.0 + 0.10;
   float t = uTime * 0.05 + aSeed * 6.2831;
   vec3 turb = vec3(snoise(p*0.045 + t), snoise(p*0.045 + t + 13.3), snoise(p*0.045 + t + 27.1));
   p += turb * amp;
@@ -278,10 +281,14 @@ export function mountTimeline(opts: Opts): () => void {
     if (Math.abs(target - cur) < 0.0004) cur = target;
     const i = clamp(Math.floor(cur), 0, F - 2);
     setForm(i);
-    uniforms.uMix.value = clamp(cur - i, 0, 1);
+    // dwell · morph · dwell — each form settles and is held crisp, then the
+    // swarm flies into the next. This is what makes them read as real forms.
+    const local = clamp(cur - i, 0, 1);
+    const mm = clamp((local - 0.30) / 0.40, 0, 1);
+    uniforms.uMix.value = mm;
     uniforms.uTime.value = now * 0.001;
     burst *= 0.9; uniforms.uBurst.value = burst;
-    const mixT = smooth(clamp(cur - i, 0, 1));
+    const mixT = smooth(mm);
     bloom.strength = lerp(FORMS[i]!.bloom, FORMS[Math.min(i + 1, F - 1)]!.bloom, mixT);
     // camera: gentle zoom journey between the two active forms + slow drift
     const camZ = lerp(FORMS[i]!.cam, FORMS[Math.min(i + 1, F - 1)]!.cam, mixT) * (small ? 1.5 : 1);
