@@ -323,7 +323,7 @@ export function mountTimeline(opts: Opts): () => void {
   composer.addPass(bloom);
 
   // particle count, and precompute every form
-  const PC = small ? 22000 : 42000;
+  const PC = small ? 30000 : 60000;
   const F = FORMS.length;
   const EARTH = 7;
   const forms: Float32Array[] = [];
@@ -397,6 +397,7 @@ export function mountTimeline(opts: Opts): () => void {
 
   // ---- scroll + loop ----
   let target = 0, cur = 0, running = false, raf = 0, last = performance.now();
+  let userYaw = 0, userPitch = 0, dragging = false, lastX = 0, lastY = 0;
   function readScroll() { const r = track.getBoundingClientRect(); const span = track.offsetHeight - window.innerHeight; target = (span > 0 ? clamp(-r.top / span, 0, 1) : 0) * (F - 1); }
   function frame(now: number) {
     raf = requestAnimationFrame(frame);
@@ -415,10 +416,14 @@ export function mountTimeline(opts: Opts): () => void {
     burst *= 0.9; uniforms.uBurst.value = burst;
     const mixT = smooth(mm);
     bloom.strength = lerp(FORMS[i]!.bloom, FORMS[Math.min(i + 1, F - 1)]!.bloom, mixT);
-    // camera: gentle zoom journey between the two active forms + slow drift
+    // camera: gentle zoom journey between the two active forms; orbits with a
+    // slow drift, and the viewer can drag to look around (desktop)
     const camZ = lerp(FORMS[i]!.cam, FORMS[Math.min(i + 1, F - 1)]!.cam, mixT) * (small ? 1.5 : 1);
-    const dr = now * 0.00004;
-    camera.position.set(Math.sin(dr) * 14, small ? -8 : 6, camZ);
+    if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
+    const yaw = Math.sin(now * 0.00004) * 0.16 + userYaw;
+    const pitch = clamp(userPitch, -1.0, 1.0);
+    const cp = Math.cos(pitch);
+    camera.position.set(Math.sin(yaw) * camZ * cp, (small ? -8 : 6) + Math.sin(pitch) * camZ, Math.cos(yaw) * camZ * cp);
     camera.lookAt(0, small ? -8 : 0, 0);
     setActive(clamp(Math.round(cur), 0, F - 1));
     composer.render();
@@ -430,6 +435,18 @@ export function mountTimeline(opts: Opts): () => void {
   addEventListener("resize", resize, { passive: true });
   const io = new IntersectionObserver(es => { es.some(e => e.isIntersecting) ? start_() : stop(); }, { rootMargin: "100px 0px" });
   io.observe(track);
+
+  // drag-to-look — desktop only (touch is reserved for scrolling the timeline)
+  const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (fine) {
+    canvas.style.cursor = "grab";
+    canvas.addEventListener("pointerdown", e => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = "grabbing"; try { canvas.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ } });
+    canvas.addEventListener("pointermove", e => { if (!dragging) return; userYaw += (e.clientX - lastX) * 0.006; userPitch = clamp(userPitch + (e.clientY - lastY) * 0.005, -1.0, 1.0); lastX = e.clientX; lastY = e.clientY; });
+    const end = () => { dragging = false; canvas.style.cursor = "grab"; };
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+  }
+
   setForm(0); setActive(0); composer.render();
 
   return () => { stop(); io.disconnect(); removeEventListener("resize", resize); geo.dispose(); mat.dispose(); composer.dispose(); renderer.dispose(); };
