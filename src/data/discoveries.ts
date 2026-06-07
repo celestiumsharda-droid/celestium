@@ -634,6 +634,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The night we learned<br><i>the universe is growing.</i>',
     dek: "For all of history the cosmos was assumed to be fixed and eternal. Then someone measured the light of distant galaxies and found them all rushing away — and the faster, the farther. Space itself was stretching.",
     hero: "deep-field",
+    heroImage: { base: "expanding-universe", w: 1280, h: 720, alt: "A deep field scattered with galaxies — distant ones reddened, nearer ones blue-white — drifting apart across the dark.", credit: "Illustration · Celestium" },
     related: ["weighing-the-universe", "cosmic-background", "__scale"],
     depths: [
       [
@@ -683,6 +684,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'The table that<br><i>predicted the unknown.</i>',
     dek: "Arrange the elements in the right order and a rhythm appears — their properties repeat. Mendeleev trusted that rhythm so completely that he left blank squares for elements no one had found, and described them before they existed.",
     hero: "grid",
+    heroImage: { base: "periodic-table", w: 1280, h: 720, alt: "A row of glowing gas-discharge tubes, each holding a different element's light — cool blues and violets beside a single warm amber.", credit: "Illustration · Celestium" },
     related: ["age-of-earth", "double-slit", "__scale"],
     depths: [
       [
@@ -730,6 +732,7 @@ const DISCOVERIES: DiscoveryMap = {
     title: 'How we taught the body<br><i>to remember a disease.</i>',
     dek: "Smallpox killed hundreds of millions and scarred or blinded millions more. Then a country doctor noticed that milkmaids never caught it — and turned that clue into the idea that would, two centuries later, wipe the disease from the Earth.",
     hero: "culture",
+    heroImage: { base: "vaccination", w: 1280, h: 720, alt: "A single glass vaccine vial lit by cool blue light with a warm highlight, standing in darkness.", credit: "Illustration · Celestium" },
     related: ["penicillin", "double-helix", "__scale"],
     depths: [
       [
