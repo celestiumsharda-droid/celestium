@@ -163,7 +163,7 @@ nav.solid {
 .navlinks a[aria-current="page"]::after { width: 100%; }
 @media (max-width: 920px) {
   .navlinks { display: none; }
-  #burger { display: flex; }
+  /* #burger is shown below, after its base rule, so source order wins */
 }
 @media (max-width: 640px) {
   nav, nav.solid {
@@ -222,6 +222,9 @@ nav.solid {
 #burger.x span { width: 26px; }
 #burger.x span:first-child { transform: translateY(4px) rotate(45deg); }
 #burger.x span:last-child  { transform: translateY(-4px) rotate(-45deg); }
+/* show the burger once the inline nav links collapse (after the base rule
+   above, so equal-specificity source order makes this win on mobile) */
+@media (max-width: 920px) { #burger { display: flex; } }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
