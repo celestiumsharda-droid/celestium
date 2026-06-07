@@ -91,9 +91,13 @@ function buildEarth(pos: Float32Array, col: Float32Array, N: number): void {
     for (const c of conts) { const dd = vx * c[0]! + vy * c[1]! + vz * c[2]!; if (dd > 0.7) land = Math.max(land, (dd - 0.7) / 0.3); }
     land *= 0.55 + 0.45 * r();
     set(pos, i, vx * R, vy * R, vz * R);
-    if (Math.abs(vy) > 0.84) { col[i * 3] = 0.82; col[i * 3 + 1] = 0.88; col[i * 3 + 2] = 1.0; }            // ice caps
-    else if (land > 0.28) { col[i * 3] = 0.27 + 0.18 * r(); col[i * 3 + 1] = 0.52 + 0.16 * r(); col[i * 3 + 2] = 0.23; } // land
-    else { col[i * 3] = 0.11; col[i * 3 + 1] = 0.32 + 0.12 * r(); col[i * 3 + 2] = 0.72 + 0.14 * r(); }     // ocean
+    let cr: number, cg: number, cb: number;
+    if (Math.abs(vy) > 0.84) { cr = 0.82; cg = 0.88; cb = 1.0; }                       // ice caps
+    else if (land > 0.28) { cr = 0.27 + 0.18 * r(); cg = 0.52 + 0.16 * r(); cb = 0.23; } // land
+    else { cr = 0.11; cg = 0.32 + 0.12 * r(); cb = 0.72 + 0.14 * r(); }                // ocean
+    // bake a day/night terminator — lit from one side
+    const lit = 0.28 + 0.72 * Math.max(0, vx * 0.55 + vy * 0.3 + vz * 0.78);
+    col[i * 3] = cr * lit; col[i * 3 + 1] = cg * lit; col[i * 3 + 2] = cb * lit;
   }
 }
 
@@ -167,6 +171,54 @@ const FORMS: { gen: Gen; col: THREE.Color; cam: number; bloom: number }[] = [
   { gen: fBrain,    col: COL(0xf2e6c4), cam: 195, bloom: 0.2 },  // You
 ];
 
+/* Per-particle colour. Most forms take their base colour uniformly; these
+   painters read a form's positions and give it real, varied colour so the
+   sun blazes, the galaxy has a gold core and blue arms, the cell glows, etc. */
+function fillCol(col: Float32Array, c: THREE.Color, N: number): void {
+  for (let i = 0; i < N; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+}
+function paintStars(pos: Float32Array, col: Float32Array, N: number): void {
+  const r = mkRnd(201);
+  for (let i = 0; i < N; i++) {
+    const d = Math.hypot(pos[i * 3]!, pos[i * 3 + 1]!, pos[i * 3 + 2]!), core = clamp(1 - d / 42, 0, 1);
+    if (r() < 0.2) { col[i * 3] = 1.0; col[i * 3 + 1] = 0.82; col[i * 3 + 2] = 0.55; }            // a few warm stars
+    else { col[i * 3] = lerp(0.7, 1.0, core); col[i * 3 + 1] = lerp(0.82, 0.97, core); col[i * 3 + 2] = lerp(1.25, 1.05, core); }
+  }
+}
+function paintSun(pos: Float32Array, col: Float32Array, N: number): void {
+  const r = mkRnd(202);
+  for (let i = 0; i < N; i++) {
+    const d = Math.hypot(pos[i * 3]!, pos[i * 3 + 1]!);
+    if (d < 22) { const t = d / 22; col[i * 3] = 1.0; col[i * 3 + 1] = lerp(0.95, 0.5, t); col[i * 3 + 2] = lerp(0.7, 0.15, t); } // white→orange sun
+    else { const g = 0.4 + r() * 0.15; col[i * 3] = g * 0.8; col[i * 3 + 1] = g * 0.86; col[i * 3 + 2] = g * 1.12; }              // cool orbit dust
+  }
+}
+function paintCell(pos: Float32Array, col: Float32Array, N: number): void {
+  const r = mkRnd(203);
+  for (let i = 0; i < N; i++) {
+    const x = pos[i * 3]!, y = pos[i * 3 + 1]!, dO = Math.hypot(x, y), dN = Math.hypot(x - 6, y + 4);
+    if (dO > 64) { col[i * 3] = 0.4; col[i * 3 + 1] = 0.95; col[i * 3 + 2] = 0.6; }      // bright membrane
+    else if (dN < 18) { col[i * 3] = 0.78; col[i * 3 + 1] = 1.0; col[i * 3 + 2] = 0.82; } // glowing nucleus
+    else { const g = 0.5 + r() * 0.2; col[i * 3] = 0.2 * g; col[i * 3 + 1] = 0.7 * g; col[i * 3 + 2] = 0.45 * g; }
+  }
+}
+function paintGalaxy(pos: Float32Array, col: Float32Array, N: number): void {
+  for (let i = 0; i < N; i++) {
+    const t = smooth(clamp(Math.hypot(pos[i * 3]!, pos[i * 3 + 1]!) / 88, 0, 1));
+    col[i * 3] = lerp(1.0, 0.55, t); col[i * 3 + 1] = lerp(0.82, 0.62, t); col[i * 3 + 2] = lerp(0.5, 1.05, t); // gold core → blue arms
+  }
+}
+function paintDNA(pos: Float32Array, col: Float32Array, N: number): void {
+  for (let i = 0; i < N; i++) {
+    const rad = Math.hypot(pos[i * 3]!, pos[i * 3 + 2]!), h = clamp(pos[i * 3 + 1]! / 150 + 0.5, 0, 1);
+    if (rad < 22) { col[i * 3] = 1.0; col[i * 3 + 1] = 0.8; col[i * 3 + 2] = 0.45; }     // warm base-pair rungs
+    else { col[i * 3] = lerp(0.35, 0.5, h); col[i * 3 + 1] = lerp(0.9, 0.85, h); col[i * 3 + 2] = lerp(1.0, 0.85, h); } // cyan strands
+  }
+}
+const PAINT: Record<number, (pos: Float32Array, col: Float32Array, N: number) => void> = {
+  2: paintStars, 4: paintSun, 5: paintCell, 8: paintDNA, 11: paintGalaxy,
+};
+
 /* ---- GLSL ---- */
 const SNOISE = /* glsl */`
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -187,9 +239,8 @@ vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);m=m*m;
 return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
 
 const VERT = /* glsl */`
-uniform float uTime, uMix, uBurst, uSize, uDpr, uEarth;
-uniform vec3 uColA, uColB;
-attribute vec3 aTo; attribute vec3 aEarth; attribute float aSeed;
+uniform float uTime, uMix, uBurst, uSize, uDpr;
+attribute vec3 aTo; attribute vec3 aColA; attribute vec3 aColB; attribute float aSeed;
 varying vec3 vCol; varying float vA;
 ${SNOISE}
 void main(){
@@ -208,16 +259,11 @@ void main(){
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = clamp(uSize * uDpr * (260.0 / -mv.z), 0.5, 5.5);
-  float br = 0.55 + 0.45 * fract(aSeed * 91.7);
+  float br = 0.62 + 0.38 * fract(aSeed * 91.7);
   // (3) twinkle — each particle pulses on its own phase, so the form sparkles
   float tw = 0.72 + 0.28 * sin(uTime * 2.4 + aSeed * 120.0);
-  vec3 base = mix(uColA, uColB, m);
-  // Earth: swap to per-particle ocean/land colour, lit by a day/night terminator
-  if (uEarth > 0.001) {
-    float lit = 0.32 + 0.68 * clamp(dot(normalize(position + 0.0001), vec3(0.55, 0.35, 0.76)), 0.0, 1.0);
-    base = mix(base, aEarth * lit, uEarth);
-  }
-  vCol = base * br * tw * (1.0 + uBurst * 1.4);
+  // per-particle colour, morphing from this form's palette to the next
+  vCol = mix(aColA, aColB, m) * br * tw * (1.0 + uBurst * 1.4);
   vA = (0.26 + 0.26 * fract(aSeed * 53.1)) * tw + uBurst * 0.35 + trans * 0.12;
 }`;
 
@@ -251,31 +297,35 @@ export function mountTimeline(opts: Opts): () => void {
   const PC = small ? 22000 : 42000;
   const F = FORMS.length;
   const EARTH = 7;
-  const earthColor = new Float32Array(PC * 3);
   const forms: Float32Array[] = [];
+  const formColors: Float32Array[] = [];
   for (let k = 0; k < F; k++) {
-    const arr = new Float32Array(PC * 3);
-    if (k === EARTH) buildEarth(arr, earthColor, PC); else FORMS[k]!.gen(arr, PC);
-    forms.push(arr);
+    const arr = new Float32Array(PC * 3), carr = new Float32Array(PC * 3);
+    if (k === EARTH) buildEarth(arr, carr, PC);
+    else { FORMS[k]!.gen(arr, PC); const pf = PAINT[k]; if (pf) pf(arr, carr, PC); else fillCol(carr, FORMS[k]!.col, PC); }
+    forms.push(arr); formColors.push(carr);
   }
 
   const posArr = new Float32Array(PC * 3); posArr.set(forms[0]!);
   const toArr = new Float32Array(PC * 3); toArr.set(forms[1] ?? forms[0]!);
+  const colAArr = new Float32Array(PC * 3); colAArr.set(formColors[0]!);
+  const colBArr = new Float32Array(PC * 3); colBArr.set(formColors[1] ?? formColors[0]!);
   const seed = new Float32Array(PC); const sr = mkRnd(5); for (let i = 0; i < PC; i++) seed[i] = sr();
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
   geo.setAttribute("aTo", new THREE.BufferAttribute(toArr, 3));
+  geo.setAttribute("aColA", new THREE.BufferAttribute(colAArr, 3));
+  geo.setAttribute("aColB", new THREE.BufferAttribute(colBArr, 3));
   geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
-  geo.setAttribute("aEarth", new THREE.BufferAttribute(earthColor, 3));
   const posAttr = geo.getAttribute("position") as THREE.BufferAttribute;
   const toAttr = geo.getAttribute("aTo") as THREE.BufferAttribute;
+  const colAAttr = geo.getAttribute("aColA") as THREE.BufferAttribute;
+  const colBAttr = geo.getAttribute("aColB") as THREE.BufferAttribute;
 
   const uniforms = {
     uTime: { value: 0 }, uMix: { value: 0 }, uBurst: { value: 0 },
     uSize: { value: small ? 1.7 : 2.0 }, uDpr: { value: dpr },
-    uColA: { value: FORMS[0]!.col.clone() }, uColB: { value: (FORMS[1] ?? FORMS[0]!).col.clone() },
-    uEarth: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   scene.add(new THREE.Points(geo, mat));
@@ -289,10 +339,10 @@ export function mountTimeline(opts: Opts): () => void {
     if (i === segFrom) return;
     segFrom = i;
     posArr.set(forms[i]!); posAttr.needsUpdate = true;
+    colAArr.set(formColors[i]!); colAAttr.needsUpdate = true;
     const j = Math.min(i + 1, F - 1);
     toArr.set(forms[j]!); toAttr.needsUpdate = true;
-    uniforms.uColA.value.copy(FORMS[i]!.col);
-    uniforms.uColB.value.copy(FORMS[j]!.col);
+    colBArr.set(formColors[j]!); colBAttr.needsUpdate = true;
   }
   function setActive(i: number) {
     if (i === activeInt) return;
@@ -332,7 +382,6 @@ export function mountTimeline(opts: Opts): () => void {
     uniforms.uTime.value = now * 0.001;
     burst *= 0.9; uniforms.uBurst.value = burst;
     const mixT = smooth(mm);
-    uniforms.uEarth.value = i === EARTH ? 1 - mixT : (i + 1 === EARTH ? mixT : 0);
     bloom.strength = lerp(FORMS[i]!.bloom, FORMS[Math.min(i + 1, F - 1)]!.bloom, mixT);
     // camera: gentle zoom journey between the two active forms + slow drift
     const camZ = lerp(FORMS[i]!.cam, FORMS[Math.min(i + 1, F - 1)]!.cam, mixT) * (small ? 1.5 : 1);
