@@ -64,7 +64,14 @@
 </div>
 
 <main id="main">
-  <header class="cat-hero">
+  <div class="phero" aria-hidden="true">
+    <picture>
+      <source type="image/avif" srcset="/img/join-720.avif 720w, /img/join-1280.avif 1280w" sizes="100vw">
+      <source type="image/webp" srcset="/img/join-720.webp 720w, /img/join-1280.webp 1280w" sizes="100vw">
+      <img src="/img/join-1280.jpg" srcset="/img/join-720.jpg 720w, /img/join-1280.jpg 1280w" sizes="100vw" alt="" decoding="async" fetchpriority="high">
+    </picture>
+  </div>
+  <header class="cat-hero has-banner">
     <p class="kick">Be part of Celestium</p>
     <h1>Join the<br><i>expedition.</i></h1>
     <p class="dek">Celestium is a small, exacting attempt to hold awe and rigour in the same hand — landmark science told at three depths, every claim cited to the work that earned it. If that resonates, here is how to follow along, stay in orbit, and help shape what comes next.</p>

@@ -64,7 +64,14 @@
 </div>
 
 <main id="main">
-  <header class="cat-hero">
+  <div class="phero" aria-hidden="true">
+    <picture>
+      <source type="image/avif" srcset="/img/about-720.avif 720w, /img/about-1280.avif 1280w" sizes="100vw">
+      <source type="image/webp" srcset="/img/about-720.webp 720w, /img/about-1280.webp 1280w" sizes="100vw">
+      <img src="/img/about-1280.jpg" srcset="/img/about-720.jpg 720w, /img/about-1280.jpg 1280w" sizes="100vw" alt="" decoding="async" fetchpriority="high">
+    </picture>
+  </div>
+  <header class="cat-hero has-banner">
     <p class="kick">About Celestium</p>
     <h1>A pinnacle of science,<br><i>built to be felt.</i></h1>
     <p class="dek">Most science writing forces a choice: too shallow to satisfy, or too dense to enter. Celestium refuses it. Every discovery is written three times over, from one fact set, so you can read at the altitude you choose — and every claim traces back to the work that earned it.</p>
