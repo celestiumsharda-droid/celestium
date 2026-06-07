@@ -71,7 +71,31 @@ const fCell: Gen = (a, N) => { const r = mkRnd(53); for (let i = 0; i < N; i++) 
 
 const fMolecule: Gen = (a, N) => { const r = mkRnd(61); const sites: number[][] = []; for (let k = 0; k < 9; k++) sites.push([(r() - 0.5) * 150, (r() - 0.5) * 120, (r() - 0.5) * 30]); for (let i = 0; i < N; i++) { const s = sites[(r() * sites.length | 0)]!; const lobe = r() < 0.5 ? -1 : 1; const rad = Math.pow(r(), 0.6) * 9; const th = Math.acos(2 * r() - 1), ph = r() * TAU; set(a, i, s[0]! + lobe * 11 + rad * Math.sin(th) * Math.cos(ph), s[1]! + rad * Math.sin(th) * Math.sin(ph), s[2]! + rad * Math.cos(th)); } };
 
-const fImpact: Gen = (a, N) => { const r = mkRnd(71); for (let i = 0; i < N; i++) { const roll = r(); if (roll < 0.5) { const ang = r() * TAU, R = Math.pow(r(), 0.6) * 52; set(a, i, Math.cos(ang) * R, Math.sin(ang) * R, gaussR(r) * 5); } else if (roll < 0.72) { const rad = Math.pow(r(), 0.7) * 12; const th = Math.acos(2 * r() - 1), ph = r() * TAU; set(a, i, 60 + rad * Math.sin(th) * Math.cos(ph), 54 + rad * Math.sin(th) * Math.sin(ph), rad * Math.cos(th)); } else { const ang = r() * TAU, R = 70 + gaussR(r) * 6; set(a, i, Math.cos(ang) * R, Math.sin(ang) * R, gaussR(r) * 3); } } };
+/* Earth — a real lit globe with ocean/land/ice colour (in aEarth) plus a
+   bright incoming impactor. Fills both the position and the colour arrays. */
+function buildEarth(pos: Float32Array, col: Float32Array, N: number): void {
+  const r = mkRnd(71), R = 56;
+  const conts: number[][] = [];
+  for (let k = 0; k < 6; k++) { const th = Math.acos(2 * r() - 1), ph = r() * TAU; conts.push([Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)]); }
+  const impactStart = Math.floor(N * 0.95);
+  for (let i = 0; i < N; i++) {
+    if (i >= impactStart) {                       // the asteroid: a hot streak inbound
+      const t = (i - impactStart) / Math.max(1, N - impactStart);
+      set(pos, i, 100 - t * 56 + gaussR(r) * 2, 72 - t * 40 + gaussR(r) * 2, 26 - t * 16);
+      col[i * 3] = 1.0; col[i * 3 + 1] = 0.66; col[i * 3 + 2] = 0.3;
+      continue;
+    }
+    const th = Math.acos(2 * r() - 1), ph = r() * TAU;
+    const vx = Math.sin(th) * Math.cos(ph), vy = Math.cos(th), vz = Math.sin(th) * Math.sin(ph);
+    let land = 0;
+    for (const c of conts) { const dd = vx * c[0]! + vy * c[1]! + vz * c[2]!; if (dd > 0.7) land = Math.max(land, (dd - 0.7) / 0.3); }
+    land *= 0.55 + 0.45 * r();
+    set(pos, i, vx * R, vy * R, vz * R);
+    if (Math.abs(vy) > 0.84) { col[i * 3] = 0.82; col[i * 3 + 1] = 0.88; col[i * 3 + 2] = 1.0; }            // ice caps
+    else if (land > 0.28) { col[i * 3] = 0.27 + 0.18 * r(); col[i * 3 + 1] = 0.52 + 0.16 * r(); col[i * 3 + 2] = 0.23; } // land
+    else { col[i * 3] = 0.11; col[i * 3 + 1] = 0.32 + 0.12 * r(); col[i * 3 + 2] = 0.72 + 0.14 * r(); }     // ocean
+  }
+}
 
 const fDNA: Gen = (a, N) => { const r = mkRnd(83); const H = 150, turns = 2.4, rad = 40; for (let i = 0; i < N; i++) { const roll = r(); const t = r(); const y = (t - 0.5) * H; const ang = t * turns * TAU; if (roll < 0.46) { set(a, i, Math.cos(ang) * rad + gaussR(r) * 0.8, y, Math.sin(ang) * rad + gaussR(r) * 0.8); } else if (roll < 0.92) { set(a, i, Math.cos(ang + Math.PI) * rad + gaussR(r) * 0.8, y, Math.sin(ang + Math.PI) * rad + gaussR(r) * 0.8); } else { const u = Math.round(t * turns * 10) / 10; const ra = u * turns * TAU; const uu = r(); set(a, i, lerp(Math.cos(ra), Math.cos(ra + Math.PI), uu) * rad, (u - 0.5) * H, lerp(Math.sin(ra), Math.sin(ra + Math.PI), uu) * rad); } } };
 
@@ -134,7 +158,7 @@ const FORMS: { gen: Gen; col: THREE.Color; cam: number; bloom: number }[] = [
   { gen: fSolar,    col: COL(0xffd9a0), cam: 235, bloom: 0.55 }, // Sun & worlds
   { gen: fCell,     col: COL(0x9ff0c4), cam: 175, bloom: 0.28 }, // Life begins
   { gen: fMolecule, col: COL(0xbaf0a0), cam: 185, bloom: 0.3 },  // Oxygen
-  { gen: fImpact,   col: COL(0xffb27a), cam: 205, bloom: 0.4 },  // Asteroid
+  { gen: (a, n) => buildEarth(a, new Float32Array(n * 3), n), col: COL(0x6fa8ff), cam: 150, bloom: 0.34 }, // Earth & the asteroid
   { gen: fDNA,      col: COL(0x8ff0e0), cam: 165, bloom: 0.2 },  // A mind appears
   { gen: fEye,      col: COL(0xbcd0ff), cam: 160, bloom: 0.18 }, // First telescope
   { gen: fGrid,     col: COL(0xb9a9ff), cam: 215, bloom: 0.24 }, // Gravity
@@ -163,27 +187,38 @@ vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);m=m*m;
 return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
 
 const VERT = /* glsl */`
-uniform float uTime, uMix, uBurst, uSize, uDpr;
+uniform float uTime, uMix, uBurst, uSize, uDpr, uEarth;
 uniform vec3 uColA, uColB;
-attribute vec3 aTo; attribute float aSeed;
+attribute vec3 aTo; attribute vec3 aEarth; attribute float aSeed;
 varying vec3 vCol; varying float vA;
 ${SNOISE}
 void main(){
   float m = smoothstep(0.0, 1.0, uMix);
   vec3 p = mix(position, aTo, m);
-  // particles swarm during the transition (noise peaks mid-morph), then
-  // settle to near-zero so the held form is crisp
   float trans = sin(m * 3.14159265);
-  float amp = trans * 12.0 + 0.10;
+  // (1) the swarm — particles fly apart and stream into the next form
   float t = uTime * 0.05 + aSeed * 6.2831;
   vec3 turb = vec3(snoise(p*0.045 + t), snoise(p*0.045 + t + 13.3), snoise(p*0.045 + t + 27.1));
-  p += turb * amp;
+  p += turb * (trans * 12.0);
+  // (2) ceaseless life — a gentle, ever-moving drift so a held form keeps
+  // breathing and shimmering instead of freezing solid
+  float lt = uTime * 0.55 + aSeed * 40.0;
+  vec3 life = vec3(snoise(p*0.12 + lt), snoise(p*0.12 + lt + 5.0), snoise(p*0.12 + lt + 11.0));
+  p += life * (1.25 + trans * 1.4);
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
   gl_PointSize = clamp(uSize * uDpr * (260.0 / -mv.z), 0.5, 5.5);
   float br = 0.55 + 0.45 * fract(aSeed * 91.7);
-  vCol = mix(uColA, uColB, m) * br * (1.0 + uBurst * 1.4);
-  vA = (0.26 + 0.26 * fract(aSeed * 53.1)) + uBurst * 0.35 + trans * 0.12;
+  // (3) twinkle — each particle pulses on its own phase, so the form sparkles
+  float tw = 0.72 + 0.28 * sin(uTime * 2.4 + aSeed * 120.0);
+  vec3 base = mix(uColA, uColB, m);
+  // Earth: swap to per-particle ocean/land colour, lit by a day/night terminator
+  if (uEarth > 0.001) {
+    float lit = 0.32 + 0.68 * clamp(dot(normalize(position + 0.0001), vec3(0.55, 0.35, 0.76)), 0.0, 1.0);
+    base = mix(base, aEarth * lit, uEarth);
+  }
+  vCol = base * br * tw * (1.0 + uBurst * 1.4);
+  vA = (0.26 + 0.26 * fract(aSeed * 53.1)) * tw + uBurst * 0.35 + trans * 0.12;
 }`;
 
 const FRAG = /* glsl */`
@@ -215,8 +250,14 @@ export function mountTimeline(opts: Opts): () => void {
   // particle count, and precompute every form
   const PC = small ? 22000 : 42000;
   const F = FORMS.length;
+  const EARTH = 7;
+  const earthColor = new Float32Array(PC * 3);
   const forms: Float32Array[] = [];
-  for (let k = 0; k < F; k++) { const arr = new Float32Array(PC * 3); FORMS[k]!.gen(arr, PC); forms.push(arr); }
+  for (let k = 0; k < F; k++) {
+    const arr = new Float32Array(PC * 3);
+    if (k === EARTH) buildEarth(arr, earthColor, PC); else FORMS[k]!.gen(arr, PC);
+    forms.push(arr);
+  }
 
   const posArr = new Float32Array(PC * 3); posArr.set(forms[0]!);
   const toArr = new Float32Array(PC * 3); toArr.set(forms[1] ?? forms[0]!);
@@ -226,6 +267,7 @@ export function mountTimeline(opts: Opts): () => void {
   geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
   geo.setAttribute("aTo", new THREE.BufferAttribute(toArr, 3));
   geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+  geo.setAttribute("aEarth", new THREE.BufferAttribute(earthColor, 3));
   const posAttr = geo.getAttribute("position") as THREE.BufferAttribute;
   const toAttr = geo.getAttribute("aTo") as THREE.BufferAttribute;
 
@@ -233,6 +275,7 @@ export function mountTimeline(opts: Opts): () => void {
     uTime: { value: 0 }, uMix: { value: 0 }, uBurst: { value: 0 },
     uSize: { value: small ? 1.7 : 2.0 }, uDpr: { value: dpr },
     uColA: { value: FORMS[0]!.col.clone() }, uColB: { value: (FORMS[1] ?? FORMS[0]!).col.clone() },
+    uEarth: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   scene.add(new THREE.Points(geo, mat));
@@ -289,6 +332,7 @@ export function mountTimeline(opts: Opts): () => void {
     uniforms.uTime.value = now * 0.001;
     burst *= 0.9; uniforms.uBurst.value = burst;
     const mixT = smooth(mm);
+    uniforms.uEarth.value = i === EARTH ? 1 - mixT : (i + 1 === EARTH ? mixT : 0);
     bloom.strength = lerp(FORMS[i]!.bloom, FORMS[Math.min(i + 1, F - 1)]!.bloom, mixT);
     // camera: gentle zoom journey between the two active forms + slow drift
     const camZ = lerp(FORMS[i]!.cam, FORMS[Math.min(i + 1, F - 1)]!.cam, mixT) * (small ? 1.5 : 1);
