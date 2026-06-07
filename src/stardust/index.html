@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You Are Stardust — Celestium</title>
+<meta name="description" content="Follow the atoms of your own body backward through everything that made them — your cells, your atoms, the young Earth, the Sun's birth-cloud, a dying star's supernova, the first starlight, the Big Bang — and back to you.">
+<meta name="theme-color" content="#050609">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://celestium.celestium-sharda.workers.dev/stardust/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Celestium">
+<meta property="og:title" content="You Are Stardust">
+<meta property="og:description" content="The atoms of your body have a 13.8-billion-year history. Follow them home.">
+<meta property="og:url" content="https://celestium.celestium-sharda.workers.dev/stardust/">
+<meta property="og:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="You Are Stardust">
+<meta name="twitter:description" content="The atoms of your body have a 13.8-billion-year history. Follow them home.">
+<meta name="twitter:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3Cpath d='M74 20 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='%23f2e6c4'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/fraunces-300_600-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/spectral-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/styles/home.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"You Are Stardust","url":"https://celestium.celestium-sharda.workers.dev/stardust/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"Celestium","url":"https://celestium.celestium-sharda.workers.dev/"}}</script>
+</head>
+<body>
+<a class="skip" href="#stardust">Skip to content</a>
+<div class="grain" aria-hidden="true"></div>
+<div id="prog" aria-hidden="true"></div>
+
+<nav id="nav" class="solid">
+  <a class="brand" href="/">
+    <svg class="mark" viewBox="0 0 100 100" fill="none" stroke="#f3f5fb" stroke-width="3">
+      <ellipse cx="50" cy="50" rx="40" ry="16"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(60 50 50)"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(120 50 50)"/>
+      <circle cx="50" cy="50" r="6" fill="#f3f5fb" stroke="none"/>
+      <path d="M76 16 l3 7 7 1 -5 5 1 7 -6-3 -6 3 1-7 -5-5 7-1z" fill="#f2e6c4" stroke="none"/>
+    </svg>
+    CELESTIUM
+  </a>
+  <div class="navlinks">
+    <a href="/discoveries/">Discoveries</a>
+    <a href="/timeline/">Timeline</a>
+    <a href="/#sky-sec">Tonight</a>
+    <a href="/about/">About</a>
+    <a href="/join/">Join&nbsp;Us</a>
+  </div>
+  <button id="sound" class="soundtoggle" type="button" aria-label="Enable ambient sound" aria-pressed="false"></button>
+  <button id="burger" aria-label="Open menu"><span></span><span></span></button>
+</nav>
+<div id="menu">
+  <a href="/discoveries/">Discoveries</a>
+  <a href="/timeline/">Timeline</a>
+  <a href="/#sky-sec">Tonight</a>
+  <a href="/about/">About</a>
+  <a href="/join/">Join Us</a>
+</div>
+
+<main id="top">
+  <section id="stardust">
+    <div class="sd-track" id="sd-track">
+      <div class="sd-sticky">
+        <canvas id="sd-canvas" aria-hidden="true"></canvas>
+        <div class="sd-grad" aria-hidden="true"></div>
+        <div class="sd-hud">
+          <div class="sd-caption" id="sd-caption"></div>
+          <div class="sd-hint" aria-hidden="true"><span class="cm-arrow">↓</span> Scroll to follow your atoms home</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- base experience: the written journey (no-JS / reduced motion) -->
+    <div class="sd-list-wrap" id="sd-list">
+      <header class="sd-intro">
+        <p class="eyebrow">A personal cosmic origin story</p>
+        <h1>You are stardust.</h1>
+        <p class="sd-dek">Every atom in your body has a history older than the Earth. Follow them backward through everything that made them.</p>
+      </header>
+      <div class="sd-chapter"><h2>You.</h2><p>Right now, reading this — a configuration of stardust complex enough to wonder where it came from.</p></div>
+      <div class="sd-chapter"><h2>Written through every cell.</h2><p>The same instructions, copied without a break from the very first life on Earth.</p></div>
+      <div class="sd-chapter"><h2>Made of atoms.</h2><p>Carbon, oxygen, nitrogen, calcium, iron — the same elements that build worlds and stars.</p></div>
+      <div class="sd-chapter"><h2>Once, the Earth itself.</h2><p>Your atoms were the rock, the ocean and the air of a young planet, four and a half billion years ago.</p></div>
+      <div class="sd-chapter"><h2>Gathered from a cloud.</h2><p>The Earth and everything on it condensed from the same spinning disk that lit the Sun.</p></div>
+      <div class="sd-chapter"><h2>Forged in a dying star.</h2><p>Your carbon and oxygen were cooked inside an earlier star — and flung across space when it exploded.</p></div>
+      <div class="sd-chapter"><h2>Lit from the first light.</h2><p>The hydrogen in every drop of your water is older still — among the very first atoms ever made.</p></div>
+      <div class="sd-chapter"><h2>Born from a single point.</h2><p>All of it — you, the Earth, the stars — began together, 13.8 billion years ago.</p></div>
+      <div class="sd-chapter"><h2>You are the universe, looking back at itself.</h2><p>Briefly, improbably, the cosmos arranged itself into something that could marvel at the cosmos. That something is you.</p></div>
+      <p class="sd-foot"><a class="btn" href="/timeline/">See the whole timeline &nbsp;&#8594;</a></p>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="/engine/stardust-page.ts"></script>
+</body>
+</html>

@@ -326,6 +326,34 @@ section { position: relative; padding: 140px 0; }
 .tlt-inner { max-width: 660px; margin: 0 auto; }
 .tlt-inner h2 { font-family: var(--display); font-weight: 300; line-height: .98; letter-spacing: -.02em; font-size: clamp(2.4rem, 6vw, 4.6rem); margin: 16px 0 22px; }
 .tlt-inner p { color: var(--mut); max-width: 52ch; margin: 0 auto 34px; font-size: 1.05rem; line-height: 1.6; }
+.tlt-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* ---- STARDUST page ("You Are Stardust") ---- */
+.sd-track { display: none; position: relative; height: 800vh; }
+#stardust.live .sd-track { display: block; }
+#stardust.live .sd-list-wrap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sd-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; background: var(--void); }
+#sd-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sd-grad { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, rgba(5,6,9,.95) 0%, rgba(5,6,9,.55) 22%, transparent 46%); }
+.sd-hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; padding: clamp(84px,12vh,150px) clamp(24px,6vw,90px) clamp(48px,8vh,84px); }
+.sd-hud a { pointer-events: auto; }
+.sd-caption { max-width: 700px; }
+.sd-num { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--accent); margin-bottom: 16px; }
+.sd-title { font-family: var(--display); font-weight: 300; line-height: 1.02; letter-spacing: -.02em; font-size: clamp(2rem, 5vw, 4rem); margin-bottom: 16px; color: var(--ink); }
+.sd-line { color: var(--mut); font-size: clamp(1.02rem, 1.7vw, 1.28rem); line-height: 1.6; max-width: 56ch; margin: 0 auto; }
+@keyframes sdFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.sd-caption.in { animation: sdFade .7s cubic-bezier(.2,.7,.2,1); }
+.sd-hint { margin-top: 28px; font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+.sd-hint .cm-arrow { color: var(--accent); }
+.sd-list-wrap { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
+.sd-intro { text-align: center; margin-bottom: 40px; }
+.sd-intro h1 { font-family: var(--display); font-weight: 300; font-size: clamp(2.6rem, 8vw, 5rem); letter-spacing: -.025em; margin: 16px 0 20px; }
+.sd-dek { color: var(--mut); max-width: 52ch; margin: 0 auto; font-size: 1.1rem; line-height: 1.6; }
+.sd-chapter { padding: 30px 0; border-bottom: 1px solid var(--line-soft); }
+.sd-chapter h2 { font-family: var(--display); font-weight: 400; font-size: clamp(1.5rem,3.4vw,2.2rem); letter-spacing: -.02em; margin-bottom: 10px; }
+.sd-chapter p { color: var(--mut); line-height: 1.65; max-width: 60ch; }
+.sd-foot { margin-top: 44px; text-align: center; }
+@media (max-width: 560px) { .sd-hud { padding: 80px 22px 40px; } }
 
 /* ---- TIMELINE page: spiral/genesis flight (also used on /timeline/) ---- */
 #timeline { border-top: 1px solid var(--line-soft); position: relative; }
