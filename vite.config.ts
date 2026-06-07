@@ -60,6 +60,7 @@ export default defineConfig({
         discoveriesIndex: resolve(__dirname, "src/discoveries/index.html"),
         about: resolve(__dirname, "src/about/index.html"),
         join: resolve(__dirname, "src/join/index.html"),
+        timeline: resolve(__dirname, "src/timeline/index.html"),
         notfound: resolve(__dirname, "src/404.html"),
       },
     },

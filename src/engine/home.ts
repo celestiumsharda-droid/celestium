@@ -7,7 +7,6 @@ import { playIntro } from "./intro";
 import { attachSpotlight } from "./spotlight";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
-import TIMELINE from "../data/timeline";
 import STORY from "../data/story";
 import DEPTH_PREVIEW from "../data/depth-preview";
 import EXPLORE from "../data/explore";
@@ -179,54 +178,6 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
 
   addEventListener("scroll", onScrollZoom, { passive: true });
   addEventListener("resize", onScrollZoom);
-})();
-
-/* ---------- timeline ---------- */
-const rail = document.querySelector<HTMLElement>(".tlrail")!;
-TIMELINE.forEach((e, i) => {
-  const r = document.createElement("div");
-  r.className = "tlrow";
-  if (i === 0) r.classList.add("act");
-  const link = e.id
-    ? `<a href="/discoveries/${e.id}/" class="discov" style="display:block;width:fit-content;margin-top:18px;color:var(--accent);border-color:var(--accent-dim)" onclick="event.stopPropagation()">Read the full discovery &nbsp;→</a>`
-    : "";
-  r.innerHTML =
-    `<div class="when">${e.w}</div><div class="knot"></div>` +
-    `<h3>${e.t}</h3><div class="body"><p>${e.b}</p>` +
-    `<span class="discov">How we know — ${e.d}</span>${link}</div>`;
-  r.addEventListener("click", () => {
-    const was = r.classList.contains("act");
-    rail.querySelectorAll(".tlrow").forEach(o => o.classList.remove("act"));
-    if (!was) r.classList.add("act");
-  });
-  rail.appendChild(r);
-});
-
-/* Enhance the timeline into the spiral flight — unless reduced motion or no
-   canvas, where the list above stays as the (accessible) experience. */
-(() => {
-  const section = document.getElementById("timeline");
-  const tlTrack = document.getElementById("tl-track");
-  const tlCanvas = document.getElementById("tl-canvas") as HTMLCanvasElement | null;
-  if (!section || !tlTrack || !tlCanvas || reduceMotion || !tlCanvas.getContext) return;
-  const io = new IntersectionObserver(async entries => {
-    if (!entries.some(e => e.isIntersecting)) return;
-    io.disconnect();
-    try {
-      const m = await import("./timeline");
-      section.classList.add("spiral");
-      m.mountTimeline({
-        canvas: tlCanvas,
-        track: tlTrack,
-        card: document.getElementById("tl-card")!,
-        gap: document.getElementById("tl-gap")!,
-        data: TIMELINE,
-      });
-    } catch (err) {
-      console.warn("Timeline spiral unavailable; keeping the list.", err);
-    }
-  }, { rootMargin: "400px 0px" });
-  io.observe(section);
 })();
 
 /* ---------- scrollytelling ---------- */

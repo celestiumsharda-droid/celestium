@@ -321,9 +321,14 @@ section { position: relative; padding: 140px 0; }
 .persp-fallback p { color: var(--mut); max-width: 52ch; font-size: 1.05rem; }
 
 /* ---- timeline ---- */
-#timeline { border-top: 1px solid var(--line-soft); position: relative; }
+/* ---- homepage timeline teaser (the full experience lives on /timeline/) ---- */
+#tl-teaser { border-top: 1px solid var(--line-soft); padding: clamp(90px,14vh,170px) 0; text-align: center; }
+.tlt-inner { max-width: 660px; margin: 0 auto; }
+.tlt-inner h2 { font-family: var(--display); font-weight: 300; line-height: .98; letter-spacing: -.02em; font-size: clamp(2.4rem, 6vw, 4.6rem); margin: 16px 0 22px; }
+.tlt-inner p { color: var(--mut); max-width: 52ch; margin: 0 auto 34px; font-size: 1.05rem; line-height: 1.6; }
 
-/* ---- TIMELINE: spiral flight (progressive enhancement over the list) ---- */
+/* ---- TIMELINE page: spiral/genesis flight (also used on /timeline/) ---- */
+#timeline { border-top: 1px solid var(--line-soft); position: relative; }
 .tl-track { display: none; position: relative; height: 580vh; }
 #timeline.spiral .tl-track { display: block; }
 #timeline.spiral .tl-list-wrap {

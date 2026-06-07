@@ -171,6 +171,25 @@ const FORMS: { gen: Gen; col: THREE.Color; cam: number; bloom: number }[] = [
   { gen: fBrain,    col: COL(0xf2e6c4), cam: 195, bloom: 0.2 },  // You
 ];
 
+/* per-form rotation [spinAroundY, spinAroundZ, rate] — gives 3D forms life
+   and reveals their structure; silhouettes/diagrams stay still (facing us). */
+const SPIN: [number, number, number][] = [
+  [0, 0, 0],      // fireball
+  [0, 0, 0],      // first light
+  [0, 1, 0.05],   // first stars
+  [1, 0, 0.28],   // atom — orbits revolve
+  [0, 1, 0.18],   // solar — planets orbit the sun
+  [0, 1, 0.05],   // cell
+  [0, 0, 0],      // molecule
+  [1, 0, 0.16],   // earth — the globe turns
+  [1, 0, 0.30],   // dna — the helix winds
+  [0, 0, 0],      // eye
+  [0, 0, 0],      // gravity grid
+  [0, 1, 0.12],   // galaxy — face-on spin
+  [0, 0, 0],      // gravitational waves
+  [0, 0, 0],      // brain
+];
+
 /* Per-particle colour. Most forms take their base colour uniformly; these
    painters read a form's positions and give it real, varied colour so the
    sun blazes, the galaxy has a gold core and blue arms, the cell glows, etc. */
@@ -240,12 +259,22 @@ return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
 
 const VERT = /* glsl */`
 uniform float uTime, uMix, uBurst, uSize, uDpr;
+uniform vec3 uSpinA, uSpinB;
 attribute vec3 aTo; attribute vec3 aColA; attribute vec3 aColB; attribute float aSeed;
 varying vec3 vCol; varying float vA;
 ${SNOISE}
+vec3 rotY(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z); }
+vec3 rotZ(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x - s*p.y, s*p.x + c*p.y, p.z); }
 void main(){
   float m = smoothstep(0.0, 1.0, uMix);
-  vec3 p = mix(position, aTo, m);
+  // each form spins about its own axis, revealing 3D structure
+  vec3 pa = position;
+  pa = mix(pa, rotY(pa, uTime * uSpinA.z), uSpinA.x);
+  pa = mix(pa, rotZ(pa, uTime * uSpinA.z), uSpinA.y);
+  vec3 pb = aTo;
+  pb = mix(pb, rotY(pb, uTime * uSpinB.z), uSpinB.x);
+  pb = mix(pb, rotZ(pb, uTime * uSpinB.z), uSpinB.y);
+  vec3 p = mix(pa, pb, m);
   float trans = sin(m * 3.14159265);
   // (1) the swarm — particles fly apart and stream into the next form
   float t = uTime * 0.05 + aSeed * 6.2831;
@@ -326,6 +355,7 @@ export function mountTimeline(opts: Opts): () => void {
   const uniforms = {
     uTime: { value: 0 }, uMix: { value: 0 }, uBurst: { value: 0 },
     uSize: { value: small ? 1.7 : 2.0 }, uDpr: { value: dpr },
+    uSpinA: { value: new THREE.Vector3() }, uSpinB: { value: new THREE.Vector3() },
   };
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   scene.add(new THREE.Points(geo, mat));
@@ -343,6 +373,8 @@ export function mountTimeline(opts: Opts): () => void {
     const j = Math.min(i + 1, F - 1);
     toArr.set(forms[j]!); toAttr.needsUpdate = true;
     colBArr.set(formColors[j]!); colBAttr.needsUpdate = true;
+    uniforms.uSpinA.value.set(SPIN[i]![0], SPIN[i]![1], SPIN[i]![2]);
+    uniforms.uSpinB.value.set(SPIN[j]![0], SPIN[j]![1], SPIN[j]![2]);
   }
   function setActive(i: number) {
     if (i === activeInt) return;
