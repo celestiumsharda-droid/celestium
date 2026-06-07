@@ -15,7 +15,9 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { playClick } from "./sound";
 
-interface Opts { canvas: HTMLCanvasElement; track: HTMLElement; caption: HTMLElement; }
+/** Optional personalisation, computed by the page from name + birthday. */
+export interface Person { youTitle: string; finaleTitle: string; finaleLine: string; }
+interface Opts { canvas: HTMLCanvasElement; track: HTMLElement; caption: HTMLElement; person?: Person | null; }
 
 const TAU = Math.PI * 2;
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
@@ -83,7 +85,25 @@ const fSolar: Gen = (a, N) => { const r = mkRnd(41); const orbits = [34, 50, 66,
 
 const fStar: Gen = (a, N) => { const r = mkRnd(23); for (let i = 0; i < N; i++) { if (r() < 0.84) { const rad = Math.pow(r(), 0.5) * 34, th = Math.acos(2 * r() - 1), ph = r() * TAU; set(a, i, rad * Math.sin(th) * Math.cos(ph), rad * Math.sin(th) * Math.sin(ph), rad * Math.cos(th)); } else { const k = r() * 6 | 0, ang = k / 6 * TAU + gaussR(r) * 0.12, d = 34 + r() * 48; set(a, i, Math.cos(ang) * d, Math.sin(ang) * d, gaussR(r) * 4); } } };
 
-const fSupernova: Gen = (a, N) => { const r = mkRnd(151); for (let i = 0; i < N; i++) { const roll = r(); if (roll < 0.22) { const rad = Math.pow(r(), 0.6) * 16, th = Math.acos(2 * r() - 1), ph = r() * TAU; set(a, i, rad * Math.sin(th) * Math.cos(ph), rad * Math.sin(th) * Math.sin(ph), rad * Math.cos(th)); } else if (roll < 0.8) { const th = Math.acos(2 * r() - 1), ph = r() * TAU; const d = 18 + Math.pow(r(), 0.5) * 78; set(a, i, d * Math.sin(th) * Math.cos(ph) + gaussR(r) * 2, d * Math.sin(th) * Math.sin(ph) + gaussR(r) * 2, d * Math.cos(th) + gaussR(r) * 2); } else { const th = Math.acos(2 * r() - 1), ph = r() * TAU; const d = 96 + gaussR(r) * 5; set(a, i, d * Math.sin(th) * Math.cos(ph), d * Math.sin(th) * Math.sin(ph), d * Math.cos(th)); } } };
+const fSupernova: Gen = (a, N) => {
+  const r = mkRnd(151);
+  const RAYS = 70; const dirs: number[][] = [];
+  for (let k = 0; k < RAYS; k++) { const th = Math.acos(2 * r() - 1), ph = r() * TAU; dirs.push([Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph)]); }
+  for (let i = 0; i < N; i++) {
+    const roll = r();
+    if (roll < 0.16) {                         // brilliant core
+      const rad = Math.pow(r(), 0.7) * 13, th = Math.acos(2 * r() - 1), ph = r() * TAU;
+      set(a, i, rad * Math.sin(th) * Math.cos(ph), rad * Math.sin(th) * Math.sin(ph), rad * Math.cos(th));
+    } else if (roll < 0.86) {                   // debris blasted along rays
+      const d = dirs[(r() * RAYS) | 0]!;
+      const dist = 13 + Math.pow(r(), 0.65) * 84, spread = dist * 0.05 + 1;
+      set(a, i, d[0]! * dist + gaussR(r) * spread, d[1]! * dist + gaussR(r) * spread, d[2]! * dist + gaussR(r) * spread);
+    } else {                                    // expanding shockwave shell
+      const th = Math.acos(2 * r() - 1), ph = r() * TAU, d = 99 + gaussR(r) * 4;
+      set(a, i, d * Math.sin(th) * Math.cos(ph), d * Math.sin(th) * Math.sin(ph), d * Math.cos(th));
+    }
+  }
+};
 
 const fFireball: Gen = (a, N) => { const r = mkRnd(3); for (let i = 0; i < N; i++) { const rad = Math.pow(r(), 1.8) * 18, th = Math.acos(2 * r() - 1), ph = r() * TAU; set(a, i, rad * Math.sin(th) * Math.cos(ph), rad * Math.sin(th) * Math.sin(ph), rad * Math.cos(th) * 0.8); } };
 
@@ -162,13 +182,16 @@ const FRAG = /* glsl */`precision mediump float; varying vec3 vCol; varying floa
 void main(){ vec2 d = gl_PointCoord - 0.5; float r2 = dot(d,d); if (r2 > 0.25) discard;
   gl_FragColor = vec4(vCol, smoothstep(0.25, 0.0, r2) * vA); }`;
 
-export function mountStardust(opts: Opts): () => void {
+export interface StardustHandle { destroy: () => void; setPerson: (p: Person | null) => void; }
+
+export function mountStardust(opts: Opts): StardustHandle {
   const { canvas, track, caption } = opts;
+  let person: Person | null = opts.person ?? null;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" }); }
-  catch (_e) { return () => {}; }
+  catch (_e) { return { destroy: () => {}, setPerson: () => {} }; }
   renderer.setClearColor(0x050609, 1);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   renderer.setPixelRatio(dpr);
@@ -233,7 +256,12 @@ export function mountStardust(opts: Opts): () => void {
     if (i === activeInt) return;
     const prev = activeInt; activeInt = i;
     const s = SCENES[i]!;
-    caption.innerHTML = `<p class="sd-num">${String(i + 1).padStart(2, "0")} / ${String(F).padStart(2, "0")}</p><h2 class="sd-title">${s.title}</h2><p class="sd-line">${s.line}</p>`;
+    let title = s.title, line = s.line;
+    if (person) {
+      if (i === 0) title = person.youTitle;
+      else if (i === F - 1) { title = person.finaleTitle; line = person.finaleLine; }
+    }
+    caption.innerHTML = `<p class="sd-num">${String(i + 1).padStart(2, "0")} / ${String(F).padStart(2, "0")}</p><h2 class="sd-title">${title}</h2><p class="sd-line">${line}</p>`;
     caption.classList.remove("in"); void caption.offsetWidth; caption.classList.add("in");
     if (prev >= 0) { burst = 1; try { playClick(); } catch (_e) { /* off */ } }
   }
@@ -279,5 +307,8 @@ export function mountStardust(opts: Opts): () => void {
   }
 
   setForm(0); setActive(0); composer.render();
-  return () => { stop(); io.disconnect(); removeEventListener("resize", resize); geo.dispose(); mat.dispose(); composer.dispose(); renderer.dispose(); };
+  return {
+    destroy: () => { stop(); io.disconnect(); removeEventListener("resize", resize); geo.dispose(); mat.dispose(); composer.dispose(); renderer.dispose(); },
+    setPerson: (p: Person | null) => { person = p; const i = activeInt; activeInt = -1; setActive(i); },
+  };
 }
