@@ -137,28 +137,37 @@ void main(){
   vec3 rd = normalize(uFwd + uRight*(ndc.x*uTan) + uUp*(ndc.y*uTan));
   vec3 ro = uCamPos;
 
-  // big-bang phase (Phase 1 occupies the early journey)
-  float bang = smoothstep(0.34, 0.0, uT);              // 1 at t=0, fades by ~0.34
-  float heat = clamp(1.0 - uT*3.0, 0.0, 1.0);          // temperature falls as it expands
-  float R = mix(0.35, 2.6, smoothstep(0.0, 0.30, uT)); // the fireball inflates
+  // angular distance from the singularity / fireball centre (0 at centre)
+  float centerD = length(cross(rd, -normalize(ro + vec3(1e-4))));
+
+  // timeline scalars
+  float erupt = smoothstep(0.02, 0.10, uT);            // the fireball erupts FROM the point
+  float bang  = smoothstep(0.34, 0.0, uT) * erupt;
+  float heat  = clamp(1.0 - uT*3.0, 0.0, 1.0);
+  float R     = mix(0.06, 2.6, smoothstep(0.0, 0.30, uT));
 
   vec3 col = vec3(0.0);
 
-  // (a) nucleosynthesis — matter forming and fusing chaotically inside the soup
+  // (0) the singularity — out of complete black, a single point ignites it all
+  float sing = smoothstep(0.0, 0.018, uT) * smoothstep(0.12, 0.03, uT);
+  col += vec3(1.5,1.42,1.28) * sing * smoothstep(0.055, 0.0, centerD) * 5.5;
+
+  // (a) nucleosynthesis — matter forming & fusing, concentrated IN the hot soup
   float soup = smoothstep(0.07, 0.12, uT) * smoothstep(0.24, 0.17, uT);
-  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * 1.4;
+  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * smoothstep(0.85, 0.10, centerD) * 1.5;
 
   // (b) the dark ages — neutral gas, no stars yet, only the faintest glow
   float dark = smoothstep(0.30, 0.35, uT) * smoothstep(0.50, 0.42, uT);
   if (dark > 0.001) col += vec3(0.10,0.13,0.24) * fbm(rd*4.5 + 9.0) * dark * 0.6;
 
-  // (c) the cosmic dawn — the FIRST stars ignite (and persist), never before
+  // (c) the cosmic dawn — the FIRST stars ignite here, and never before
   float dawn = smoothstep(0.42, 0.58, uT);
   if (dawn > 0.001) {
-    float ignite = 1.0 + 1.6 * smoothstep(0.58, 0.44, uT);   // a brighter flare as they first light up
-    col += vec3(0.80,0.86,1.06) * stars(rd) * dawn * ignite;
+    float ig = 1.0 + 1.6 * smoothstep(0.58, 0.44, uT);
+    col += vec3(0.80,0.86,1.06) * stars(rd) * dawn * ig;
   }
 
+  // the volumetric fireball, inflating out of the point
   if (bang > 0.002) {
     vec3 s = sphere(ro, rd, R);
     if (s.z > 0.0) {
@@ -170,8 +179,8 @@ void main(){
       for (int i=0;i<STEPS;i++){
         vec3 p = ro + rd*t;
         float rr = length(p)/R;
-        float edge = smoothstep(1.0, 0.55, rr);                       // soft sphere falloff
-        float turb = fbm(p*2.6 + flow) ;
+        float edge = smoothstep(1.0, 0.55, rr);
+        float turb = fbm(p*2.6 + flow);
         float dens = clamp((turb - 0.42) * 2.4, 0.0, 1.0) * edge;
         if (dens > 0.001){
           float k = clamp(heat*0.7 + (1.0-rr)*0.5 + turb*0.2, 0.0, 1.0);
@@ -182,9 +191,6 @@ void main(){
         }
         t += dt; if (trans < 0.02) break;
       }
-      // a blinding core at the very first instant
-      float core = smoothstep(0.06, 0.0, uT) * smoothstep(0.5, 0.0, length(cross(rd, -normalize(ro))));
-      acc += vec3(1.2,1.1,1.0) * core * 3.0;
       col = mix(col, col + acc, bang);
     }
   }
@@ -202,7 +208,7 @@ export function mountEternity(opts: Opts): () => void {
   let renderer: THREE.WebGLRenderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" }); }
   catch (_e) { return () => {}; }
-  renderer.setClearColor(0x050609, 1);
+  renderer.setClearColor(0x000000, 1);   // the void before the first instant — true black
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   // the volumetric is fill-rate heavy, so it renders below native resolution
@@ -270,6 +276,7 @@ export function mountEternity(opts: Opts): () => void {
   // ---- the journey plays itself, pausing at the pivotal moments ----
   const PIVOTS = [0.0, 0.16, 0.30, 0.46, 0.63, 0.85, 1.0];
   let playhead = 0, pivotIdx = 0, playing = true, running = false, raf = 0, last = performance.now();
+  let bootHold = 1.1;   // seconds of complete black before the first point ignites
 
   function showCont(end: boolean) { cont.innerHTML = end ? "Begin again&nbsp;&nbsp;↺" : "Continue&nbsp;&nbsp;→"; cont.classList.add("show"); }
   function hideCont() { cont.classList.remove("show"); }
@@ -284,6 +291,7 @@ export function mountEternity(opts: Opts): () => void {
   }
   function advance(dtSec: number) {
     if (!playing) return;
+    if (bootHold > 0) { bootHold -= dtSec; return; }   // hold on black, then ignite
     const next = PIVOTS[Math.min(pivotIdx + 1, PIVOTS.length - 1)]!;
     const dist = next - playhead;
     if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
