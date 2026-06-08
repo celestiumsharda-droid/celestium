@@ -103,6 +103,10 @@ varying vec3 vColor;
 varying float vAlpha;
 
 float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float vnoise(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(hash(i+vec3(0,0,0)),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm(vec3 p){ float v=0.0,a=0.5; for(int i=0;i<3;i++){ v+=a*vnoise(p); p=p*2.02+vec3(5.1,1.7,9.2); a*=0.5; } return v; }
 vec3 tempCol(float k){
   vec3 a = vec3(0.70,0.12,0.05), b = vec3(1.0,0.45,0.12), c = vec3(1.0,0.86,0.52), d = vec3(0.72,0.84,1.5);
   if (k < 0.4) return mix(a,b,k/0.4);
@@ -112,7 +116,8 @@ vec3 tempCol(float k){
 
 void main(){
   vec3 dir = position;                                   // unit direction
-  // ---- the procedural birth: a point that erupts into expanding plasma ----
+
+  // ===== PHASE 1 — the birth: a point that erupts into expanding plasma =====
   float erupt  = smoothstep(0.045, 0.13, uT);
   float expand = smoothstep(0.04, 0.30, uT);
   float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);
@@ -125,21 +130,45 @@ void main(){
   pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
   float vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
   float coreDim = mix(0.28, 1.0, smoothstep(0.0, 0.6, rr / 3.2));
-  vec3  pCol   = tempCol(vHeat);
-  float pAlpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
+  vec3  col   = tempCol(vHeat);
+  float alpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
+  float psize = 0.35 + 0.9*aRand;
 
-  // ---- morph toward an image-sampled form (e.g. a real galaxy) ----
-  vec3 tgt = aTarget;
-  tgt.z += 0.05 * sin(uTime*0.4 + aRand*20.0);           // a living shimmer in depth
-  float tAlpha = 0.16 + 0.22*aRand2;
-  float m = uMorph;
-  vec3 pos2 = mix(pos, tgt, m);
-  vColor = mix(pCol, aTargetCol, m);
-  vAlpha = mix(pAlpha, tAlpha, m);
+  // ===== PHASE 2 — the dark ages → the cosmic dawn (cosmic web + first stars) =====
+  if (uT > 0.27) {
+    float toWeb = smoothstep(0.30, 0.36, uT);              // plasma settles into structure
+    // a 3D filamentary volume: warp a filled ball by low-freq noise into lumps/voids
+    vec3 q = dir * (1.8 + 1.7*aRand);
+    vec3 warp = vec3(fbm(q*0.55 + 1.0), fbm(q*0.55 + 9.0), fbm(q*0.55 + 17.0)) - 0.5;
+    q += warp * 2.7;
+    q += 0.10*vec3(sin(uTime*0.15 + aRand*9.0), cos(uTime*0.12 + aRand2*5.0), sin(uTime*0.13 + aRand*7.0));
+    float dens = fbm(q*0.5 + 3.0);                         // filament crests are denser/brighter
+    // the first stars: a sparse subset ignites at the cosmic dawn (Pop III, hot & blue)
+    float isStar = step(0.972, aRand2);
+    float dawn   = smoothstep(0.37, 0.40, uT);
+    float twk    = 0.55 + 0.45*sin(uTime*2.2 + aRand*50.0);
+    vec3  gasCol  = mix(vec3(0.09,0.12,0.25), vec3(0.22,0.27,0.45), dens);
+    float gasA    = (0.022 + 0.06*dens) * (0.5 + 0.5*aRand);
+    vec3  starCol = vec3(0.78,0.86,1.15);
+    float starA   = 0.6 * dawn * twk;
+    vec3  webCol  = mix(gasCol, starCol, isStar*dawn);
+    float webA    = mix(gasA, max(gasA, starA), isStar);
+    float webSz   = mix(psize, 1.9 + 1.3*aRand, isStar*dawn);
+    pos   = mix(pos, q, toWeb);
+    col   = mix(col, webCol, toWeb);
+    alpha = mix(alpha, webA, toWeb);
+    psize = mix(psize, webSz, toWeb);
+  }
 
-  vec4 mv = modelViewMatrix * vec4(pos2, 1.0);
+  // ---- optional morph toward an image reference target (inactive for now) ----
+  pos = mix(pos, aTarget, uMorph);
+  col = mix(col, aTargetCol, uMorph);
+
+  vColor = col;
+  vAlpha = alpha;
+  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = uSize * uPix * (0.35 + 0.9*aRand) / max(-mv.z, 0.12);
+  gl_PointSize = uSize * uPix * psize / max(-mv.z, 0.12);
 }`;
 
 const FRAG = /* glsl */`
