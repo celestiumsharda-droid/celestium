@@ -183,6 +183,36 @@ void main(){
       alpha = mix(alpha, galA, toGal);
       psize = mix(psize, galSz, toGal);
     }
+
+    // ===== PHASE 4 — our galaxy: zoom into one grand 3D spiral (the Milky Way) =====
+    if (uT > 0.52) {
+      float toSpiral = smoothstep(0.55, 0.63, uT);
+      float r = pow(aRand, 0.5) * 5.2;                       // disk radius, concentrated inward
+      float arm = floor(aRand2 * 2.0);                       // two spiral arms
+      float spread = (hash(dir + 2.0) - 0.5) * 0.7;          // scatter within the arm
+      float ang = arm*3.14159 + spread + 2.3*log(r + 0.5) + uTime*0.035;   // log spiral + slow spin
+      float bulge = 0.55 * exp(-r*0.9);                      // a round 3D bulge at the centre
+      float thick = (hash(dir + 9.0) - 0.5) * (bulge + 0.05 + 0.02*r);
+      vec3 sp = vec3(cos(ang)*r, sin(ang)*r, thick);         // disk in XY (faces the camera on +Z)
+      float ca = 0.878, sa = 0.479;                          // tilt ~0.5 rad around X → a 3/4 view
+      sp = vec3(sp.x, sp.y*ca - sp.z*sa, sp.y*sa + sp.z*ca);
+      // the Sun — a warm beacon out in an arm: "you are here"
+      float isSun = step(0.9994, hash(dir + 99.0));
+      vec3 sunP = vec3(2.4, 1.9, 0.0);
+      sunP = vec3(sunP.x, sunP.y*ca - sunP.z*sa, sunP.y*sa + sunP.z*ca);
+      sp = mix(sp, sunP + (vec3(hash(dir+1.0), hash(dir+2.0), hash(dir+3.0)) - 0.5)*0.12, isSun);
+      float coreS = 1.0 - smoothstep(0.0, 0.7, r);
+      float knot  = step(0.985, hash(dir + 4.0)) * smoothstep(1.2, 4.5, r);   // pink HII knots in arms
+      vec3 armCol = mix(vec3(0.62,0.74,1.12), vec3(1.0,0.55,0.72), knot);
+      vec3 spCol  = mix(vec3(1.0,0.85,0.55), armCol, smoothstep(0.4, 2.2, r));  // warm core → arms
+      spCol = mix(spCol, vec3(1.0,0.93,0.70), isSun);
+      float spA  = 0.08 + 0.12*aRand2 + coreS*0.25 + knot*0.4 + isSun*0.9;
+      float spSz = 0.5 + 0.8*aRand + coreS*1.6 + knot*1.0 + isSun*3.2;
+      pos   = mix(pos, sp, toSpiral);
+      col   = mix(col, spCol, toSpiral);
+      alpha = mix(alpha, spA, toSpiral);
+      psize = mix(psize, spSz, toSpiral);
+    }
   }
 
   // ---- optional morph toward an image reference target (inactive for now) ----
@@ -311,7 +341,7 @@ export function mountEternity(opts: Opts): () => void {
     if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
     const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
     const dist = lerp(1.15, 9.0, expand);
-    const yaw = now * 0.00004 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);
+    const yaw = Math.sin(now * 0.00005) * 0.12 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);   // gentle bounded sway, not endless drift
     const cp = Math.cos(pitch);
     orbitPos.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
     if (morph > 0.001) {
