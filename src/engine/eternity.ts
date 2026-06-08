@@ -82,56 +82,62 @@ const VERT = /* glsl */`
 precision highp float;
 attribute float aRand;
 attribute float aRand2;
-uniform float uT, uTime, uSize, uPix;
-varying float vHeat;
+attribute vec3 aTarget;        // image-sampled position (an act this particle morphs into)
+attribute vec3 aTargetCol;     // the colour sampled from that image
+uniform float uT, uTime, uSize, uPix, uMorph;
+varying vec3 vColor;
 varying float vAlpha;
 
 float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
-
-void main(){
-  vec3 dir = position;                                   // unit direction
-  // ---- ACT 1: the birth — a point that erupts into expanding plasma ----
-  float erupt  = smoothstep(0.045, 0.13, uT);            // the eruption from the point
-  float expand = smoothstep(0.04, 0.30, uT);             // the cloud inflating
-  float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);          // low-freq density variation → texture
-  float radius = mix(0.015, 3.2, expand);
-  float rr = radius * (0.18 + 0.82*aRand) * clump;       // a filled, clumpy cloud, not a shell
-  vec3 pos = dir * rr;
-  // turbulence — isotropic per-particle drift, ZERO at the start (so the
-  // newborn point is a clean round dot, not an axis-aligned cube), growing
-  // only as the cloud expands.
-  float n = hash(dir*3.0 + aRand);
-  vec3 nd = normalize(vec3(hash(dir+11.0), hash(dir+23.0), hash(dir+37.0)) - 0.5 + 1e-4);
-  float wob = 0.6 + 0.4*sin(uTime*0.5 + aRand*28.0);
-  pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
-  // heat: blazing in the dense early core, cooling as it spreads & ages
-  vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
-  // ignite from black, then brighten as it bursts; kept dim so additive
-  // overlap reads as luminous points on black, not a blown-out white blob.
-  // dim the densest centre so the core doesn't saturate to flat white.
-  float coreDim = mix(0.28, 1.0, smoothstep(0.0, 0.6, rr / 3.2));
-  vAlpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
-  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  gl_Position = projectionMatrix * mv;
-  gl_PointSize = uSize * uPix * (0.35 + 0.9*aRand) / max(-mv.z, 0.12);
-}`;
-
-const FRAG = /* glsl */`
-precision highp float;
-varying float vHeat;
-varying float vAlpha;
 vec3 tempCol(float k){
   vec3 a = vec3(0.70,0.12,0.05), b = vec3(1.0,0.45,0.12), c = vec3(1.0,0.86,0.52), d = vec3(0.72,0.84,1.5);
   if (k < 0.4) return mix(a,b,k/0.4);
   if (k < 0.75) return mix(b,c,(k-0.4)/0.35);
   return mix(c,d,(k-0.75)/0.25);
 }
+
+void main(){
+  vec3 dir = position;                                   // unit direction
+  // ---- the procedural birth: a point that erupts into expanding plasma ----
+  float erupt  = smoothstep(0.045, 0.13, uT);
+  float expand = smoothstep(0.04, 0.30, uT);
+  float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);
+  float radius = mix(0.015, 3.2, expand);
+  float rr = radius * (0.18 + 0.82*aRand) * clump;
+  vec3 pos = dir * rr;
+  float n = hash(dir*3.0 + aRand);
+  vec3 nd = normalize(vec3(hash(dir+11.0), hash(dir+23.0), hash(dir+37.0)) - 0.5 + 1e-4);
+  float wob = 0.6 + 0.4*sin(uTime*0.5 + aRand*28.0);
+  pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
+  float vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
+  float coreDim = mix(0.28, 1.0, smoothstep(0.0, 0.6, rr / 3.2));
+  vec3  pCol   = tempCol(vHeat);
+  float pAlpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
+
+  // ---- morph toward an image-sampled form (e.g. a real galaxy) ----
+  vec3 tgt = aTarget;
+  tgt.z += 0.05 * sin(uTime*0.4 + aRand*20.0);           // a living shimmer in depth
+  float tAlpha = 0.16 + 0.22*aRand2;
+  float m = uMorph;
+  vec3 pos2 = mix(pos, tgt, m);
+  vColor = mix(pCol, aTargetCol, m);
+  vAlpha = mix(pAlpha, tAlpha, m);
+
+  vec4 mv = modelViewMatrix * vec4(pos2, 1.0);
+  gl_Position = projectionMatrix * mv;
+  gl_PointSize = uSize * uPix * (0.35 + 0.9*aRand) / max(-mv.z, 0.12);
+}`;
+
+const FRAG = /* glsl */`
+precision highp float;
+varying vec3 vColor;
+varying float vAlpha;
 void main(){
   vec2 q = gl_PointCoord - 0.5;
   float d2 = dot(q,q);
   if (d2 > 0.25) discard;
   float soft = smoothstep(0.25, 0.0, d2);                // round, soft-edged
-  gl_FragColor = vec4(tempCol(vHeat), soft * vAlpha);
+  gl_FragColor = vec4(vColor, soft * vAlpha);
 }`;
 
 export function mountEternity(opts: Opts): () => void {
@@ -165,9 +171,50 @@ export function mountEternity(opts: Opts): () => void {
   geo.setAttribute("position", new THREE.BufferAttribute(dirs, 3));
   geo.setAttribute("aRand", new THREE.BufferAttribute(rand, 1));
   geo.setAttribute("aRand2", new THREE.BufferAttribute(rand2, 1));
+  // image-morph targets (filled asynchronously by sampling a real photo)
+  const aTarget = new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3);
+  const aTargetCol = new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3);
+  geo.setAttribute("aTarget", aTarget);
+  geo.setAttribute("aTargetCol", aTargetCol);
   const uniforms = {
-    uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix },
+    uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix }, uMorph: { value: 0 },
   };
+
+  // ---- sample a real image into particle positions + colours ----
+  // density follows the image's brightness; black voids are skipped, so the
+  // photo becomes points of light on nothing. Maps the frame onto an XY plane.
+  function sampleImage(url: string, scale: number) {
+    const img = new Image();
+    img.onload = () => {
+      const cw = 540, ch = Math.max(1, Math.round(cw * img.height / img.width));
+      const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
+      const ctx = cv.getContext("2d", { willReadFrequently: true }); if (!ctx) return;
+      ctx.drawImage(img, 0, 0, cw, ch);
+      const d = ctx.getImageData(0, 0, cw, ch).data;
+      const aspect = cw / ch;
+      const cand: number[] = [];   // packed sx, sy, r, g, b, lum
+      for (let py = 0; py < ch; py++) for (let px = 0; px < cw; px++) {
+        const o = (py * cw + px) * 4, r = d[o]! / 255, g = d[o + 1]! / 255, b = d[o + 2]! / 255;
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum < 0.05) continue;
+        cand.push(((px / cw) * 2 - 1) * aspect, -((py / ch) * 2 - 1), r, g, b, lum);
+      }
+      const m = cand.length / 6; if (m < 1) return;
+      const tp = aTarget.array as Float32Array, tc = aTargetCol.array as Float32Array;
+      for (let i = 0; i < COUNT; i++) {
+        let k = 0;
+        for (let t = 0; t < 8; t++) { k = (Math.random() * m) | 0; if (Math.random() < cand[k * 6 + 5]!) break; }
+        const o = k * 6;
+        tp[i * 3] = cand[o]! * scale + (Math.random() - 0.5) * 0.02;
+        tp[i * 3 + 1] = cand[o + 1]! * scale + (Math.random() - 0.5) * 0.02;
+        tp[i * 3 + 2] = (Math.random() - 0.5) * 0.22;
+        tc[i * 3] = cand[o + 2]!; tc[i * 3 + 1] = cand[o + 3]!; tc[i * 3 + 2] = cand[o + 4]!;
+      }
+      aTarget.needsUpdate = true; aTargetCol.needsUpdate = true;
+    };
+    img.src = url;
+  }
+  sampleImage("/eternity/refs/andromeda.png", 3.0);   // Act: "Andromeda arrives"
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader: VERT, fragmentShader: FRAG,
     transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -188,15 +235,21 @@ export function mountEternity(opts: Opts): () => void {
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
 
-  // ---- camera: orbit the origin, pulling back as the cloud inflates ----
-  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false;
+  // ---- camera: orbit the origin, pulling back as the cloud inflates;
+  //      swing to face-on while morphed into an image so the photo reads ----
+  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false, morph = 0;
+  const orbitPos = new THREE.Vector3(), faceOn = new THREE.Vector3();
   function placeCamera(uT: number, now: number) {
     if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
     const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
     const dist = lerp(1.15, 9.0, expand);
     const yaw = now * 0.00004 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);
     const cp = Math.cos(pitch);
-    camera.position.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
+    orbitPos.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
+    if (morph > 0.001) {
+      faceOn.set(Math.sin(now * 0.00003) * 0.5 + userYaw, Math.sin(now * 0.000025) * 0.35 + userPitch, 7.8);
+      camera.position.lerpVectors(orbitPos, faceOn, morph);
+    } else camera.position.copy(orbitPos);
     camera.lookAt(0, 0, 0);
   }
 
@@ -254,7 +307,9 @@ export function mountEternity(opts: Opts): () => void {
     raf = requestAnimationFrame(frame);
     const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
     advance(dtSec);
-    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001;
+    // morph into the Andromeda image around its era (s = 0.73)
+    morph = clamp(smooth(clamp((playhead - 0.665) / 0.065, 0, 1)) * smooth(clamp((0.795 - playhead) / 0.065, 0, 1)), 0, 1);
+    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;
     placeCamera(playhead, now);
     updateHud(scrollToLogT(playhead), playhead);
     prog.style.transform = `scaleX(${playhead.toFixed(4)})`;
