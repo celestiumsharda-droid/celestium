@@ -87,7 +87,7 @@ float h31(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y
 float vnoise(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(h31(i+vec3(0,0,0)),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
-float fbm(vec3 p){ float v=0.0,a=0.55; for(int i=0;i<5;i++){ v+=a*vnoise(p); p=p*2.03+vec3(7.1,3.7,1.3); a*=0.5; } return v; }
+float fbm(vec3 p){ float v=0.0,a=0.58; for(int i=0;i<4;i++){ v+=a*vnoise(p); p=p*2.03+vec3(7.1,3.7,1.3); a*=0.5; } return v; }
 
 // hot→cool temperature ramp for the fireball
 vec3 tempCol(float k){ // k 0=cool red .. 1=blue-white hot
@@ -102,7 +102,24 @@ vec3 sphere(vec3 ro, vec3 rd, float R){
   if(h<0.0) return vec3(0.0,0.0,-1.0);
   h=sqrt(h); return vec3(-b-h,-b+h,1.0);
 }
-float starfield(vec3 rd){ vec3 g=floor(rd*120.0); float s=h31(g); return smoothstep(0.9975,1.0,s); }
+// real round, sized, twinkling stars across two depth layers
+float stars(vec3 rd){
+  float c = 0.0;
+  for (int L=0; L<2; L++){
+    float sc = (L==0) ? 70.0 : 138.0;
+    vec3 p = rd * sc; vec3 ip = floor(p), fp = fract(p) - 0.5;
+    float h = h31(ip + float(L)*19.0);
+    float thr = (L==0) ? 0.945 : 0.965;
+    if (h > thr){
+      vec3 jit = vec3(h31(ip+1.7), h31(ip+3.1), h31(ip+5.3)) - 0.5;
+      float d = length(fp - jit*0.7);
+      float bri = (h - thr)/(1.0-thr);
+      float tw = 0.55 + 0.45*sin(uTime*1.4 + h*61.0);
+      c += smoothstep(0.075, 0.0, d) * bri * tw * ((L==0) ? 1.0 : 0.55);
+    }
+  }
+  return c;
+}
 
 void main(){
   vec2 ndc = (gl_FragCoord.xy*2.0 - uRes)/uRes; ndc.x*=uAspect;
@@ -116,15 +133,16 @@ void main(){
 
   vec3 col = vec3(0.0);
 
-  // faint emerging starfield (the universe the fog clears to reveal)
-  col += vec3(0.7,0.8,1.0) * starfield(rd) * smoothstep(0.18, 0.34, uT) * 0.7;
+  // the starfield the fog clears to reveal (persists through the later eras)
+  col += vec3(0.78,0.85,1.05) * stars(rd) * smoothstep(0.20, 0.34, uT);
 
   if (bang > 0.002) {
     vec3 s = sphere(ro, rd, R);
     if (s.z > 0.0) {
       float tn = max(s.x, 0.0), tf = s.y;
       float dt = (tf - tn)/float(STEPS);
-      float t = tn; float trans = 1.0; vec3 acc = vec3(0.0);
+      float t = tn + h31(vec3(gl_FragCoord.xy, 7.0)) * dt;   // dither: hides banding at low step counts
+      float trans = 1.0; vec3 acc = vec3(0.0);
       vec3 flow = vec3(uTime*0.06, -uTime*0.04, uTime*0.05);
       for (int i=0;i<STEPS;i++){
         vec3 p = ro + rd*t;
@@ -164,8 +182,10 @@ export function mountEternity(opts: Opts): () => void {
   renderer.setClearColor(0x050609, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
-  const dpr = Math.min(window.devicePixelRatio || 1, small ? 1.3 : 1.6);
-  renderer.setPixelRatio(dpr);
+  // the volumetric is fill-rate heavy, so it renders below native resolution
+  // (soft gas + bloom hide it) and the canvas upscales — the big perf lever.
+  renderer.setPixelRatio(1);
+  const renderScale = small ? 0.55 : 0.74;
 
   const scene = new THREE.Scene();
   const dummy = new THREE.Camera();
@@ -176,7 +196,7 @@ export function mountEternity(opts: Opts): () => void {
     uCamPos: { value: new THREE.Vector3() }, uFwd: { value: new THREE.Vector3() },
     uRight: { value: new THREE.Vector3() }, uUp: { value: new THREE.Vector3() },
   };
-  const STEPS = small ? 30 : 52;   // raymarch quality scales with the device
+  const STEPS = small ? 22 : 36;   // raymarch quality scales with the device
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: `#define STEPS ${STEPS}\n${FRAG}`, depthTest: false, depthWrite: false });
   scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
 
@@ -187,8 +207,10 @@ export function mountEternity(opts: Opts): () => void {
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w, h);
-    uniforms.uRes.value.set(w * dpr, h * dpr); uniforms.uAspect.value = w / h;
+    const bw = Math.max(2, Math.round(w * renderScale)), bh = Math.max(2, Math.round(h * renderScale));
+    renderer.setSize(bw, bh, false);              // small drawing buffer; CSS stretches the canvas to full
+    composer.setSize(bw, bh); bloom.setSize(bw, bh);
+    uniforms.uRes.value.set(bw, bh); uniforms.uAspect.value = w / h;
   }
 
   // logical free-look camera (orbit around origin; journey sets the distance)
