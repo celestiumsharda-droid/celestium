@@ -136,13 +136,14 @@ void main(){
 
   // ===== PHASE 2 — the dark ages → the cosmic dawn (cosmic web + first stars) =====
   if (uT > 0.27) {
-    float toWeb = smoothstep(0.30, 0.36, uT);              // plasma settles into structure
     // a 3D filamentary volume: warp a filled ball by low-freq noise into lumps/voids
-    vec3 q = dir * (1.8 + 1.7*aRand);
-    vec3 warp = vec3(fbm(q*0.55 + 1.0), fbm(q*0.55 + 9.0), fbm(q*0.55 + 17.0)) - 0.5;
-    q += warp * 2.7;
-    q += 0.10*vec3(sin(uTime*0.15 + aRand*9.0), cos(uTime*0.12 + aRand2*5.0), sin(uTime*0.13 + aRand*7.0));
-    float dens = fbm(q*0.5 + 3.0);                         // filament crests are denser/brighter
+    vec3 base = dir * (1.8 + 1.7*aRand);
+    vec3 warp = vec3(fbm(base*0.55 + 1.0), fbm(base*0.55 + 9.0), fbm(base*0.55 + 17.0)) - 0.5;
+    vec3 qs = base + warp * 2.7;                           // stable web position
+    vec3 q = qs + 0.10*vec3(sin(uTime*0.15 + aRand*9.0), cos(uTime*0.12 + aRand2*5.0), sin(uTime*0.13 + aRand*7.0));
+
+    float toWeb = smoothstep(0.30, 0.36, uT);              // plasma settles into structure
+    float dens = fbm(qs*0.5 + 3.0);                        // filament crests are denser/brighter
     // the first stars: a sparse subset ignites at the cosmic dawn (Pop III, hot & blue)
     float isStar = step(0.972, aRand2);
     float dawn   = smoothstep(0.37, 0.40, uT);
@@ -158,6 +159,30 @@ void main(){
     col   = mix(col, webCol, toWeb);
     alpha = mix(alpha, webA, toWeb);
     psize = mix(psize, webSz, toWeb);
+
+    // ===== PHASE 3 — the age of galaxies: the web condenses into 3D galaxies =====
+    if (uT > 0.40) {
+      float toGal = smoothstep(0.44, 0.52, uT);
+      float CELL = 2.4;
+      vec3 cell = floor(qs / CELL);                        // each web cell becomes a galaxy
+      float gh = hash(cell + 0.5);
+      vec3 gcenter = (cell + vec3(0.5))*CELL + (vec3(hash(cell+1.0), hash(cell+2.0), hash(cell+3.0)) - 0.5)*CELL*0.75;
+      vec3 gnormal = normalize(vec3(hash(cell+5.0), hash(cell+7.0), hash(cell+11.0)) - 0.5 + 1e-4);
+      vec3 tang = normalize(cross(gnormal, vec3(0.0, 1.0, 0.037)));
+      vec3 bito = cross(gnormal, tang);
+      float gr = pow(aRand, 0.7) * (CELL*0.40);            // disk radius, concentrated to the core
+      float ga = aRand2*6.2831 + gh*12.0 + uTime*0.06/(0.3 + gr);   // differential rotation
+      float thick = (hash(dir + gh) - 0.5) * (0.05 + 0.10*gr);      // a thin 3D disk
+      vec3 galPos = gcenter + (cos(ga)*tang + sin(ga)*bito)*gr + gnormal*thick;
+      float core = 1.0 - smoothstep(0.0, 0.22, gr);
+      vec3  galCol = mix(vec3(1.0,0.86,0.55), vec3(0.60,0.72,1.08), smoothstep(0.1, 0.85, aRand));  // warm core → blue arms
+      float galA   = 0.07 + 0.13*aRand2 + core*0.22;
+      float galSz  = 0.5 + 0.8*aRand + core*1.3;
+      pos   = mix(pos, galPos, toGal);
+      col   = mix(col, galCol, toGal);
+      alpha = mix(alpha, galA, toGal);
+      psize = mix(psize, galSz, toGal);
+    }
   }
 
   // ---- optional morph toward an image reference target (inactive for now) ----
