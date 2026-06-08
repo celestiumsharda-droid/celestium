@@ -31,20 +31,22 @@ interface Opts {
 /* ---- the eras of all time (scroll position → log10 age in years) ---- */
 interface Era { s: number; lt: number; name: string; temp: string; line: string; }
 export const ERAS: Era[] = [
-  { s: 0.00, lt: -49.0, name: "The Planck epoch",     temp: "10³² K",  line: "Time itself begins. The four forces are one, and physics as we know it cannot yet describe a thing." },
-  { s: 0.07, lt: -32.0, name: "Inflation",            temp: "10²⁷ K",  line: "In a sliver of an instant, space erupts — doubling over and over, smoothing the cosmos and seeding every structure to come." },
-  { s: 0.16, lt: -7.5,  name: "The particle soup",    temp: "10¹⁰ K",  line: "A blazing plasma of quarks and light. Matter and antimatter annihilate; a tiny surplus of matter survives — and that is everything." },
-  { s: 0.30, lt: 5.58,  name: "First light",          temp: "3,000 K", line: "After 380,000 years the fog clears and light flies free for the first time — the afterglow we still see as the cosmic microwave background." },
-  { s: 0.42, lt: 8.30,  name: "The cosmic dawn",      temp: "50 K",    line: "Gravity gathers the dark into the first suns. Light returns to a universe that had gone black." },
-  { s: 0.52, lt: 9.60,  name: "The age of galaxies",  temp: "20 K",    line: "Stars swarm into galaxies, galaxies into clusters and a vast cosmic web. Generation after generation of stars forge the elements." },
-  { s: 0.58, lt: 9.96,  name: "The Sun is born",      temp: "5 K",     line: "From the ashes of dead stars, our Sun and its worlds condense — nine billion years into the story." },
-  { s: 0.63, lt: 10.14, name: "Now. You are here.",   temp: "2.7 K",   line: "13.8 billion years in — a brief, bright moment when the universe is full of stars, and something is here to notice." },
-  { s: 0.70, lt: 10.30, name: "Andromeda arrives",    temp: "2 K",     line: "In four billion years the Andromeda galaxy collides with ours, and the night sky burns with a second river of stars." },
-  { s: 0.78, lt: 11.20, name: "The long isolation",   temp: "1 K",     line: "Dark energy drives the galaxies apart faster than light can bridge them. One by one they slip over the horizon, and the sky empties." },
-  { s: 0.85, lt: 14.00, name: "The last star dies",   temp: "0.01 K",  line: "A hundred trillion years in, the gas runs out. The final star flickers and fades. The age of starlight is over." },
-  { s: 0.91, lt: 25.00, name: "The degenerate era",   temp: "≈ 0 K",   line: "Only cold embers remain — black dwarfs, neutron stars, drifting worlds — and slowly even the atoms within them begin to decay." },
-  { s: 0.96, lt: 40.00, name: "The black hole era",   temp: "≈ 0 K",   line: "For an unimaginable span, black holes are all that is left — bleeding away, one photon at a time, through Hawking radiation." },
-  { s: 1.00, lt: 100.0, name: "Heat death",           temp: "10⁻²⁹ K", line: "The last black holes evaporate. Nothing remains that can change. Maximum entropy — an endless, uniform dark. Not a bang, but the slow, final quiet." },
+  { s: 0.00, lt: -50.5, name: "The Planck epoch",      temp: "10³² K",  line: "The first instant. Space, time and the four forces are a single thing, at a temperature beyond meaning. Our physics simply stops here." },
+  { s: 0.06, lt: -39.5, name: "Inflation",             temp: "10²⁷ K",  line: "In far less than a trillionth of a second, space erupts — doubling over and over, at least a trillion-trillion-fold. It flattens the cosmos and freezes quantum noise into the seeds of every galaxy to come." },
+  { s: 0.13, lt: -13.5, name: "The quark soup",        temp: "10¹³ K",  line: "A blinding plasma of free quarks, gluons and light. Matter and antimatter annihilate — and for every billion pairs, a single particle of matter is left over. That tiny surplus is everything you will ever see." },
+  { s: 0.20, lt: -5.24, name: "The first nuclei",      temp: "10⁹ K",   line: "Three minutes in. Protons and neutrons fuse into the first nuclei — hydrogen, a quarter helium, a trace of lithium. Then the universe thins too far to fuse, and the recipe is set for a billion years." },
+  { s: 0.29, lt: 5.58,  name: "First light",           temp: "3,000 K", line: "After 380,000 years the fog of plasma cools into neutral atoms and the universe turns clear. Light streams free for the first time — the oldest light there is, which we still catch today as the cosmic microwave background." },
+  { s: 0.37, lt: 8.00,  name: "The dark ages",         temp: "60 K",    line: "No stars, no light but the fading afterglow. For a hundred million years, gravity quietly draws cold hydrogen along threads of dark matter, gathering the dark toward a first dawn." },
+  { s: 0.45, lt: 8.30,  name: "The cosmic dawn",       temp: "30 K",    line: "The first stars ignite — colossal, brilliant and brief. They flood the dark with ultraviolet light, forge the first heavy elements, and die young in the first supernovae." },
+  { s: 0.53, lt: 9.48,  name: "The age of galaxies",   temp: "19 K",    line: "Stars gather into galaxies, galaxies into clusters strung along a vast cosmic web of filaments and voids. At the hearts of the brightest, supermassive black holes blaze as quasars. Generations of stars seed space with carbon, oxygen and iron." },
+  { s: 0.60, lt: 9.96,  name: "The Sun is born",       temp: "5 K",     line: "Nine billion years in, an enriched cloud collapses; our Sun lights up and its planets sweep their orbits clear. Earth forms from the same dust — the atoms in it, and in you, forged inside dead stars." },
+  { s: 0.66, lt: 10.14, name: "Now. You are here.",    temp: "2.7 K",   line: "13.8 billion years in — a brief, bright window when the sky is full of stars, and something made of that stardust is here to look up and notice. This is the strangest fact on this page." },
+  { s: 0.73, lt: 10.26, name: "Andromeda arrives",     temp: "2.3 K",   line: "In four and a half billion years the Andromeda galaxy sweeps into our own. Almost no stars actually collide, but the two unwind and merge, and the night sky burns with a second river of stars." },
+  { s: 0.80, lt: 11.18, name: "The long isolation",    temp: "1 K",     line: "Dark energy keeps accelerating the expansion. Beyond our merged galaxy, every other group of galaxies is carried over the horizon, one by one, until the sky outside goes utterly dark." },
+  { s: 0.86, lt: 14.00, name: "The last star dies",    temp: "0.01 K",  line: "A hundred trillion years in, the gas runs out and no new stars can form. The longest-lived red dwarfs flicker out one by one. The final ember fades, and the age of starlight is over forever." },
+  { s: 0.91, lt: 25.00, name: "The degenerate era",    temp: "10⁻⁶ K",  line: "Only stellar corpses remain — cooling white dwarfs, neutron stars, drifting frozen worlds. Galaxies dissolve as these remnants scatter or fall inward, and if protons themselves decay, even this cold matter slowly evaporates away." },
+  { s: 0.96, lt: 40.00, name: "The black hole era",    temp: "10⁻¹⁸ K", line: "For an almost endless span, black holes are the only things left. One photon at a time, they bleed their mass away as Hawking radiation — the smallest first, the most massive last — each ending in a final, soundless flash." },
+  { s: 1.00, lt: 100.0, name: "Heat death",            temp: "10⁻²⁹ K", line: "The last black hole has evaporated. All that remains is a thinning mist of light and stray particles, drifting ever farther apart toward absolute zero. Maximum entropy: nothing left that can ever change. Not a bang, but the slow, final quiet." },
 ];
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
@@ -132,6 +134,44 @@ float sparks(vec3 rd){
   float fuse = 0.5 + 0.5*sin(uTime*6.0 + h*50.0);     // the flash of fusion
   return smoothstep(0.085, 0.0, d) * (0.35 + 0.9*fuse) * (h - 0.45) * 1.8;
 }
+// distant galaxies — soft coloured elliptical glows scattered through a depth field
+vec3 galaxies(vec3 rd){
+  vec3 c = vec3(0.0);
+  for (int L=0; L<2; L++){
+    float sc = (L==0) ? 24.0 : 46.0;
+    vec3 p = rd*sc; vec3 ip = floor(p), fp = fract(p) - 0.5;
+    float h = h31(ip + float(L)*7.0);
+    float thr = (L==0) ? 0.92 : 0.95;
+    if (h > thr){
+      vec2 j = vec2(h31(ip+1.3), h31(ip+2.7)) - 0.5;
+      float ang = h*6.2831, ca = cos(ang), sa = sin(ang);
+      vec2 q = mat2(ca,-sa,sa,ca) * (fp.xy - j*0.6);
+      q.y *= 2.6;                                            // squash into an ellipse
+      float d = length(q);
+      float glow = smoothstep(0.22,0.0,d) + smoothstep(0.05,0.0,d)*0.7;   // halo + bright core
+      vec3 tint = mix(vec3(1.0,0.93,0.78), vec3(0.80,0.86,1.12), h31(ip+4.0));
+      c += tint * glow * ((h-thr)/(1.0-thr)) * ((L==0) ? 1.0 : 0.55);
+    }
+  }
+  return c;
+}
+// the Milky Way — a luminous, dust-laned band across the sky
+float mwBand(vec3 rd){
+  vec3 n = normalize(vec3(0.32,0.92,0.22));
+  float d = dot(rd, n);
+  float band = exp(-d*d*26.0);
+  band *= 0.5 + 0.7*fbm(rd*3.2 + vec3(4.0));
+  band *= smoothstep(0.85,0.25, fbm(rd*7.0 + vec3(1.0)));   // dark dust lanes cut across it
+  return band;
+}
+// a hero star — granulated disk + soft corona
+vec3 heroStar(vec3 rd, float cD){
+  float disk   = smoothstep(0.105,0.088,cD);
+  float gran   = 0.5 + 0.55*fbm(rd*60.0 + vec3(uTime*0.2));
+  float corona = smoothstep(0.40,0.088,cD);
+  vec3 surf = mix(vec3(1.35,0.72,0.26), vec3(1.55,1.25,0.72), gran);
+  return surf*disk + vec3(1.2,0.66,0.30)*corona*corona*0.5;
+}
 
 void main(){
   vec2 ndc = (gl_FragCoord.xy*2.0 - uRes)/uRes; ndc.x*=uAspect;
@@ -141,9 +181,9 @@ void main(){
   // angular distance from the singularity / fireball centre (0 at centre)
   float centerD = length(cross(rd, -normalize(ro + vec3(1e-4))));
 
-  // timeline scalars — the point lingers, THEN erupts
+  // ---------------- timeline scalars ----------------
   float erupt = smoothstep(0.05, 0.14, uT);            // the fireball erupts FROM the point
-  float bang  = smoothstep(0.34, 0.0, uT) * erupt;
+  float bang  = smoothstep(0.24, 0.0, uT) * erupt;     // plasma persists through the quark soup
   float heat  = clamp(1.0 - uT*3.0, 0.0, 1.0);
   float R     = mix(0.05, 2.6, smoothstep(0.02, 0.30, uT));
 
@@ -152,32 +192,15 @@ void main(){
   // (0) the singularity — out of complete black, a single point of light holds,
   //     swelling slightly, before it bursts. A tight core + a soft bloom halo.
   float sing = smoothstep(0.0, 0.030, uT) * smoothstep(0.155, 0.055, uT);
-  float core = smoothstep(0.020, 0.0, centerD);
-  float halo = smoothstep(0.18,  0.0, centerD);
-  col += vec3(1.6,1.5,1.36) * sing * (core * 6.0 + halo * 0.55);
+  col += vec3(1.6,1.5,1.36) * sing * (smoothstep(0.020,0.0,centerD)*6.0 + smoothstep(0.18,0.0,centerD)*0.55);
 
-  // (a) nucleosynthesis — matter forming & fusing, concentrated IN the hot soup
-  float soup = smoothstep(0.07, 0.12, uT) * smoothstep(0.24, 0.17, uT);
-  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * smoothstep(0.85, 0.10, centerD) * 1.5;
-
-  // (b) the dark ages — neutral gas, no stars yet, only the faintest glow
-  float dark = smoothstep(0.30, 0.35, uT) * smoothstep(0.50, 0.42, uT);
-  if (dark > 0.001) col += vec3(0.10,0.13,0.24) * fbm(rd*4.5 + 9.0) * dark * 0.6;
-
-  // (c) the cosmic dawn — the FIRST stars ignite here, and never before
-  float dawn = smoothstep(0.42, 0.58, uT);
-  if (dawn > 0.001) {
-    float ig = 1.0 + 1.6 * smoothstep(0.58, 0.44, uT);
-    col += vec3(0.80,0.86,1.06) * stars(rd) * dawn * ig;
-  }
-
-  // the volumetric fireball, inflating out of the point
+  // (1) the volumetric fireball, inflating out of the point
   if (bang > 0.002) {
     vec3 s = sphere(ro, rd, R);
     if (s.z > 0.0) {
       float tn = max(s.x, 0.0), tf = s.y;
       float dt = (tf - tn)/float(STEPS);
-      float t = tn + h31(vec3(gl_FragCoord.xy, 7.0)) * dt;   // dither: hides banding at low step counts
+      float t = tn + h31(vec3(gl_FragCoord.xy, 7.0)) * dt;   // dither hides banding at low step counts
       float trans = 1.0; vec3 acc = vec3(0.0);
       vec3 flow = vec3(uTime*0.06, -uTime*0.04, uTime*0.05);
       for (int i=0;i<STEPS;i++){
@@ -189,15 +212,74 @@ void main(){
         if (dens > 0.001){
           float k = clamp(heat*0.7 + (1.0-rr)*0.5 + turb*0.2, 0.0, 1.0);
           vec3 emit = tempCol(k) * dens * (1.6 + heat*2.5);
-          float a = dens * dt * 3.2;
           acc += emit * trans * dt * 4.0;
-          trans *= exp(-a);
+          trans *= exp(-dens * dt * 3.2);
         }
         t += dt; if (trans < 0.02) break;
       }
       col = mix(col, col + acc, bang);
     }
   }
+
+  // (2) nucleosynthesis — the first nuclei form & fuse, concentrated in the hot soup
+  float soup = smoothstep(0.12,0.16,uT) * smoothstep(0.26,0.20,uT);
+  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * smoothstep(0.85,0.10,centerD) * 1.6;
+
+  // (3) recombination — the fog clears; the CMB flares warm, then cools to a faint mottle
+  float recomb = smoothstep(0.245,0.29,uT) * smoothstep(0.345,0.30,uT);
+  if (recomb > 0.001){
+    float mott = fbm(rd*3.0 + vec3(5.0));
+    vec3 cmb = mix(vec3(1.0,0.62,0.32), vec3(0.55,0.60,0.85), smoothstep(0.26,0.32,uT));
+    col += cmb * (0.45 + 0.55*mott) * recomb * 0.8;
+  }
+
+  // (4) the dark ages — neutral gas drawn along filaments, no stars yet
+  float dark = smoothstep(0.31,0.37,uT) * smoothstep(0.46,0.40,uT);
+  if (dark > 0.001) col += vec3(0.10,0.13,0.24) * fbm(rd*4.5 + vec3(9.0)) * dark * 0.7;
+
+  // (5) the age of starlight — first stars ignite at the dawn, the sky is full at "now",
+  //     then the stars fade away as the last ones die.
+  float starEra = smoothstep(0.40,0.47,uT) * smoothstep(0.86,0.80,uT);
+  if (starEra > 0.001){
+    float ig = 1.0 + 1.5*smoothstep(0.50,0.43,uT);    // a first-light flare at the cosmic dawn
+    col += vec3(0.80,0.86,1.06) * stars(rd) * starEra * ig;
+  }
+  // galaxies & the cosmic web
+  float galEra = smoothstep(0.48,0.55,uT) * smoothstep(0.83,0.75,uT);
+  if (galEra > 0.001) col += galaxies(rd) * galEra;
+  // the Milky Way band, brightest around the Sun & now
+  float mwEra = smoothstep(0.52,0.60,uT) * smoothstep(0.80,0.71,uT);
+  if (mwEra > 0.001) col += vec3(0.62,0.72,1.0) * mwBand(rd) * mwEra * 0.5;
+  // (6) the Sun ignites
+  float sunEra = smoothstep(0.555,0.60,uT) * smoothstep(0.665,0.61,uT);
+  if (sunEra > 0.001) col += heroStar(rd, centerD) * sunEra;
+  // (7) Andromeda approaches — a second great galaxy swells in the sky
+  float androm = smoothstep(0.685,0.73,uT) * smoothstep(0.795,0.74,uT);
+  if (androm > 0.001){
+    vec3 dir = normalize(vec3(0.55,0.18,-0.82));
+    float grow = smoothstep(0.685,0.77,uT);
+    float g = smoothstep(mix(0.988,0.945,grow), 1.0, dot(rd,dir));
+    col += mix(vec3(0.82,0.86,1.06), vec3(1.0,0.92,0.78), 0.4) * g*g * androm * 1.3;
+  }
+
+  // (8) the last star — a final ember flickers out at the centre
+  float ember = smoothstep(0.815,0.855,uT) * smoothstep(0.895,0.86,uT);
+  if (ember > 0.001){
+    float flick = 0.35 + 0.65*fbm(vec3(uTime*0.6, 3.0, 0.0));
+    col += vec3(0.95,0.40,0.14) * smoothstep(0.05,0.0,centerD) * ember * flick;
+  }
+
+  // (9) the black hole era — a dark horizon, a bright photon ring, a faint Hawking shimmer
+  float bhEra = smoothstep(0.905,0.95,uT) * smoothstep(0.995,0.965,uT);
+  if (bhEra > 0.001){
+    col *= (1.0 - smoothstep(0.086,0.080,centerD) * bhEra);          // event horizon: pure black
+    col += vec3(1.0,0.62,0.28) * smoothstep(0.018,0.0,abs(centerD-0.10)) * 1.7 * bhEra;   // photon ring
+    float shimmer = smoothstep(0.22,0.10,centerD) * (0.5 + 0.5*sin(uTime*2.5 + centerD*70.0));
+    col += vec3(0.5,0.62,1.0) * shimmer * 0.05 * bhEra;
+  }
+
+  // (10) heat death — all of it fades to a uniform, near-absolute-zero dark
+  col = mix(col, vec3(0.004,0.005,0.009), smoothstep(0.965,1.0,uT) * 0.92);
 
   // gentle vignette
   vec2 q = (gl_FragCoord.xy/uRes - 0.5);
@@ -278,7 +360,8 @@ export function mountEternity(opts: Opts): () => void {
   }
 
   // ---- the journey plays itself, pausing at the pivotal moments ----
-  const PIVOTS = [0.0, 0.16, 0.30, 0.46, 0.63, 0.85, 1.0];
+  // one pause per era — the journey stops at every pivotal moment
+  const PIVOTS = ERAS.map(e => e.s);
   let playhead = 0, pivotIdx = 0, playing = false, running = false, raf = 0, last = performance.now();
   let armed = false;     // the journey waits on the "Begin" gate
   let bootHold = 0;      // seconds of complete black before the first point ignites

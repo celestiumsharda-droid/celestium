@@ -422,7 +422,7 @@ section { position: relative; padding: 140px 0; }
 .et-hint .cm-arrow { color: var(--accent); }
 .et-scale { position: absolute; right: clamp(16px,3vw,34px); top: 16vh; bottom: 16vh; width: 1px; background: linear-gradient(var(--line), var(--line-soft)); pointer-events: none; }
 .et-scale-lab { position: absolute; right: 14px; white-space: nowrap; font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); transform: translateY(-50%); }
-.et-scale-a { top: 0; } .et-scale-b { top: 53%; color: var(--accent); } .et-scale-c { top: 100%; }
+.et-scale-a { top: 0; } .et-scale-b { top: 66%; color: var(--accent); } .et-scale-c { top: 100%; }
 .et-marker { position: absolute; left: 50%; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: translate(-50%,-50%); top: 0; }
 @media (max-width: 760px) { .et-scale, .et-hint { display: none; } .et-readout { max-width: none; } .et-hud { padding-bottom: 124px; } .et-continue { bottom: 40px; } }
 .et-list-wrap { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
