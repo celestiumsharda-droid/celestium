@@ -13,11 +13,7 @@ type IdleWindow = Window & { requestIdleCallback?: (cb: () => void, opts?: { tim
 
 enableViewTransitions();
 
-const prog = $("prog");
-addEventListener("scroll", () => {
-  const h = document.documentElement.scrollHeight - innerHeight;
-  prog.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
-}, { passive: true });
+const prog = $("prog");   // driven by the engine's playhead (the page itself doesn't scroll)
 
 const bg = $("burger"), mn = $("menu");
 bg.setAttribute("aria-expanded", "false"); bg.setAttribute("aria-controls", "menu");
@@ -33,15 +29,16 @@ const loadPalette = () => { import("./command-palette").then(m => m.initCommandP
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
 
 const section = document.getElementById("eternity");
-const track = document.getElementById("et-track");
 const canvas = document.getElementById("et-canvas") as HTMLCanvasElement | null;
+const cont = document.getElementById("et-continue");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (section && track && canvas && !reduce) {
+if (section && canvas && cont && !reduce) {
   import("./eternity")
     .then(m => {
       section.classList.add("live");
+      document.body.style.overflow = "hidden";   // the experience is a fixed, self-playing stage
       m.mountEternity({
-        canvas, track,
+        canvas, cont, prog,
         age: $("et-age"), era: $("et-era"), temp: $("et-temp"), line: $("et-line"), marker: $("et-marker"),
       });
     })

@@ -23,8 +23,8 @@ import { playClick } from "./sound";
 
 interface Opts {
   canvas: HTMLCanvasElement;
-  track: HTMLElement;
   age: HTMLElement; era: HTMLElement; temp: HTMLElement; line: HTMLElement; marker: HTMLElement;
+  cont: HTMLElement; prog: HTMLElement;
 }
 
 /* ---- the eras of all time (scroll position → log10 age in years) ---- */
@@ -120,6 +120,17 @@ float stars(vec3 rd){
   }
   return c;
 }
+// nucleosynthesis — chaotic, jittering nucleons that flash as they fuse
+float sparks(vec3 rd){
+  vec3 p = rd * 44.0; vec3 ip = floor(p), fp = fract(p) - 0.5;
+  float h = h31(ip);
+  if (h < 0.45) return 0.0;
+  vec3 j = vec3(h31(ip+1.0), h31(ip+2.0), h31(ip+3.0)) - 0.5;
+  vec3 mot = 0.32 * vec3(sin(uTime*3.0 + h*30.0), cos(uTime*2.7 + h*20.0), sin(uTime*3.3 + h*11.0));
+  float d = length(fp - j*0.5 - mot);
+  float fuse = 0.5 + 0.5*sin(uTime*6.0 + h*50.0);     // the flash of fusion
+  return smoothstep(0.085, 0.0, d) * (0.35 + 0.9*fuse) * (h - 0.45) * 1.8;
+}
 
 void main(){
   vec2 ndc = (gl_FragCoord.xy*2.0 - uRes)/uRes; ndc.x*=uAspect;
@@ -133,8 +144,20 @@ void main(){
 
   vec3 col = vec3(0.0);
 
-  // the starfield the fog clears to reveal (persists through the later eras)
-  col += vec3(0.78,0.85,1.05) * stars(rd) * smoothstep(0.20, 0.34, uT);
+  // (a) nucleosynthesis — matter forming and fusing chaotically inside the soup
+  float soup = smoothstep(0.07, 0.12, uT) * smoothstep(0.24, 0.17, uT);
+  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * 1.4;
+
+  // (b) the dark ages — neutral gas, no stars yet, only the faintest glow
+  float dark = smoothstep(0.30, 0.35, uT) * smoothstep(0.50, 0.42, uT);
+  if (dark > 0.001) col += vec3(0.10,0.13,0.24) * fbm(rd*4.5 + 9.0) * dark * 0.6;
+
+  // (c) the cosmic dawn — the FIRST stars ignite (and persist), never before
+  float dawn = smoothstep(0.42, 0.58, uT);
+  if (dawn > 0.001) {
+    float ignite = 1.0 + 1.6 * smoothstep(0.58, 0.44, uT);   // a brighter flare as they first light up
+    col += vec3(0.80,0.86,1.06) * stars(rd) * dawn * ignite;
+  }
 
   if (bang > 0.002) {
     vec3 s = sphere(ro, rd, R);
@@ -173,7 +196,7 @@ void main(){
 }`;
 
 export function mountEternity(opts: Opts): () => void {
-  const { canvas, track, age, era, temp, line, marker } = opts;
+  const { canvas, age, era, temp, line, marker, cont, prog } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
@@ -244,35 +267,65 @@ export function mountEternity(opts: Opts): () => void {
     marker.style.top = `${(prog * 100).toFixed(2)}%`;
   }
 
-  let target = 0, cur = 0, running = false, raf = 0, last = performance.now();
-  function readScroll() { const r = track.getBoundingClientRect(); const span = track.offsetHeight - innerHeight; target = span > 0 ? clamp(-r.top / span, 0, 1) : 0; }
+  // ---- the journey plays itself, pausing at the pivotal moments ----
+  const PIVOTS = [0.0, 0.16, 0.30, 0.46, 0.63, 0.85, 1.0];
+  let playhead = 0, pivotIdx = 0, playing = true, running = false, raf = 0, last = performance.now();
+
+  function showCont(end: boolean) { cont.innerHTML = end ? "Begin again&nbsp;&nbsp;↺" : "Continue&nbsp;&nbsp;→"; cont.classList.add("show"); }
+  function hideCont() { cont.classList.remove("show"); }
+  function goForward() {
+    if (playing) return;
+    if (pivotIdx >= PIVOTS.length - 1) { playhead = 0; pivotIdx = 0; }   // begin again
+    playing = true; hideCont();
+  }
+  function goBack() {
+    if (playing || pivotIdx <= 0) return;
+    pivotIdx -= 1; playhead = PIVOTS[pivotIdx]!; showCont(false);
+  }
+  function advance(dtSec: number) {
+    if (!playing) return;
+    const next = PIVOTS[Math.min(pivotIdx + 1, PIVOTS.length - 1)]!;
+    const dist = next - playhead;
+    if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
+    else playhead = Math.min(next, playhead + clamp(0.6 * dist, 0.05, 0.22) * dtSec);  // ease into each pivot
+  }
+
   function frame(now: number) {
     raf = requestAnimationFrame(frame);
-    readScroll();
-    const dt = Math.min((now - last) / 16.67, 3); last = now;
-    cur += (target - cur) * clamp(0.1 * dt, 0, 1);
-    if (Math.abs(target - cur) < 0.0002) cur = target;
-    uniforms.uT.value = cur; uniforms.uTime.value = now * 0.001;
-    placeCamera(cur, now);
-    updateHud(scrollToLogT(cur), cur);
+    const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
+    advance(dtSec);
+    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001;
+    placeCamera(playhead, now);
+    updateHud(scrollToLogT(playhead), playhead);
+    prog.style.transform = `scaleX(${playhead.toFixed(4)})`;
     composer.render();
   }
   function start_() { if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); }
   function stop() { running = false; cancelAnimationFrame(raf); }
 
-  resize(); readScroll(); cur = target;
+  resize();
   addEventListener("resize", resize, { passive: true });
-  const io = new IntersectionObserver(es => { es.some(e => e.isIntersecting) ? start_() : stop(); }, { rootMargin: "100px 0px" });
-  io.observe(track);
+  const vis = () => { document.hidden ? stop() : start_(); };
+  document.addEventListener("visibilitychange", vis);
 
-  if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
-    canvas.style.cursor = "grab";
-    canvas.addEventListener("pointerdown", e => { dragging = true; lx = e.clientX; ly = e.clientY; canvas.style.cursor = "grabbing"; try { canvas.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ } });
-    canvas.addEventListener("pointermove", e => { if (!dragging) return; userYaw += (e.clientX - lx) * 0.005; userPitch = clamp(userPitch + (e.clientY - ly) * 0.004, -1.3, 1.3); lx = e.clientX; ly = e.clientY; });
-    const end = () => { dragging = false; canvas.style.cursor = "grab"; };
-    canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
-  }
+  // interaction: drag to look, tap/click/space/wheel to continue
+  let moved = false;
+  canvas.style.cursor = "grab";
+  canvas.addEventListener("pointerdown", e => { dragging = true; moved = false; lx = e.clientX; ly = e.clientY; canvas.style.cursor = "grabbing"; try { canvas.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ } });
+  canvas.addEventListener("pointermove", e => { if (!dragging) return; const dx = e.clientX - lx, dy = e.clientY - ly; if (Math.abs(dx) + Math.abs(dy) > 6) moved = true; userYaw += dx * 0.005; userPitch = clamp(userPitch + dy * 0.004, -1.3, 1.3); lx = e.clientX; ly = e.clientY; });
+  canvas.addEventListener("pointerup", () => { dragging = false; canvas.style.cursor = "grab"; if (!moved) goForward(); });
+  canvas.addEventListener("pointercancel", () => { dragging = false; });
+  cont.addEventListener("click", e => { e.stopPropagation(); goForward(); });
+  addEventListener("keydown", e => {
+    const t = e.target as HTMLElement | null;
+    if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); goForward(); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); goBack(); }
+  });
+  let wheelLock = 0;
+  addEventListener("wheel", e => { const n = performance.now(); if (n - wheelLock < 650) return; wheelLock = n; if (e.deltaY > 0) goForward(); else if (e.deltaY < 0) goBack(); }, { passive: true });
 
   placeCamera(0, 0); updateHud(scrollToLogT(0), 0); composer.render();
-  return () => { stop(); io.disconnect(); removeEventListener("resize", resize); mat.dispose(); composer.dispose(); renderer.dispose(); };
+  start_();
+  return () => { stop(); document.removeEventListener("visibilitychange", vis); removeEventListener("resize", resize); mat.dispose(); composer.dispose(); renderer.dispose(); };
 }

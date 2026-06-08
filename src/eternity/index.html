@@ -64,26 +64,25 @@
 
 <main id="top">
   <section id="eternity">
-    <div class="et-track" id="et-track">
-      <div class="et-sticky">
-        <canvas id="et-canvas" aria-hidden="true"></canvas>
-        <div class="et-hud">
-          <div class="et-readout">
-            <p class="et-eyebrow">The whole of time</p>
-            <p class="et-kicker">Age of the universe</p>
-            <p class="et-age" id="et-age" aria-live="polite">—</p>
-            <h2 class="et-era" id="et-era">—</h2>
-            <p class="et-meta">Temperature&nbsp;·&nbsp;<b id="et-temp">—</b></p>
-            <p class="et-line" id="et-line"></p>
-          </div>
-          <div class="et-hint" aria-hidden="true"><span class="cm-arrow">↓</span> Scroll through time &nbsp;·&nbsp; drag to look</div>
+    <div class="et-stage" id="et-stage">
+      <canvas id="et-canvas" aria-hidden="true"></canvas>
+      <div class="et-hud">
+        <div class="et-readout">
+          <p class="et-eyebrow">The whole of time</p>
+          <p class="et-kicker">Age of the universe</p>
+          <p class="et-age" id="et-age" aria-live="polite">—</p>
+          <h2 class="et-era" id="et-era">—</h2>
+          <p class="et-meta">Temperature&nbsp;·&nbsp;<b id="et-temp">—</b></p>
+          <p class="et-line" id="et-line"></p>
         </div>
-        <div class="et-scale" aria-hidden="true">
-          <span class="et-scale-lab et-scale-a">Big Bang</span>
-          <span class="et-scale-lab et-scale-b">Now</span>
-          <span class="et-scale-lab et-scale-c">Heat death</span>
-          <span class="et-marker" id="et-marker"></span>
-        </div>
+        <div class="et-hint" aria-hidden="true">Drag to look around</div>
+      </div>
+      <button class="et-continue" id="et-continue" type="button">Continue&nbsp;&nbsp;→</button>
+      <div class="et-scale" aria-hidden="true">
+        <span class="et-scale-lab et-scale-a">Big Bang</span>
+        <span class="et-scale-lab et-scale-b">Now</span>
+        <span class="et-scale-lab et-scale-c">Heat death</span>
+        <span class="et-marker" id="et-marker"></span>
       </div>
     </div>
 
