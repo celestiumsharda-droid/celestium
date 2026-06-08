@@ -1,19 +1,16 @@
 /* =====================================================================
-   CELESTIUM — "THE WHOLE OF TIME"  ·  engine core (Phase 1)
-   A from-scratch cinematic flight across the whole life of the universe,
-   built as one seamless logarithmic zoom. Three.js is used only as WebGL
-   plumbing; every pixel of the look is bespoke.
+   CELESTIUM — "THE WHOLE OF TIME"  ·  particle engine
+   The whole life of the universe told in one substance: light itself,
+   as a swarm of hundreds of thousands of GPU particles. The same points
+   that erupt from the first instant go on to become plasma, the first
+   nuclei, stars, galaxies — everything is made of them. A single journey
+   playhead eases to a stop at each pivotal moment; a running cosmic clock,
+   the era titles, ambient sound and drag-to-look sit on top.
 
-   This first phase establishes the engine — an HDR/ACES pipeline, the
-   journey director (scroll + gentle autoplay + drag-to-look), the running
-   cosmic clock — and the opening act: the Big Bang, rendered as a real
-   volumetric raymarch. A blinding singularity inflates and cools into a
-   turbulent plasma fireball that the camera pulls out of as the first
-   light (the CMB) clears. Gas you fly through, not points.
-
-   Later phases dock further acts (atoms, first stars, nebula, supernova,
-   galaxies, Earth, the far future, heat death) onto the same journey
-   parameter and cross-fade between their scale-bands for the seamless zoom.
+   ACT 1 (this build): the birth. A single point of light holds in the
+   black, then erupts into an expanding, turbulent, cooling plasma cloud.
+   Later acts (nuclei → first light → stars → galaxies → the far future)
+   dock onto the same playhead and morph the same particles.
    ===================================================================== */
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -28,7 +25,7 @@ interface Opts {
   startOverlay: HTMLElement; begin: HTMLElement;
 }
 
-/* ---- the eras of all time (scroll position → log10 age in years) ---- */
+/* ---- the eras of all time (journey position → log10 age in years) ---- */
 interface Era { s: number; lt: number; name: string; temp: string; line: string; }
 export const ERAS: Era[] = [
   { s: 0.00, lt: -50.5, name: "The Planck epoch",      temp: "10³² K",  line: "The first instant. Space, time and the four forces are a single thing, at a temperature beyond meaning. Our physics simply stops here." },
@@ -78,213 +75,62 @@ function formatAge(lt: number): string {
   return `10${sup(Math.round(lt))} years`;
 }
 
-/* ---- the cosmos as a camera-true volumetric raymarch ---- */
-const VERT = "void main(){ gl_Position = vec4(position, 1.0); }";
-const FRAG = /* glsl */`
+/* ---- the particle universe ----
+   `position` carries each particle's unit direction; aRand/aRand2 give it
+   its own life. The form is computed on the GPU from the journey value uT. */
+const VERT = /* glsl */`
 precision highp float;
-uniform vec2 uRes; uniform float uT, uTime, uTan, uAspect;
-uniform vec3 uCamPos, uFwd, uRight, uUp;
+attribute float aRand;
+attribute float aRand2;
+uniform float uT, uTime, uSize, uPix;
+varying float vHeat;
+varying float vAlpha;
 
-// 3D value noise + fbm
-float h31(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
-float vnoise(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
-  return mix(mix(mix(h31(i+vec3(0,0,0)),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
-             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
-float fbm(vec3 p){ float v=0.0,a=0.58; for(int i=0;i<4;i++){ v+=a*vnoise(p); p=p*2.03+vec3(7.1,3.7,1.3); a*=0.5; } return v; }
-
-// hot→cool temperature ramp for the fireball
-vec3 tempCol(float k){ // k 0=cool red .. 1=blue-white hot
-  vec3 a=vec3(0.55,0.06,0.02), b=vec3(1.0,0.35,0.08), c=vec3(1.0,0.8,0.4), d=vec3(0.85,0.92,1.4);
-  if(k<0.4) return mix(a,b,k/0.4);
-  if(k<0.75) return mix(b,c,(k-0.4)/0.35);
-  return mix(c,d,(k-0.75)/0.25);
-}
-// ray vs sphere (radius R, centre origin) → returns t-near/t-far in t.xy, hit in t.z
-vec3 sphere(vec3 ro, vec3 rd, float R){
-  float b=dot(ro,rd), c=dot(ro,ro)-R*R, h=b*b-c;
-  if(h<0.0) return vec3(0.0,0.0,-1.0);
-  h=sqrt(h); return vec3(-b-h,-b+h,1.0);
-}
-// real round, sized, twinkling stars across two depth layers
-float stars(vec3 rd){
-  float c = 0.0;
-  for (int L=0; L<2; L++){
-    float sc = (L==0) ? 70.0 : 138.0;
-    vec3 p = rd * sc; vec3 ip = floor(p), fp = fract(p) - 0.5;
-    float h = h31(ip + float(L)*19.0);
-    float thr = (L==0) ? 0.945 : 0.965;
-    if (h > thr){
-      vec3 jit = vec3(h31(ip+1.7), h31(ip+3.1), h31(ip+5.3)) - 0.5;
-      float d = length(fp - jit*0.7);
-      float bri = (h - thr)/(1.0-thr);
-      float tw = 0.55 + 0.45*sin(uTime*1.4 + h*61.0);
-      c += smoothstep(0.075, 0.0, d) * bri * tw * ((L==0) ? 1.0 : 0.55);
-    }
-  }
-  return c;
-}
-// nucleosynthesis — chaotic, jittering nucleons that flash as they fuse
-float sparks(vec3 rd){
-  vec3 p = rd * 44.0; vec3 ip = floor(p), fp = fract(p) - 0.5;
-  float h = h31(ip);
-  if (h < 0.45) return 0.0;
-  vec3 j = vec3(h31(ip+1.0), h31(ip+2.0), h31(ip+3.0)) - 0.5;
-  vec3 mot = 0.32 * vec3(sin(uTime*3.0 + h*30.0), cos(uTime*2.7 + h*20.0), sin(uTime*3.3 + h*11.0));
-  float d = length(fp - j*0.5 - mot);
-  float fuse = 0.5 + 0.5*sin(uTime*6.0 + h*50.0);     // the flash of fusion
-  return smoothstep(0.085, 0.0, d) * (0.35 + 0.9*fuse) * (h - 0.45) * 1.8;
-}
-// distant galaxies — soft coloured elliptical glows scattered through a depth field
-vec3 galaxies(vec3 rd){
-  vec3 c = vec3(0.0);
-  for (int L=0; L<2; L++){
-    float sc = (L==0) ? 24.0 : 46.0;
-    vec3 p = rd*sc; vec3 ip = floor(p), fp = fract(p) - 0.5;
-    float h = h31(ip + float(L)*7.0);
-    float thr = (L==0) ? 0.92 : 0.95;
-    if (h > thr){
-      vec2 j = vec2(h31(ip+1.3), h31(ip+2.7)) - 0.5;
-      float ang = h*6.2831, ca = cos(ang), sa = sin(ang);
-      vec2 q = mat2(ca,-sa,sa,ca) * (fp.xy - j*0.6);
-      q.y *= 2.6;                                            // squash into an ellipse
-      float d = length(q);
-      float glow = smoothstep(0.22,0.0,d) + smoothstep(0.05,0.0,d)*0.7;   // halo + bright core
-      vec3 tint = mix(vec3(1.0,0.93,0.78), vec3(0.80,0.86,1.12), h31(ip+4.0));
-      c += tint * glow * ((h-thr)/(1.0-thr)) * ((L==0) ? 1.0 : 0.55);
-    }
-  }
-  return c;
-}
-// the Milky Way — a luminous, dust-laned band across the sky
-float mwBand(vec3 rd){
-  vec3 n = normalize(vec3(0.32,0.92,0.22));
-  float d = dot(rd, n);
-  float band = exp(-d*d*26.0);
-  band *= 0.5 + 0.7*fbm(rd*3.2 + vec3(4.0));
-  band *= smoothstep(0.85,0.25, fbm(rd*7.0 + vec3(1.0)));   // dark dust lanes cut across it
-  return band;
-}
-// a hero star — granulated disk + soft corona
-vec3 heroStar(vec3 rd, float cD){
-  float disk   = smoothstep(0.105,0.088,cD);
-  float gran   = 0.5 + 0.55*fbm(rd*60.0 + vec3(uTime*0.2));
-  float corona = smoothstep(0.40,0.088,cD);
-  vec3 surf = mix(vec3(1.35,0.72,0.26), vec3(1.55,1.25,0.72), gran);
-  return surf*disk + vec3(1.2,0.66,0.30)*corona*corona*0.5;
-}
+float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 
 void main(){
-  vec2 ndc = (gl_FragCoord.xy*2.0 - uRes)/uRes; ndc.x*=uAspect;
-  vec3 rd = normalize(uFwd + uRight*(ndc.x*uTan) + uUp*(ndc.y*uTan));
-  vec3 ro = uCamPos;
+  vec3 dir = position;                                   // unit direction
+  // ---- ACT 1: the birth — a point that erupts into expanding plasma ----
+  float erupt  = smoothstep(0.045, 0.13, uT);            // the eruption from the point
+  float expand = smoothstep(0.04, 0.30, uT);             // the cloud inflating
+  float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);          // low-freq density variation → texture
+  float radius = mix(0.015, 3.2, expand);
+  float rr = radius * (0.18 + 0.82*aRand) * clump;       // a filled, clumpy cloud, not a shell
+  vec3 pos = dir * rr;
+  // turbulence — swirling plasma, growing as it expands
+  float n = hash(dir*3.0 + aRand);
+  vec3 swirl = vec3(sin(uTime*0.30 + aRand*30.0),
+                    cos(uTime*0.25 + aRand2*22.0),
+                    sin(uTime*0.27 + aRand*17.0));
+  pos += swirl * (0.10 + 0.55*expand) * (0.35 + 0.65*n);
+  // heat: blazing in the dense early core, cooling as it spreads & ages
+  vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
+  // ignite from black, then brighten as it bursts; kept dim so additive
+  // overlap reads as luminous points on black, not a blown-out white blob.
+  // dim the densest centre so the core doesn't saturate to flat white.
+  float coreDim = mix(0.28, 1.0, smoothstep(0.0, 0.6, rr / 3.2));
+  vAlpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
+  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+  gl_Position = projectionMatrix * mv;
+  gl_PointSize = uSize * uPix * (0.35 + 0.9*aRand) / max(-mv.z, 0.12);
+}`;
 
-  // angular distance from the singularity / fireball centre (0 at centre)
-  float centerD = length(cross(rd, -normalize(ro + vec3(1e-4))));
-
-  // ---------------- timeline scalars ----------------
-  float erupt = smoothstep(0.05, 0.14, uT);            // the fireball erupts FROM the point
-  float bang  = smoothstep(0.24, 0.0, uT) * erupt;     // plasma persists through the quark soup
-  float heat  = clamp(1.0 - uT*3.0, 0.0, 1.0);
-  float R     = mix(0.05, 2.6, smoothstep(0.02, 0.30, uT));
-
-  vec3 col = vec3(0.0);
-
-  // (0) the singularity — out of complete black, a single point of light holds,
-  //     swelling slightly, before it bursts. A tight core + a soft bloom halo.
-  float sing = smoothstep(0.0, 0.030, uT) * smoothstep(0.155, 0.055, uT);
-  col += vec3(1.6,1.5,1.36) * sing * (smoothstep(0.020,0.0,centerD)*6.0 + smoothstep(0.18,0.0,centerD)*0.55);
-
-  // (1) the volumetric fireball, inflating out of the point
-  if (bang > 0.002) {
-    vec3 s = sphere(ro, rd, R);
-    if (s.z > 0.0) {
-      float tn = max(s.x, 0.0), tf = s.y;
-      float dt = (tf - tn)/float(STEPS);
-      float t = tn + h31(vec3(gl_FragCoord.xy, 7.0)) * dt;   // dither hides banding at low step counts
-      float trans = 1.0; vec3 acc = vec3(0.0);
-      vec3 flow = vec3(uTime*0.06, -uTime*0.04, uTime*0.05);
-      for (int i=0;i<STEPS;i++){
-        vec3 p = ro + rd*t;
-        float rr = length(p)/R;
-        float edge = smoothstep(1.0, 0.55, rr);
-        float turb = fbm(p*2.6 + flow);
-        float dens = clamp((turb - 0.42) * 2.4, 0.0, 1.0) * edge;
-        if (dens > 0.001){
-          float k = clamp(heat*0.7 + (1.0-rr)*0.5 + turb*0.2, 0.0, 1.0);
-          vec3 emit = tempCol(k) * dens * (1.6 + heat*2.5);
-          acc += emit * trans * dt * 4.0;
-          trans *= exp(-dens * dt * 3.2);
-        }
-        t += dt; if (trans < 0.02) break;
-      }
-      col = mix(col, col + acc, bang);
-    }
-  }
-
-  // (2) nucleosynthesis — the first nuclei form & fuse, concentrated in the hot soup
-  float soup = smoothstep(0.12,0.16,uT) * smoothstep(0.26,0.20,uT);
-  if (soup > 0.001) col += vec3(0.95,0.98,1.25) * sparks(rd) * soup * smoothstep(0.85,0.10,centerD) * 1.6;
-
-  // (3) recombination — the fog clears; the CMB flares warm, then cools to a faint mottle
-  float recomb = smoothstep(0.245,0.29,uT) * smoothstep(0.345,0.30,uT);
-  if (recomb > 0.001){
-    float mott = fbm(rd*3.0 + vec3(5.0));
-    vec3 cmb = mix(vec3(1.0,0.62,0.32), vec3(0.55,0.60,0.85), smoothstep(0.26,0.32,uT));
-    col += cmb * (0.45 + 0.55*mott) * recomb * 0.8;
-  }
-
-  // (4) the dark ages — neutral gas drawn along filaments, no stars yet
-  float dark = smoothstep(0.31,0.37,uT) * smoothstep(0.46,0.40,uT);
-  if (dark > 0.001) col += vec3(0.10,0.13,0.24) * fbm(rd*4.5 + vec3(9.0)) * dark * 0.7;
-
-  // (5) the age of starlight — first stars ignite at the dawn, the sky is full at "now",
-  //     then the stars fade away as the last ones die.
-  float starEra = smoothstep(0.40,0.47,uT) * smoothstep(0.86,0.80,uT);
-  if (starEra > 0.001){
-    float ig = 1.0 + 1.5*smoothstep(0.50,0.43,uT);    // a first-light flare at the cosmic dawn
-    col += vec3(0.80,0.86,1.06) * stars(rd) * starEra * ig;
-  }
-  // galaxies & the cosmic web
-  float galEra = smoothstep(0.48,0.55,uT) * smoothstep(0.83,0.75,uT);
-  if (galEra > 0.001) col += galaxies(rd) * galEra;
-  // the Milky Way band, brightest around the Sun & now
-  float mwEra = smoothstep(0.52,0.60,uT) * smoothstep(0.80,0.71,uT);
-  if (mwEra > 0.001) col += vec3(0.62,0.72,1.0) * mwBand(rd) * mwEra * 0.5;
-  // (6) the Sun ignites
-  float sunEra = smoothstep(0.555,0.60,uT) * smoothstep(0.665,0.61,uT);
-  if (sunEra > 0.001) col += heroStar(rd, centerD) * sunEra;
-  // (7) Andromeda approaches — a second great galaxy swells in the sky
-  float androm = smoothstep(0.685,0.73,uT) * smoothstep(0.795,0.74,uT);
-  if (androm > 0.001){
-    vec3 dir = normalize(vec3(0.55,0.18,-0.82));
-    float grow = smoothstep(0.685,0.77,uT);
-    float g = smoothstep(mix(0.988,0.945,grow), 1.0, dot(rd,dir));
-    col += mix(vec3(0.82,0.86,1.06), vec3(1.0,0.92,0.78), 0.4) * g*g * androm * 1.3;
-  }
-
-  // (8) the last star — a final ember flickers out at the centre
-  float ember = smoothstep(0.815,0.855,uT) * smoothstep(0.895,0.86,uT);
-  if (ember > 0.001){
-    float flick = 0.35 + 0.65*fbm(vec3(uTime*0.6, 3.0, 0.0));
-    col += vec3(0.95,0.40,0.14) * smoothstep(0.05,0.0,centerD) * ember * flick;
-  }
-
-  // (9) the black hole era — a dark horizon, a bright photon ring, a faint Hawking shimmer
-  float bhEra = smoothstep(0.905,0.95,uT) * smoothstep(0.995,0.965,uT);
-  if (bhEra > 0.001){
-    col *= (1.0 - smoothstep(0.086,0.080,centerD) * bhEra);          // event horizon: pure black
-    col += vec3(1.0,0.62,0.28) * smoothstep(0.018,0.0,abs(centerD-0.10)) * 1.7 * bhEra;   // photon ring
-    float shimmer = smoothstep(0.22,0.10,centerD) * (0.5 + 0.5*sin(uTime*2.5 + centerD*70.0));
-    col += vec3(0.5,0.62,1.0) * shimmer * 0.05 * bhEra;
-  }
-
-  // (10) heat death — all of it fades to a uniform, near-absolute-zero dark
-  col = mix(col, vec3(0.004,0.005,0.009), smoothstep(0.965,1.0,uT) * 0.92);
-
-  // gentle vignette
-  vec2 q = (gl_FragCoord.xy/uRes - 0.5);
-  col *= 1.0 - 0.35*dot(q,q);
-  gl_FragColor = vec4(col, 1.0);
+const FRAG = /* glsl */`
+precision highp float;
+varying float vHeat;
+varying float vAlpha;
+vec3 tempCol(float k){
+  vec3 a = vec3(0.70,0.12,0.05), b = vec3(1.0,0.45,0.12), c = vec3(1.0,0.86,0.52), d = vec3(0.72,0.84,1.5);
+  if (k < 0.4) return mix(a,b,k/0.4);
+  if (k < 0.75) return mix(b,c,(k-0.4)/0.35);
+  return mix(c,d,(k-0.75)/0.25);
+}
+void main(){
+  vec2 q = gl_PointCoord - 0.5;
+  float d2 = dot(q,q);
+  if (d2 > 0.25) discard;
+  float soft = smoothstep(0.25, 0.0, d2);                // round, soft-edged
+  gl_FragColor = vec4(tempCol(vHeat), soft * vAlpha);
 }`;
 
 export function mountEternity(opts: Opts): () => void {
@@ -294,83 +140,90 @@ export function mountEternity(opts: Opts): () => void {
   let renderer: THREE.WebGLRenderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" }); }
   catch (_e) { return () => {}; }
-  renderer.setClearColor(0x000000, 1);   // the void before the first instant — true black
+  const pix = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
+  renderer.setPixelRatio(pix);
+  renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  // the volumetric is fill-rate heavy, so it renders below native resolution
-  // (soft gas + bloom hide it) and the canvas upscales — the big perf lever.
-  renderer.setPixelRatio(1);
-  const renderScale = small ? 0.55 : 0.74;
+  renderer.toneMappingExposure = 0.85;
 
   const scene = new THREE.Scene();
-  const dummy = new THREE.Camera();
-  const FOV = 58 * Math.PI / 180;
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 100);
+
+  // ---- build the particle swarm ----
+  const COUNT = small ? 90000 : 240000;
+  const dirs = new Float32Array(COUNT * 3);
+  const rand = new Float32Array(COUNT);
+  const rand2 = new Float32Array(COUNT);
+  for (let i = 0; i < COUNT; i++) {
+    // uniform point on a sphere
+    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u);
+    dirs[i * 3] = r * Math.cos(th); dirs[i * 3 + 1] = u; dirs[i * 3 + 2] = r * Math.sin(th);
+    rand[i] = Math.random(); rand2[i] = Math.random();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(dirs, 3));
+  geo.setAttribute("aRand", new THREE.BufferAttribute(rand, 1));
+  geo.setAttribute("aRand2", new THREE.BufferAttribute(rand2, 1));
   const uniforms = {
-    uRes: { value: new THREE.Vector2(1, 1) }, uT: { value: 0 }, uTime: { value: 0 },
-    uTan: { value: Math.tan(FOV / 2) }, uAspect: { value: 1 },
-    uCamPos: { value: new THREE.Vector3() }, uFwd: { value: new THREE.Vector3() },
-    uRight: { value: new THREE.Vector3() }, uUp: { value: new THREE.Vector3() },
+    uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix },
   };
-  const STEPS = small ? 22 : 36;   // raymarch quality scales with the device
-  const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: `#define STEPS ${STEPS}\n${FRAG}`, depthTest: false, depthWrite: false });
-  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+  const mat = new THREE.ShaderMaterial({
+    uniforms, vertexShader: VERT, fragmentShader: FRAG,
+    transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
+  });
+  const points = new THREE.Points(geo, mat);
+  points.frustumCulled = false;
+  scene.add(points);
 
   const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, dummy));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.9, 0.7, 0.0);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.55, 0.62);
   composer.addPass(bloom);
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    const bw = Math.max(2, Math.round(w * renderScale)), bh = Math.max(2, Math.round(h * renderScale));
-    renderer.setSize(bw, bh, false);              // small drawing buffer; CSS stretches the canvas to full
-    composer.setSize(bw, bh); bloom.setSize(bw, bh);
-    uniforms.uRes.value.set(bw, bh); uniforms.uAspect.value = w / h;
+    renderer.setSize(w, h, false);
+    composer.setSize(w, h); bloom.setSize(w, h);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
   }
 
-  // logical free-look camera (orbit around origin; journey sets the distance)
-  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0;
-  const camPos = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
-  const UP = new THREE.Vector3(0, 1, 0);
+  // ---- camera: orbit the origin, pulling back as the cloud inflates ----
+  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false;
   function placeCamera(uT: number, now: number) {
-    if (!dragging) { userYaw *= 0.96; userPitch *= 0.96; }
-    const dist = lerp(0.15, 3.4, smooth(clamp(uT / 0.32, 0, 1)));        // pull out of the fireball
-    const yaw = now * 0.00005 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);
+    if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
+    const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
+    const dist = lerp(1.15, 9.0, expand);
+    const yaw = now * 0.00004 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);
     const cp = Math.cos(pitch);
-    camPos.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
-    fwd.copy(camPos).multiplyScalar(-1).normalize();                    // look at origin
-    right.crossVectors(fwd, UP).normalize();
-    up.crossVectors(right, fwd).normalize();
-    uniforms.uCamPos.value.copy(camPos);
-    uniforms.uFwd.value.copy(fwd); uniforms.uRight.value.copy(right); uniforms.uUp.value.copy(up);
+    camera.position.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
+    camera.lookAt(0, 0, 0);
   }
 
+  // ---- running HUD ----
   let eraIdx = -1, lastAge = "";
-  function updateHud(lt: number, prog: number) {
+  function updateHud(lt: number, p: number) {
     const a = formatAge(lt);
     if (a !== lastAge) { age.textContent = a; lastAge = a; }
-    let idx = 0; for (let i = 0; i < ERAS.length; i++) if (prog >= ERAS[i]!.s - 1e-4) idx = i;
+    let idx = 0; for (let i = 0; i < ERAS.length; i++) if (p >= ERAS[i]!.s - 1e-4) idx = i;
     if (idx !== eraIdx) {
       eraIdx = idx; const e = ERAS[idx]!;
       era.textContent = e.name; temp.textContent = e.temp; line.textContent = e.line;
       era.classList.remove("in"); void era.offsetWidth; era.classList.add("in");
       try { playClick(); } catch (_e) { /* off */ }
     }
-    marker.style.top = `${(prog * 100).toFixed(2)}%`;
+    marker.style.top = `${(p * 100).toFixed(2)}%`;
   }
 
-  // ---- the journey plays itself, pausing at the pivotal moments ----
-  // one pause per era — the journey stops at every pivotal moment
+  // ---- the journey plays itself, pausing at every pivotal moment ----
   const PIVOTS = ERAS.map(e => e.s);
   let playhead = 0, pivotIdx = 0, playing = false, running = false, raf = 0, last = performance.now();
-  let armed = false;     // the journey waits on the "Begin" gate
-  let bootHold = 0;      // seconds of complete black before the first point ignites
+  let armed = false, bootHold = 0;
 
   function showCont(end: boolean) { cont.innerHTML = end ? "Begin again&nbsp;&nbsp;↺" : "Continue&nbsp;&nbsp;→"; cont.classList.add("show"); }
   function hideCont() { cont.classList.remove("show"); }
   function goForward() {
     if (!armed || playing) return;
-    if (pivotIdx >= PIVOTS.length - 1) { playhead = 0; pivotIdx = 0; }   // begin again
+    if (pivotIdx >= PIVOTS.length - 1) { playhead = 0; pivotIdx = 0; }
     playing = true; hideCont();
   }
   function goBack() {
@@ -379,20 +232,20 @@ export function mountEternity(opts: Opts): () => void {
   }
   function begin_() {
     if (armed) return;
-    armed = true; bootHold = 2.0; playing = true;   // a long beat of black, then the point ignites
+    armed = true; bootHold = 1.6; playing = true;
     startOverlay.classList.add("gone");
     try { playClick(); } catch (_e) { /* off */ }
   }
   function advance(dtSec: number) {
     if (!playing) return;
-    if (bootHold > 0) { bootHold -= dtSec; return; }   // hold on black, then ignite
+    if (bootHold > 0) { bootHold -= dtSec; return; }
     const next = PIVOTS[Math.min(pivotIdx + 1, PIVOTS.length - 1)]!;
     const dist = next - playhead;
     if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
     else {
-      let speed = clamp(0.6 * dist, 0.05, 0.22);
-      if (playhead < 0.09) speed *= 0.30 + 0.70 * (playhead / 0.09);  // crawl through the ignition
-      playhead = Math.min(next, playhead + speed * dtSec);            // then ease into each pivot
+      let speed = clamp(0.5 * dist, 0.04, 0.16);
+      if (playhead < 0.09) speed *= 0.30 + 0.70 * (playhead / 0.09);   // crawl through the ignition
+      playhead = Math.min(next, playhead + speed * dtSec);
     }
   }
 
@@ -415,7 +268,6 @@ export function mountEternity(opts: Opts): () => void {
   document.addEventListener("visibilitychange", vis);
 
   // interaction: drag to look, tap/click/space/wheel to continue
-  let moved = false;
   canvas.style.cursor = "grab";
   canvas.addEventListener("pointerdown", e => { dragging = true; moved = false; lx = e.clientX; ly = e.clientY; canvas.style.cursor = "grabbing"; try { canvas.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ } });
   canvas.addEventListener("pointermove", e => { if (!dragging) return; const dx = e.clientX - lx, dy = e.clientY - ly; if (Math.abs(dx) + Math.abs(dy) > 6) moved = true; userYaw += dx * 0.005; userPitch = clamp(userPitch + dy * 0.004, -1.3, 1.3); lx = e.clientX; ly = e.clientY; });
@@ -434,5 +286,5 @@ export function mountEternity(opts: Opts): () => void {
 
   placeCamera(0, 0); updateHud(scrollToLogT(0), 0); composer.render();
   start_();
-  return () => { stop(); document.removeEventListener("visibilitychange", vis); removeEventListener("resize", resize); mat.dispose(); composer.dispose(); renderer.dispose(); };
+  return () => { stop(); document.removeEventListener("visibilitychange", vis); removeEventListener("resize", resize); geo.dispose(); mat.dispose(); composer.dispose(); renderer.dispose(); };
 }
