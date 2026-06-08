@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Whole of Time — Celestium</title>
+<meta name="description" content="Travel the entire life of the universe in one continuous flight — from the Big Bang, through the first light, stars, galaxies and the present, to the last star, the black-hole era and the heat death of everything.">
+<meta name="theme-color" content="#050609">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://celestium.celestium-sharda.workers.dev/eternity/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Celestium">
+<meta property="og:title" content="The Whole of Time">
+<meta property="og:description" content="The entire life of the universe, Big Bang to heat death, in one continuous cinematic flight.">
+<meta property="og:url" content="https://celestium.celestium-sharda.workers.dev/eternity/">
+<meta property="og:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Whole of Time">
+<meta name="twitter:description" content="The entire life of the universe, Big Bang to heat death, in one continuous flight.">
+<meta name="twitter:image" content="https://celestium.celestium-sharda.workers.dev/og-cover.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3Cpath d='M74 20 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='%23f2e6c4'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/fraunces-300_600-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/spectral-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/styles/home.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"The Whole of Time","url":"https://celestium.celestium-sharda.workers.dev/eternity/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"Celestium","url":"https://celestium.celestium-sharda.workers.dev/"}}</script>
+</head>
+<body>
+<a class="skip" href="#eternity">Skip to content</a>
+<div class="grain" aria-hidden="true"></div>
+<div id="prog" aria-hidden="true"></div>
+
+<nav id="nav" class="solid">
+  <a class="brand" href="/">
+    <svg class="mark" viewBox="0 0 100 100" fill="none" stroke="#f3f5fb" stroke-width="3">
+      <ellipse cx="50" cy="50" rx="40" ry="16"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(60 50 50)"/>
+      <ellipse cx="50" cy="50" rx="40" ry="16" transform="rotate(120 50 50)"/>
+      <circle cx="50" cy="50" r="6" fill="#f3f5fb" stroke="none"/>
+      <path d="M76 16 l3 7 7 1 -5 5 1 7 -6-3 -6 3 1-7 -5-5 7-1z" fill="#f2e6c4" stroke="none"/>
+    </svg>
+    CELESTIUM
+  </a>
+  <div class="navlinks">
+    <a href="/discoveries/">Discoveries</a>
+    <a href="/timeline/">Timeline</a>
+    <a href="/#sky-sec">Tonight</a>
+    <a href="/about/">About</a>
+    <a href="/join/">Join&nbsp;Us</a>
+  </div>
+  <button id="sound" class="soundtoggle" type="button" aria-label="Enable ambient sound" aria-pressed="false"></button>
+  <button id="burger" aria-label="Open menu"><span></span><span></span></button>
+</nav>
+<div id="menu">
+  <a href="/discoveries/">Discoveries</a>
+  <a href="/timeline/">Timeline</a>
+  <a href="/#sky-sec">Tonight</a>
+  <a href="/about/">About</a>
+  <a href="/join/">Join Us</a>
+</div>
+
+<main id="top">
+  <section id="eternity">
+    <div class="et-track" id="et-track">
+      <div class="et-sticky">
+        <canvas id="et-canvas" aria-hidden="true"></canvas>
+        <div class="et-hud">
+          <div class="et-readout">
+            <p class="et-eyebrow">The whole of time</p>
+            <p class="et-kicker">Age of the universe</p>
+            <p class="et-age" id="et-age" aria-live="polite">—</p>
+            <h2 class="et-era" id="et-era">—</h2>
+            <p class="et-meta">Temperature&nbsp;·&nbsp;<b id="et-temp">—</b></p>
+            <p class="et-line" id="et-line"></p>
+          </div>
+          <div class="et-hint" aria-hidden="true"><span class="cm-arrow">↓</span> Scroll through time &nbsp;·&nbsp; drag to look</div>
+        </div>
+        <div class="et-scale" aria-hidden="true">
+          <span class="et-scale-lab et-scale-a">Big Bang</span>
+          <span class="et-scale-lab et-scale-b">Now</span>
+          <span class="et-scale-lab et-scale-c">Heat death</span>
+          <span class="et-marker" id="et-marker"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- base experience: the eras as text (no-JS / reduced motion) -->
+    <div class="et-list-wrap" id="et-list">
+      <header class="et-intro">
+        <p class="eyebrow">The whole of time</p>
+        <h1>The entire life<br>of the universe.</h1>
+        <p class="et-dek">From the first instant to the last — the Big Bang, the first light, the age of stars, the present moment, and the long darkness that comes after everything.</p>
+      </header>
+      <div class="et-chapter"><span>10⁻⁴³ s</span><h2>The Planck epoch</h2><p>Time itself begins. The four forces are one, and physics as we know it cannot yet describe a thing.</p></div>
+      <div class="et-chapter"><span>10⁻³² s</span><h2>Inflation</h2><p>In a sliver of an instant, space erupts — doubling over and over, smoothing the cosmos and seeding every structure to come.</p></div>
+      <div class="et-chapter"><span>1 second</span><h2>The particle soup</h2><p>A blazing plasma of quarks and light. Matter and antimatter annihilate; a tiny surplus of matter survives — and that is everything.</p></div>
+      <div class="et-chapter"><span>380,000 yr</span><h2>First light</h2><p>The fog clears and light flies free for the first time — the afterglow we still see as the cosmic microwave background.</p></div>
+      <div class="et-chapter"><span>200 Myr</span><h2>The cosmic dawn</h2><p>Gravity gathers the dark into the first suns. Light returns to a universe that had gone black.</p></div>
+      <div class="et-chapter"><span>1–10 Gyr</span><h2>The age of galaxies</h2><p>Stars swarm into galaxies, galaxies into clusters and a vast cosmic web. Generation after generation of stars forge the elements.</p></div>
+      <div class="et-chapter"><span>9.2 Gyr</span><h2>The Sun is born</h2><p>From the ashes of dead stars, our Sun and its worlds condense.</p></div>
+      <div class="et-chapter"><span>13.8 Gyr</span><h2>Now. You are here.</h2><p>A brief, bright moment when the universe is full of stars, and something is here to notice.</p></div>
+      <div class="et-chapter"><span>+4 Gyr</span><h2>Andromeda arrives</h2><p>The Andromeda galaxy collides with ours, and the night sky burns with a second river of stars.</p></div>
+      <div class="et-chapter"><span>100+ Gyr</span><h2>The long isolation</h2><p>Dark energy drives the galaxies apart faster than light can bridge them. One by one they slip over the horizon, and the sky empties.</p></div>
+      <div class="et-chapter"><span>100 Tyr</span><h2>The last star dies</h2><p>The gas runs out. The final star flickers and fades. The age of starlight is over.</p></div>
+      <div class="et-chapter"><span>10²⁵ yr</span><h2>The degenerate era</h2><p>Only cold embers remain, and slowly even the atoms within them begin to decay.</p></div>
+      <div class="et-chapter"><span>10⁴⁰ yr</span><h2>The black hole era</h2><p>For an unimaginable span, black holes are all that is left — bleeding away through Hawking radiation.</p></div>
+      <div class="et-chapter"><span>10¹⁰⁰ yr</span><h2>Heat death</h2><p>Nothing remains that can change. Maximum entropy — an endless, uniform dark. Not a bang, but the slow, final quiet.</p></div>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="/engine/eternity-page.ts"></script>
+</body>
+</html>

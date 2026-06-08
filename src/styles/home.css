@@ -372,6 +372,40 @@ section { position: relative; padding: 140px 0; }
 .sd-modal-cta { display: flex; gap: 12px; margin-top: 24px; }
 .sd-modal-cta .btn { flex: 1; text-align: center; }
 
+/* ---- THE WHOLE OF TIME page ---- */
+.et-track { display: none; position: relative; height: 1000vh; }
+#eternity.live .et-track { display: block; }
+#eternity.live .et-list-wrap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.et-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; background: #050609; }
+#et-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.et-hud { position: absolute; inset: 0; pointer-events: none; padding: clamp(86px,13vh,150px) clamp(24px,6vw,90px) clamp(40px,7vh,70px); display: flex; flex-direction: column; justify-content: flex-end; }
+.et-readout { max-width: 520px; }
+.et-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: var(--accent); margin-bottom: 26px; }
+.et-kicker { font-family: var(--mono); font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+.et-age { font-family: var(--display); font-weight: 300; font-size: clamp(2rem, 5.5vw, 4.4rem); line-height: 1; letter-spacing: -.02em; color: var(--ink); margin-bottom: 18px; font-variant-numeric: tabular-nums; }
+.et-era { font-family: var(--display); font-weight: 400; font-size: clamp(1.3rem, 2.6vw, 2rem); color: var(--accent); letter-spacing: -.01em; margin-bottom: 10px; }
+.et-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
+.et-meta b { color: var(--mut); font-weight: 400; }
+.et-line { color: var(--mut); font-size: clamp(.98rem, 1.5vw, 1.12rem); line-height: 1.6; max-width: 48ch; }
+@keyframes etFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.et-era.in { animation: etFade .6s cubic-bezier(.2,.7,.2,1); }
+.et-hint { position: absolute; bottom: clamp(20px,4vh,34px); left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.et-hint .cm-arrow { color: var(--accent); }
+.et-scale { position: absolute; right: clamp(16px,3vw,34px); top: 16vh; bottom: 16vh; width: 1px; background: linear-gradient(var(--line), var(--line-soft)); pointer-events: none; }
+.et-scale-lab { position: absolute; right: 14px; white-space: nowrap; font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); transform: translateY(-50%); }
+.et-scale-a { top: 0; } .et-scale-b { top: 53%; color: var(--accent); } .et-scale-c { top: 100%; }
+.et-marker { position: absolute; left: 50%; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: translate(-50%,-50%); top: 0; }
+@media (max-width: 760px) { .et-scale, .et-hint { display: none; } .et-readout { max-width: none; } }
+.et-list-wrap { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
+.et-intro { text-align: center; margin-bottom: 44px; }
+.et-intro h1 { font-family: var(--display); font-weight: 300; font-size: clamp(2.6rem, 8vw, 5rem); letter-spacing: -.025em; margin: 16px 0 20px; }
+.et-dek { color: var(--mut); max-width: 54ch; margin: 0 auto; font-size: 1.1rem; line-height: 1.6; }
+.et-chapter { display: grid; grid-template-columns: 120px 1fr; gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--line-soft); align-items: baseline; }
+.et-chapter > span { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
+.et-chapter h2 { font-family: var(--display); font-weight: 400; font-size: clamp(1.4rem,3vw,1.9rem); margin-bottom: 8px; letter-spacing: -.02em; }
+.et-chapter p { color: var(--mut); line-height: 1.6; }
+@media (max-width: 560px) { .et-chapter { grid-template-columns: 1fr; gap: 6px; } }
+
 /* ---- TIMELINE page: spiral/genesis flight (also used on /timeline/) ---- */
 #timeline { border-top: 1px solid var(--line-soft); position: relative; }
 .tl-track { display: none; position: relative; height: 580vh; }

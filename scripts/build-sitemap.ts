@@ -19,6 +19,7 @@ const urls = [
   { loc: SITE.origin + "/discoveries/", priority: "0.9" },
   { loc: SITE.origin + "/timeline/", priority: "0.8" },
   { loc: SITE.origin + "/stardust/", priority: "0.8" },
+  { loc: SITE.origin + "/eternity/", priority: "0.85" },
   { loc: SITE.origin + "/about/", priority: "0.5" },
   { loc: SITE.origin + "/join/", priority: "0.5" },
   ...Object.keys(DISCOVERIES).map(slug => ({

@@ -44,6 +44,7 @@ function buildItems(): Item[] {
     { title: "The universe map", sub: "You are here", href: "/#scale", kind: "page", q: "universe map perspective scale you are here zoom" },
     { title: "Cosmic timeline", sub: "13.8 billion years", href: "/timeline/", kind: "page", q: "timeline history big bang cosmic" },
     { title: "You are stardust", sub: "Your atoms' origin story", href: "/stardust/", kind: "page", q: "stardust you are atoms origin supernova made of stars personal" },
+    { title: "The whole of time", sub: "Big Bang to heat death", href: "/eternity/", kind: "page", q: "whole of time universe big bang heat death future end eternity timeline flight cosmos evolution" },
     { title: "Tonight's sky", sub: "Live above you now", href: "/#sky-sec", kind: "page", q: "tonight sky live planets aurora iss" },
     { title: "About Celestium", sub: "How it's made", href: "/about/", kind: "page", q: "about methodology how made philosophy sources standards" },
     { title: "Join us", sub: "Follow, subscribe, contribute", href: "/join/", kind: "page", q: "join us follow instagram social newsletter subscribe contribute pitch contact community" },

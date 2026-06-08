@@ -62,6 +62,7 @@ export default defineConfig({
         join: resolve(__dirname, "src/join/index.html"),
         timeline: resolve(__dirname, "src/timeline/index.html"),
         stardust: resolve(__dirname, "src/stardust/index.html"),
+        eternity: resolve(__dirname, "src/eternity/index.html"),
         notfound: resolve(__dirname, "src/404.html"),
       },
     },
