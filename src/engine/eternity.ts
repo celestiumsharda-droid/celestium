@@ -97,12 +97,13 @@ void main(){
   float radius = mix(0.015, 3.2, expand);
   float rr = radius * (0.18 + 0.82*aRand) * clump;       // a filled, clumpy cloud, not a shell
   vec3 pos = dir * rr;
-  // turbulence — swirling plasma, growing as it expands
+  // turbulence — isotropic per-particle drift, ZERO at the start (so the
+  // newborn point is a clean round dot, not an axis-aligned cube), growing
+  // only as the cloud expands.
   float n = hash(dir*3.0 + aRand);
-  vec3 swirl = vec3(sin(uTime*0.30 + aRand*30.0),
-                    cos(uTime*0.25 + aRand2*22.0),
-                    sin(uTime*0.27 + aRand*17.0));
-  pos += swirl * (0.10 + 0.55*expand) * (0.35 + 0.65*n);
+  vec3 nd = normalize(vec3(hash(dir+11.0), hash(dir+23.0), hash(dir+37.0)) - 0.5 + 1e-4);
+  float wob = 0.6 + 0.4*sin(uTime*0.5 + aRand*28.0);
+  pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
   // heat: blazing in the dense early core, cooling as it spreads & ages
   vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
   // ignite from black, then brighten as it bursts; kept dim so additive
