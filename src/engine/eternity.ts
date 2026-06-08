@@ -28,22 +28,36 @@ interface Opts {
 /* ---- the eras of all time (journey position → log10 age in years) ---- */
 interface Era { s: number; lt: number; name: string; temp: string; line: string; }
 export const ERAS: Era[] = [
-  { s: 0.00, lt: -50.5, name: "The Planck epoch",      temp: "10³² K",  line: "The first instant. Space, time and the four forces are a single thing, at a temperature beyond meaning. Our physics simply stops here." },
-  { s: 0.06, lt: -39.5, name: "Inflation",             temp: "10²⁷ K",  line: "In far less than a trillionth of a second, space erupts — doubling over and over, at least a trillion-trillion-fold. It flattens the cosmos and freezes quantum noise into the seeds of every galaxy to come." },
-  { s: 0.13, lt: -13.5, name: "The quark soup",        temp: "10¹³ K",  line: "A blinding plasma of free quarks, gluons and light. Matter and antimatter annihilate — and for every billion pairs, a single particle of matter is left over. That tiny surplus is everything you will ever see." },
-  { s: 0.20, lt: -5.24, name: "The first nuclei",      temp: "10⁹ K",   line: "Three minutes in. Protons and neutrons fuse into the first nuclei — hydrogen, a quarter helium, a trace of lithium. Then the universe thins too far to fuse, and the recipe is set for a billion years." },
-  { s: 0.29, lt: 5.58,  name: "First light",           temp: "3,000 K", line: "After 380,000 years the fog of plasma cools into neutral atoms and the universe turns clear. Light streams free for the first time — the oldest light there is, which we still catch today as the cosmic microwave background." },
-  { s: 0.37, lt: 8.00,  name: "The dark ages",         temp: "60 K",    line: "No stars, no light but the fading afterglow. For a hundred million years, gravity quietly draws cold hydrogen along threads of dark matter, gathering the dark toward a first dawn." },
-  { s: 0.45, lt: 8.30,  name: "The cosmic dawn",       temp: "30 K",    line: "The first stars ignite — colossal, brilliant and brief. They flood the dark with ultraviolet light, forge the first heavy elements, and die young in the first supernovae." },
-  { s: 0.53, lt: 9.48,  name: "The age of galaxies",   temp: "19 K",    line: "Stars gather into galaxies, galaxies into clusters strung along a vast cosmic web of filaments and voids. At the hearts of the brightest, supermassive black holes blaze as quasars. Generations of stars seed space with carbon, oxygen and iron." },
-  { s: 0.60, lt: 9.96,  name: "The Sun is born",       temp: "5 K",     line: "Nine billion years in, an enriched cloud collapses; our Sun lights up and its planets sweep their orbits clear. Earth forms from the same dust — the atoms in it, and in you, forged inside dead stars." },
-  { s: 0.66, lt: 10.14, name: "Now. You are here.",    temp: "2.7 K",   line: "13.8 billion years in — a brief, bright window when the sky is full of stars, and something made of that stardust is here to look up and notice. This is the strangest fact on this page." },
-  { s: 0.73, lt: 10.26, name: "Andromeda arrives",     temp: "2.3 K",   line: "In four and a half billion years the Andromeda galaxy sweeps into our own. Almost no stars actually collide, but the two unwind and merge, and the night sky burns with a second river of stars." },
-  { s: 0.80, lt: 11.18, name: "The long isolation",    temp: "1 K",     line: "Dark energy keeps accelerating the expansion. Beyond our merged galaxy, every other group of galaxies is carried over the horizon, one by one, until the sky outside goes utterly dark." },
-  { s: 0.86, lt: 14.00, name: "The last star dies",    temp: "0.01 K",  line: "A hundred trillion years in, the gas runs out and no new stars can form. The longest-lived red dwarfs flicker out one by one. The final ember fades, and the age of starlight is over forever." },
-  { s: 0.91, lt: 25.00, name: "The degenerate era",    temp: "10⁻⁶ K",  line: "Only stellar corpses remain — cooling white dwarfs, neutron stars, drifting frozen worlds. Galaxies dissolve as these remnants scatter or fall inward, and if protons themselves decay, even this cold matter slowly evaporates away." },
-  { s: 0.96, lt: 40.00, name: "The black hole era",    temp: "10⁻¹⁸ K", line: "For an almost endless span, black holes are the only things left. One photon at a time, they bleed their mass away as Hawking radiation — the smallest first, the most massive last — each ending in a final, soundless flash." },
-  { s: 1.00, lt: 100.0, name: "Heat death",            temp: "10⁻²⁹ K", line: "The last black hole has evaporated. All that remains is a thinning mist of light and stray particles, drifting ever farther apart toward absolute zero. Maximum entropy: nothing left that can ever change. Not a bang, but the slow, final quiet." },
+  // ---- THE PAST: Big Bang → now ----
+  { s: 0.000, lt: -50.5, name: "The Planck epoch",        temp: "10³² K",  line: "Space, time and all four forces are a single thing, at a temperature beyond meaning. Quantum gravity rules; our physics cannot yet describe it." },
+  { s: 0.025, lt: -43.5, name: "Grand unification",       temp: "10³⁰ K",  line: "Gravity separates from the rest. The strong, weak and electromagnetic forces are still one single force." },
+  { s: 0.050, lt: -39.5, name: "Inflation",               temp: "—",       line: "In a sliver of an instant, space expands more than a trillion-trillion-fold — smoothing the cosmos and stretching quantum jitter into the seeds of every future galaxy. It ends in a flood of hot plasma." },
+  { s: 0.075, lt: -19.5, name: "The electroweak epoch",   temp: "10¹⁵ K",  line: "A blazing plasma of quarks and gluons. The electromagnetic and weak forces are still unified as one." },
+  { s: 0.100, lt: -19.3, name: "Electroweak breaking",    temp: "10¹⁵ K",  line: "The Higgs field switches on. The last forces split apart, and particles gain their mass." },
+  { s: 0.130, lt: -13.5, name: "The quark epoch",         temp: "10¹³ K",  line: "Quarks still roam free. A tiny asymmetry — about one part in a billion — favours matter over antimatter. That surplus is the reason anything exists at all." },
+  { s: 0.160, lt: -7.5,  name: "The hadron epoch",        temp: "10¹¹ K",  line: "Quarks confine into protons and neutrons. Matter and antimatter annihilate; the one-in-a-billion surplus is all that survives — and it is everything." },
+  { s: 0.190, lt: -7.3,  name: "Neutrino decoupling",     temp: "10¹⁰ K",  line: "Neutrinos stop interacting and stream free forever — a ghostly background still passing through you, unfelt, right now." },
+  { s: 0.220, lt: -5.24, name: "Nucleosynthesis",         temp: "10⁹ K",   line: "In a few minutes, protons and neutrons fuse into the first nuclei — hydrogen, a quarter helium, a trace of lithium. Then it is too cold to fuse, and the recipe is set." },
+  { s: 0.260, lt: 4.70,  name: "Matter meets radiation",  temp: "9,000 K", line: "The density of matter finally overtakes that of radiation. For the first time, gravity can begin to build structure." },
+  { s: 0.300, lt: 5.58,  name: "First light",             temp: "3,000 K", line: "After 380,000 years atoms form, the fog clears, and light flies free for the first time — the cosmic microwave background we still see across the whole sky today." },
+  { s: 0.350, lt: 7.70,  name: "The dark ages",           temp: "~100 K",  line: "No stars yet. Cold hydrogen drifts along invisible threads of dark matter, gathering in the dark, lit only by the fading afterglow." },
+  { s: 0.400, lt: 8.30,  name: "The cosmic dawn",         temp: "~50 K",   line: "The first stars ignite — colossal, brilliant, metal-free and short-lived. They forge the first heavy elements and die young as the first supernovae." },
+  { s: 0.450, lt: 8.70,  name: "Reionization",            temp: "~30 K",   line: "Ultraviolet starlight floods space and re-ionizes the hydrogen between the galaxies; the universe turns transparent once more." },
+  { s: 0.500, lt: 9.48,  name: "The age of galaxies",     temp: "~20 K",   line: "Stars gather into galaxies, galaxies into clusters strung along a vast cosmic web. At their hearts, supermassive black holes blaze as quasars." },
+  { s: 0.545, lt: 9.54,  name: "Cosmic noon",             temp: "~15 K",   line: "Star formation peaks — the universe forges new stars faster than it ever will again, seeding space with carbon, oxygen and iron." },
+  { s: 0.580, lt: 9.96,  name: "The Sun is born",         temp: "5 K",     line: "An enriched cloud collapses; our Sun ignites and its planets accrete. Earth forms from the same dust — and the atoms in it, and in you, were forged inside dead stars." },
+  { s: 0.610, lt: 9.99,  name: "Dark energy awakens",     temp: "4 K",     line: "The expansion of the universe stops slowing and begins to accelerate, driven by something we still barely understand." },
+  { s: 0.640, lt: 10.14, name: "Now. You are here.",      temp: "2.7 K",   line: "13.8 billion years in — a brief, bright window when the sky is full of stars, and something made of that stardust is here to look up and notice." },
+  // ---- THE FUTURE: now → forever ----
+  { s: 0.690, lt: 10.26, name: "Andromeda arrives",       temp: "2.3 K",   line: "The Andromeda galaxy sweeps into our own. Almost no stars actually collide, but the two merge into one, and the sky gains a second river of light." },
+  { s: 0.730, lt: 10.28, name: "The Sun dies",            temp: "2.2 K",   line: "Our Sun swells into a red giant, sheds its outer layers as a glowing nebula, and settles into a slowly cooling white dwarf." },
+  { s: 0.780, lt: 11.18, name: "The long isolation",      temp: "1 K",     line: "Dark energy carries every other galaxy beyond the horizon. The Local Group merges into a single elliptical, and the sky outside goes utterly dark." },
+  { s: 0.820, lt: 12.30, name: "The age of starlight ends", temp: "0.1 K", line: "Gas runs low and star formation falters. Only the long-lived red dwarfs hold on, burning quietly for trillions of years." },
+  { s: 0.850, lt: 14.00, name: "The last star dies",      temp: "0.01 K",  line: "The final ember fades. The age of starlight is over forever; only cold, dark remnants remain." },
+  { s: 0.890, lt: 25.00, name: "The degenerate era",      temp: "10⁻⁶ K",  line: "A universe of white and black dwarfs, neutron stars and black holes. Galaxies dissolve as remnants drift apart or fall slowly inward." },
+  { s: 0.920, lt: 36.00, name: "Proton decay",            temp: "10⁻¹² K", line: "If protons are unstable, even ordinary matter slowly evaporates into radiation — the last solid things quietly coming undone." },
+  { s: 0.960, lt: 60.00, name: "The black hole era",      temp: "10⁻¹⁸ K", line: "Black holes are all that remain, bleeding away by Hawking radiation — the smallest first, the largest by 10¹⁰⁰ years — each ending in a final, soundless flash." },
+  { s: 1.000, lt: 100.0, name: "Heat death",              temp: "10⁻²⁹ K", line: "Nothing left but a dilute, ever-cooling mist of particles drifting apart. Maximum entropy, eternal dark — not a bang, but the slow, final quiet." },
 ];
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
@@ -214,7 +228,7 @@ export function mountEternity(opts: Opts): () => void {
     };
     img.src = url;
   }
-  sampleImage("/eternity/refs/andromeda.png", 3.0);   // Act: "Andromeda arrives"
+  void sampleImage;   // image→particle sampler kept for reference targets; 3D forms are built procedurally now
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader: VERT, fragmentShader: FRAG,
     transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -307,9 +321,7 @@ export function mountEternity(opts: Opts): () => void {
     raf = requestAnimationFrame(frame);
     const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
     advance(dtSec);
-    // morph into the Andromeda image around its era (s = 0.73)
-    morph = clamp(smooth(clamp((playhead - 0.665) / 0.065, 0, 1)) * smooth(clamp((0.795 - playhead) / 0.065, 0, 1)), 0, 1);
-    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;
+    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;   // morph stays 0 until 3D image-acts are built
     placeCamera(playhead, now);
     updateHud(scrollToLogT(playhead), playhead);
     prog.style.transform = `scaleX(${playhead.toFixed(4)})`;
