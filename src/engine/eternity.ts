@@ -25,6 +25,7 @@ interface Opts {
   canvas: HTMLCanvasElement;
   age: HTMLElement; era: HTMLElement; temp: HTMLElement; line: HTMLElement; marker: HTMLElement;
   cont: HTMLElement; prog: HTMLElement;
+  startOverlay: HTMLElement; begin: HTMLElement;
 }
 
 /* ---- the eras of all time (scroll position → log10 age in years) ---- */
@@ -140,17 +141,20 @@ void main(){
   // angular distance from the singularity / fireball centre (0 at centre)
   float centerD = length(cross(rd, -normalize(ro + vec3(1e-4))));
 
-  // timeline scalars
-  float erupt = smoothstep(0.02, 0.10, uT);            // the fireball erupts FROM the point
+  // timeline scalars — the point lingers, THEN erupts
+  float erupt = smoothstep(0.05, 0.14, uT);            // the fireball erupts FROM the point
   float bang  = smoothstep(0.34, 0.0, uT) * erupt;
   float heat  = clamp(1.0 - uT*3.0, 0.0, 1.0);
-  float R     = mix(0.06, 2.6, smoothstep(0.0, 0.30, uT));
+  float R     = mix(0.05, 2.6, smoothstep(0.02, 0.30, uT));
 
   vec3 col = vec3(0.0);
 
-  // (0) the singularity — out of complete black, a single point ignites it all
-  float sing = smoothstep(0.0, 0.018, uT) * smoothstep(0.12, 0.03, uT);
-  col += vec3(1.5,1.42,1.28) * sing * smoothstep(0.055, 0.0, centerD) * 5.5;
+  // (0) the singularity — out of complete black, a single point of light holds,
+  //     swelling slightly, before it bursts. A tight core + a soft bloom halo.
+  float sing = smoothstep(0.0, 0.030, uT) * smoothstep(0.155, 0.055, uT);
+  float core = smoothstep(0.020, 0.0, centerD);
+  float halo = smoothstep(0.18,  0.0, centerD);
+  col += vec3(1.6,1.5,1.36) * sing * (core * 6.0 + halo * 0.55);
 
   // (a) nucleosynthesis — matter forming & fusing, concentrated IN the hot soup
   float soup = smoothstep(0.07, 0.12, uT) * smoothstep(0.24, 0.17, uT);
@@ -202,7 +206,7 @@ void main(){
 }`;
 
 export function mountEternity(opts: Opts): () => void {
-  const { canvas, age, era, temp, line, marker, cont, prog } = opts;
+  const { canvas, age, era, temp, line, marker, cont, prog, startOverlay, begin } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
@@ -275,19 +279,26 @@ export function mountEternity(opts: Opts): () => void {
 
   // ---- the journey plays itself, pausing at the pivotal moments ----
   const PIVOTS = [0.0, 0.16, 0.30, 0.46, 0.63, 0.85, 1.0];
-  let playhead = 0, pivotIdx = 0, playing = true, running = false, raf = 0, last = performance.now();
-  let bootHold = 1.1;   // seconds of complete black before the first point ignites
+  let playhead = 0, pivotIdx = 0, playing = false, running = false, raf = 0, last = performance.now();
+  let armed = false;     // the journey waits on the "Begin" gate
+  let bootHold = 0;      // seconds of complete black before the first point ignites
 
   function showCont(end: boolean) { cont.innerHTML = end ? "Begin again&nbsp;&nbsp;↺" : "Continue&nbsp;&nbsp;→"; cont.classList.add("show"); }
   function hideCont() { cont.classList.remove("show"); }
   function goForward() {
-    if (playing) return;
+    if (!armed || playing) return;
     if (pivotIdx >= PIVOTS.length - 1) { playhead = 0; pivotIdx = 0; }   // begin again
     playing = true; hideCont();
   }
   function goBack() {
-    if (playing || pivotIdx <= 0) return;
+    if (!armed || playing || pivotIdx <= 0) return;
     pivotIdx -= 1; playhead = PIVOTS[pivotIdx]!; showCont(false);
+  }
+  function begin_() {
+    if (armed) return;
+    armed = true; bootHold = 2.0; playing = true;   // a long beat of black, then the point ignites
+    startOverlay.classList.add("gone");
+    try { playClick(); } catch (_e) { /* off */ }
   }
   function advance(dtSec: number) {
     if (!playing) return;
@@ -295,7 +306,11 @@ export function mountEternity(opts: Opts): () => void {
     const next = PIVOTS[Math.min(pivotIdx + 1, PIVOTS.length - 1)]!;
     const dist = next - playhead;
     if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
-    else playhead = Math.min(next, playhead + clamp(0.6 * dist, 0.05, 0.22) * dtSec);  // ease into each pivot
+    else {
+      let speed = clamp(0.6 * dist, 0.05, 0.22);
+      if (playhead < 0.09) speed *= 0.30 + 0.70 * (playhead / 0.09);  // crawl through the ignition
+      playhead = Math.min(next, playhead + speed * dtSec);            // then ease into each pivot
+    }
   }
 
   function frame(now: number) {
@@ -324,10 +339,11 @@ export function mountEternity(opts: Opts): () => void {
   canvas.addEventListener("pointerup", () => { dragging = false; canvas.style.cursor = "grab"; if (!moved) goForward(); });
   canvas.addEventListener("pointercancel", () => { dragging = false; });
   cont.addEventListener("click", e => { e.stopPropagation(); goForward(); });
+  begin.addEventListener("click", e => { e.stopPropagation(); begin_(); });
   addEventListener("keydown", e => {
     const t = e.target as HTMLElement | null;
     if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
-    if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); goForward(); }
+    if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); armed ? goForward() : begin_(); }
     else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); goBack(); }
   });
   let wheelLock = 0;

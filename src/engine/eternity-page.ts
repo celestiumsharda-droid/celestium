@@ -31,14 +31,16 @@ if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 
 const section = document.getElementById("eternity");
 const canvas = document.getElementById("et-canvas") as HTMLCanvasElement | null;
 const cont = document.getElementById("et-continue");
+const startOverlay = document.getElementById("et-start");
+const beginBtn = document.getElementById("et-begin");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (section && canvas && cont && !reduce) {
+if (section && canvas && cont && startOverlay && beginBtn && !reduce) {
   import("./eternity")
     .then(m => {
       section.classList.add("live");
       document.body.style.overflow = "hidden";   // the experience is a fixed, self-playing stage
       m.mountEternity({
-        canvas, cont, prog,
+        canvas, cont, prog, startOverlay, begin: beginBtn,
         age: $("et-age"), era: $("et-era"), temp: $("et-temp"), line: $("et-line"), marker: $("et-marker"),
       });
     })
