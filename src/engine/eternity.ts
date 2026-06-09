@@ -110,7 +110,7 @@ float vnoise(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
              mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
 float fbm(vec3 p){ float v=0.0,a=0.5; for(int i=0;i<3;i++){ v+=a*vnoise(p); p=p*2.02+vec3(5.1,1.7,9.2); a*=0.5; } return v; }
 vec3 tempCol(float k){
-  vec3 a = vec3(0.70,0.12,0.05), b = vec3(1.0,0.45,0.12), c = vec3(1.0,0.86,0.52), d = vec3(0.72,0.84,1.5);
+  vec3 a = vec3(0.70,0.12,0.05), b = vec3(1.0,0.45,0.12), c = vec3(1.0,0.86,0.52), d = vec3(0.78,0.87,1.18);
   if (k < 0.4) return mix(a,b,k/0.4);
   if (k < 0.75) return mix(b,c,(k-0.4)/0.35);
   return mix(c,d,(k-0.75)/0.25);
@@ -123,7 +123,7 @@ void main(){
   float erupt  = smoothstep(0.045, 0.13, uT);
   float expand = smoothstep(0.04, 0.30, uT);
   float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);
-  float radius = mix(0.015, 3.2, expand);
+  float radius = mix(0.05, 3.2, expand);   // small soft seed (not a single hot pixel → no square bloom)
   float rr = radius * (0.18 + 0.82*aRand) * clump;
   vec3 pos = dir * rr;
   float n = hash(dir*3.0 + aRand);
@@ -131,9 +131,9 @@ void main(){
   float wob = 0.6 + 0.4*sin(uTime*0.5 + aRand*28.0);
   pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
   float vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
-  float coreDim = mix(0.28, 1.0, smoothstep(0.0, 0.6, rr / 3.2));
+  float coreDim = mix(0.16, 1.0, smoothstep(0.0, 0.7, rr / 3.2));   // dim the dense core harder so it doesn't saturate to white
   vec3  col   = tempCol(vHeat);
-  float alpha = smoothstep(0.0, 0.022, uT) * (0.05 + 0.13*aRand2) * (0.5 + 1.1*erupt) * coreDim;
+  float alpha = smoothstep(0.0, 0.022, uT) * (0.04 + 0.10*aRand2) * (0.5 + 1.0*erupt) * coreDim;
   float psize = 0.35 + 0.9*aRand;
 
   // ===== PHASE 2 — the dark ages → the cosmic dawn (cosmic web + first stars) =====
@@ -232,7 +232,7 @@ export function mountEternity(opts: Opts): () => void {
   renderer.setPixelRatio(pix);
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.85;
+  renderer.toneMappingExposure = 0.80;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 100);
@@ -321,7 +321,7 @@ export function mountEternity(opts: Opts): () => void {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.32, 0.55, 0.72);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.46, 0.70);
   composer.addPass(bloom);
 
   function resize() {
