@@ -68,6 +68,17 @@
      stays legible over the starfield. */
   .glass { background: var(--glass-tint-strong); }
 }
+/* REAL REFRACTION — where the browser supports SVG backdrop filters (Chromium),
+   the showcase panes bend the starfield behind them like a thick lens (the
+   #lg-refract filter is injected by liquid-glass.ts). Everywhere else the plain
+   vibrant blur above is used unchanged. */
+@supports (backdrop-filter: url(#lg-refract)) {
+  /* limited to a few large showcase panes so the per-frame displacement over
+     the animating starfield never costs the page its smoothness */
+  .feat, nav.solid, .cmdk-panel {
+    backdrop-filter: url(#lg-refract) saturate(180%) brightness(1.06) blur(5px);
+  }
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html {

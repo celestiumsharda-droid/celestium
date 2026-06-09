@@ -9,7 +9,26 @@
  */
 const SURFACES = ".glass, .glass-soft, .card, .feat, .et-tile, .cmdk-panel, .navsearch, .soundtoggle";
 
+/** Inject the shared SVG displacement filter once — it bends (refracts) the
+ *  backdrop behind a glass pane like a real thick lens. Referenced from CSS
+ *  via `backdrop-filter: url(#lg-refract)` on the showcase surfaces. */
+function injectRefraction(): void {
+  if (document.getElementById("lg-refract-svg")) return;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.id = "lg-refract-svg";
+  svg.setAttribute("aria-hidden", "true");
+  svg.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";
+  svg.innerHTML =
+    '<filter id="lg-refract" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.004 0.0065" numOctaves="2" seed="11" result="n"/>' +
+      '<feGaussianBlur in="n" stdDeviation="9" result="nb"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="nb" scale="32" xChannelSelector="R" yChannelSelector="G"/>' +
+    "</filter>";
+  document.body.appendChild(svg);
+}
+
 export function initLiquidGlass(): void {
+  injectRefraction();   // always — the static refraction is part of the material
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   if (matchMedia("(hover: none)").matches) return;            // touch: no pointer sheen
 
