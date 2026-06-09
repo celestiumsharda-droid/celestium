@@ -15,12 +15,15 @@
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center; position: relative;
   padding: 120px 24px 80px;
+  /* a soft accent aura blooms behind the wordmark */
+  background: radial-gradient(58% 46% at 50% 42%, rgba(169,188,255,.085), transparent 72%);
 }
+.hero-layer { will-change: transform; }   /* pointer-parallax targets */
 .orbit {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -58%);
   width: min(82vw, 720px); height: min(82vw, 720px);
-  opacity: .5; pointer-events: none;
+  opacity: .58; pointer-events: none;
   /* the SVG spins; a rotating square's bounding box grows ~1.4×, which
      overflowed the viewport on phones and forced the browser to shrink
      the whole page. The orbit ellipses sit inside the box, so clipping
@@ -28,6 +31,11 @@
   overflow: hidden;
 }
 .orbit svg { width: 100%; height: 100%; animation: spin 90s linear infinite; }
+.orbit::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 9px; height: 9px; transform: translate(-50%, -50%); border-radius: 50%;
+  background: var(--star); box-shadow: 0 0 28px 7px rgba(242,230,196,.5), 0 0 6px 1px rgba(255,255,255,.9);
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .hero .eyebrow { opacity: 0; transform: translateY(16px); animation: rise .9s .2s forwards cubic-bezier(.2,.7,.2,1); }
@@ -36,6 +44,19 @@
   font-weight: 300; letter-spacing: .02em;
   margin: .18em 0 .12em; position: relative;
   white-space: nowrap;            /* keep CELESTIUM on one line */
+}
+/* a slow light-sweep glints across the wordmark */
+.hero h1::after {
+  content: ""; position: absolute; inset: -16% -6%; pointer-events: none;
+  background: linear-gradient(104deg, transparent 43%, rgba(255,255,255,.42) 50%, rgba(169,188,255,.3) 53%, transparent 60%);
+  mix-blend-mode: screen; opacity: 0;
+  animation: heroSheen 8s 2.4s ease-in-out infinite;
+}
+@keyframes heroSheen {
+  0% { transform: translateX(-62%); opacity: 0; }
+  9% { opacity: .9; }
+  26% { transform: translateX(62%); opacity: 0; }
+  100% { transform: translateX(62%); opacity: 0; }
 }
 @media (max-width: 560px) {
   .hero h1 { font-size: clamp(2.6rem, 13.5vw, 4rem); letter-spacing: 0; }

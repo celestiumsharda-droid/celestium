@@ -17,6 +17,28 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
 enableViewTransitions();
 mountStarfield($<HTMLCanvasElement>("sky"), { parallax: true });
 
+/* ---------- hero pointer-parallax (depth) ----------
+   The orbit ring drifts toward the pointer and the wordmark counter-drifts,
+   giving the hero a tactile 3D feel. Eased, rAF-gated, off on touch/reduced. */
+(function heroParallax() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(hover: none)").matches) return;
+  const orbit = document.querySelector<HTMLElement>(".orbit");
+  const title = document.querySelector<HTMLElement>(".hero h1");
+  if (!orbit) return;
+  let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+  const loop = () => {
+    x += (tx - x) * 0.07; y += (ty - y) * 0.07;
+    orbit.style.transform = `translate(-50%, -58%) translate(${(x * 24).toFixed(1)}px, ${(y * 24).toFixed(1)}px)`;
+    if (title) title.style.transform = `translate(${(x * -9).toFixed(1)}px, ${(y * -9).toFixed(1)}px)`;
+    raf = (Math.abs(tx - x) > 0.0008 || Math.abs(ty - y) > 0.0008) ? requestAnimationFrame(loop) : 0;
+  };
+  addEventListener("pointermove", e => {
+    if (scrollY > innerHeight) return;                 // only while the hero is in view
+    tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5;
+    if (!raf) raf = requestAnimationFrame(loop);
+  }, { passive: true });
+})();
+
 /* ---------- nav + progress + reveals ---------- */
 const nav = $("nav");
 const prog = $("prog");
