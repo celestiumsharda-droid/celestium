@@ -45,7 +45,8 @@ export const ERAS: Era[] = [
   { s: 0.450, lt: 8.70,  name: "Reionization",            temp: "~30 K",   line: "Ultraviolet starlight floods space and re-ionizes the hydrogen between the galaxies; the universe turns transparent once more." },
   { s: 0.500, lt: 9.48,  name: "The age of galaxies",     temp: "~20 K",   line: "Stars gather into galaxies, galaxies into clusters strung along a vast cosmic web. At their hearts, supermassive black holes blaze as quasars." },
   { s: 0.545, lt: 9.54,  name: "Cosmic noon",             temp: "~15 K",   line: "Star formation peaks — the universe forges new stars faster than it ever will again, seeding space with carbon, oxygen and iron." },
-  { s: 0.580, lt: 9.96,  name: "The Sun is born",         temp: "5 K",     line: "An enriched cloud collapses; our Sun ignites and its planets accrete. Earth forms from the same dust — and the atoms in it, and in you, were forged inside dead stars." },
+  { s: 0.565, lt: 9.93,  name: "A stellar nursery",       temp: "~10 K",   line: "Our Sun begins inside a vast, cold molecular cloud — a stellar nursery like the Pillars of Creation, where gravity gathers enriched gas and dust and lights it from within." },
+  { s: 0.585, lt: 9.96,  name: "The Sun is born",         temp: "5 K",     line: "That cloud collapses into a spinning disk; our Sun ignites at its heart and its planets accrete from the ring of dust. Earth forms here — and the atoms in it, and in you, were forged inside dead stars." },
   { s: 0.610, lt: 9.99,  name: "Dark energy awakens",     temp: "4 K",     line: "The expansion of the universe stops slowing and begins to accelerate, driven by something we still barely understand." },
   { s: 0.640, lt: 10.14, name: "Now. You are here.",      temp: "2.7 K",   line: "13.8 billion years in — a brief, bright window when the sky is full of stars, and something made of that stardust is here to look up and notice." },
   // ---- THE FUTURE: now → forever ----
@@ -194,8 +195,8 @@ void main(){
   vec3 imgCol = mix(aNebCol, aProCol, uNP);
   imgCol = mix(imgCol, aGalCol, uPG);
   float tlum  = dot(imgCol, vec3(0.299, 0.587, 0.114));     // density/brightness follow the photo
-  float galA  = 0.04 + 0.34*tlum + 0.05*aRand2;
-  float galSz = 0.55 + 0.7*aRand + tlum*1.3;
+  float galA  = 0.018 + 0.085*tlum + 0.03*aRand2;           // kept low so dense cores don't blow to white
+  float galSz = 0.5 + 0.7*aRand + tlum*0.7;
   pos   = mix(pos, imgPos, uImgOn);
   col   = mix(col, imgCol, uImgOn);
   alpha = mix(alpha, galA, uImgOn);
@@ -320,7 +321,7 @@ export function mountEternity(opts: Opts): () => void {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.55, 0.62);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.32, 0.55, 0.72);
   composer.addPass(bloom);
 
   function resize() {
@@ -400,11 +401,11 @@ export function mountEternity(opts: Opts): () => void {
     const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
     advance(dtSec);
     const ph = playhead;
-    // photographic forms enter after the cosmic web, then cross-fade:
-    //   nursery (Pillars) → protoplanetary disk (the Sun is born, s=0.58) → Milky Way (now, s=0.64)
-    uniforms.uImgOn.value = smooth(clamp((ph - 0.550) / 0.014, 0, 1));   // procedural → photo
-    uniforms.uNP.value    = smooth(clamp((ph - 0.566) / 0.010, 0, 1));   // nebula → protoplanetary disk
-    uniforms.uPG.value    = smooth(clamp((ph - 0.588) / 0.022, 0, 1));   // disk → galaxy (full by s≈0.61)
+    // photographic forms enter after the cosmic web, then cross-fade, each with
+    // its own pause: nursery (0.565) → protoplanetary disk (0.585) → galaxy (0.61+)
+    uniforms.uImgOn.value = smooth(clamp((ph - 0.548) / 0.014, 0, 1));   // procedural → nebula
+    uniforms.uNP.value    = smooth(clamp((ph - 0.570) / 0.012, 0, 1));   // nebula → protoplanetary disk
+    uniforms.uPG.value    = smooth(clamp((ph - 0.590) / 0.018, 0, 1));   // disk → galaxy
     uniforms.uT.value = ph; uniforms.uTime.value = now * 0.001;
     placeCamera(ph, now);
     updateHud(scrollToLogT(playhead), playhead);
