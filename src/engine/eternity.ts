@@ -167,16 +167,23 @@ void main(){
     vec3 base = dir * (1.8 + 1.7*aRand);
     vec3 warp = vec3(fbm(base*0.55 + 1.0), fbm(base*0.55 + 9.0), fbm(base*0.55 + 17.0)) - 0.5;
     vec3 qs = base + warp * 2.7;                           // stable web position
-    vec3 q = qs + 0.10*vec3(sin(uTime*0.15 + aRand*9.0), cos(uTime*0.12 + aRand2*5.0), sin(uTime*0.13 + aRand*7.0));
+    // collapse toward density crests so particles gather into real filaments &
+    // nodes — the dark-matter cosmic web, not an amorphous blob.
+    float e = 0.4;
+    float d0 = vnoise(qs*0.6 + 3.0);
+    vec3 grad = vec3(vnoise((qs+vec3(e,0.0,0.0))*0.6+3.0), vnoise((qs+vec3(0.0,e,0.0))*0.6+3.0), vnoise((qs+vec3(0.0,0.0,e))*0.6+3.0)) - d0;
+    qs += normalize(grad + 1e-4) * (1.0 - smoothstep(0.35, 0.62, d0)) * 1.6;   // voids drain into filaments
+    vec3 q = qs + 0.08*vec3(sin(uTime*0.15 + aRand*9.0), cos(uTime*0.12 + aRand2*5.0), sin(uTime*0.13 + aRand*7.0));
 
     float toWeb = smoothstep(0.30, 0.36, uT);              // plasma settles into structure
-    float dens = fbm(qs*0.5 + 3.0);                        // filament crests are denser/brighter
+    float dens = fbm(qs*0.5 + 3.0);
+    float fil  = smoothstep(0.40, 0.72, dens);            // filament mask: bright threads, dark voids
     // the first stars: a sparse subset ignites at the cosmic dawn (Pop III, hot & blue)
     float isStar = step(0.972, aRand2);
     float dawn   = smoothstep(0.37, 0.40, uT);
     float twk    = 0.55 + 0.45*sin(uTime*2.2 + aRand*50.0);
-    vec3  gasCol  = mix(vec3(0.09,0.12,0.25), vec3(0.22,0.27,0.45), dens);
-    float gasA    = (0.022 + 0.06*dens) * (0.5 + 0.5*aRand);
+    vec3  gasCol  = mix(vec3(0.05,0.07,0.16), vec3(0.34,0.40,0.62), fil);   // dark voids → cool glowing filaments
+    float gasA    = (0.010 + 0.13*fil) * (0.5 + 0.5*aRand);
     vec3  starCol = vec3(0.78,0.86,1.15);
     float starA   = 0.6 * dawn * twk;
     vec3  webCol  = mix(gasCol, starCol, isStar*dawn);
@@ -203,8 +210,8 @@ void main(){
       vec3 galPos = gcenter + (cos(ga)*tang + sin(ga)*bito)*gr + gnormal*thick;
       float core = 1.0 - smoothstep(0.0, 0.22, gr);
       vec3  galCol = mix(vec3(1.0,0.86,0.55), vec3(0.60,0.72,1.08), smoothstep(0.1, 0.85, aRand));  // warm core → blue arms
-      float galA   = 0.07 + 0.13*aRand2 + core*0.22;
-      float galSz  = 0.5 + 0.8*aRand + core*1.3;
+      float galA   = 0.06 + 0.12*aRand2 + core*0.22;
+      float galSz  = 0.35 + 0.5*aRand + core*1.0;
       pos   = mix(pos, galPos, toGal);
       col   = mix(col, galCol, toGal);
       alpha = mix(alpha, galA, toGal);
@@ -220,8 +227,8 @@ void main(){
   vec3 imgCol = mix(aNebCol, aProCol, uNP);
   imgCol = mix(imgCol, aGalCol, uPG);
   float tlum  = dot(imgCol, vec3(0.299, 0.587, 0.114));     // density/brightness follow the photo
-  float galA  = 0.018 + 0.085*tlum + 0.03*aRand2;           // kept low so dense cores don't blow to white
-  float galSz = 0.5 + 0.7*aRand + tlum*0.7;
+  float galA  = 0.02 + 0.10*tlum + 0.03*aRand2;             // a touch brighter to offset the finer points
+  float galSz = 0.28 + 0.40*aRand;                          // small, uniform → fine star-dots, no fat smears
   pos   = mix(pos, imgPos, uImgOn);
   col   = mix(col, imgCol, uImgOn);
   alpha = mix(alpha, galA, uImgOn);
@@ -263,7 +270,7 @@ export function mountEternity(opts: Opts): () => void {
   const camera = new THREE.PerspectiveCamera(55, 1, 0.01, 100);
 
   // ---- build the particle swarm ----
-  const COUNT = small ? 90000 : 240000;
+  const COUNT = small ? 150000 : 360000;   // more particles → fine stippled stars, not coarse smears
   const dirs = new Float32Array(COUNT * 3);
   const rand = new Float32Array(COUNT);
   const rand2 = new Float32Array(COUNT);
