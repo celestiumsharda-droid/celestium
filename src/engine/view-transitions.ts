@@ -11,6 +11,8 @@
  * `pageswap` / `pagereveal` events (multi-page mode).
  */
 
+import { initLiquidGlass } from "./liquid-glass";
+
 export function enableViewTransitions(): void {
   // Multi-page View Transitions need this meta to opt in. Inject if absent.
   if (!document.querySelector('meta[name="view-transition"]')) {
@@ -19,4 +21,7 @@ export function enableViewTransitions(): void {
     m.content = "same-origin";
     document.head.appendChild(m);
   }
+  // Every page calls this early, so it doubles as the universal hook for the
+  // pointer-tracked liquid-glass highlight.
+  initLiquidGlass();
 }
