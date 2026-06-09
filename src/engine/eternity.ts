@@ -121,7 +121,11 @@ void main(){
 
   // ===== PHASE 1 — the birth: a point that erupts into expanding plasma =====
   float erupt  = smoothstep(0.045, 0.13, uT);
-  float expand = smoothstep(0.04, 0.30, uT);
+  // inflation is a sudden, violent expansion — the cloud lurches out fast,
+  // then continues to grow gently. (a distinct beat, not a smooth ramp)
+  float infl   = smoothstep(0.040, 0.080, uT);
+  float slow   = smoothstep(0.080, 0.300, uT);
+  float expand = clamp(infl*0.5 + slow*0.55, 0.0, 1.0);
   float clump  = 0.7 + 0.6*hash(dir*1.7 + 4.0);
   float radius = mix(0.05, 3.2, expand);   // small soft seed (not a single hot pixel → no square bloom)
   float rr = radius * (0.18 + 0.82*aRand) * clump;
@@ -131,10 +135,31 @@ void main(){
   float wob = 0.6 + 0.4*sin(uTime*0.5 + aRand*28.0);
   pos += nd * (0.62*expand) * (0.35 + 0.65*n) * wob;
   float vHeat = clamp((1.0 - rr/3.2)*0.55 + (1.0 - uT*2.4)*0.6 + n*0.2, 0.0, 1.0);
-  float coreDim = mix(0.16, 1.0, smoothstep(0.0, 0.7, rr / 3.2));   // dim the dense core harder so it doesn't saturate to white
+  float coreDim = mix(0.085, 1.0, smoothstep(0.0, 0.85, rr / 3.2));   // dim the dense core hard so it doesn't saturate to white
   vec3  col   = tempCol(vHeat);
-  float alpha = smoothstep(0.0, 0.022, uT) * (0.04 + 0.10*aRand2) * (0.5 + 1.0*erupt) * coreDim;
+  float alpha = smoothstep(0.0, 0.022, uT) * (0.028 + 0.07*aRand2) * (0.5 + 1.0*erupt) * coreDim;
   float psize = 0.35 + 0.9*aRand;
+
+  // distinct epoch beats inside the fireball, so the early universe isn't one
+  // unchanging blob but a sequence you can read at a glance:
+  // (a) matter–antimatter annihilation — chaotic white-hot flashes pop & vanish
+  float annih = smoothstep(0.085, 0.115, uT) * smoothstep(0.205, 0.165, uT);
+  if (annih > 0.001) {
+    float spark = step(0.905, hash(dir + floor(uTime*4.0)*1.7));
+    alpha += spark * annih * 0.40 * coreDim;             // dim at the dense core so it doesn't flood white
+    col = mix(col, vec3(1.0,0.93,0.82), clamp(spark*annih, 0.0, 1.0));
+    psize += spark * annih * 2.2;
+  }
+  // (b) nucleosynthesis — rarer, warmer fusion flares as the first nuclei bind
+  float fuse = smoothstep(0.195, 0.215, uT) * smoothstep(0.275, 0.235, uT);
+  if (fuse > 0.001) {
+    float f = step(0.962, hash(dir + 7.0 + floor(uTime*2.5)*3.1));
+    alpha += f * fuse * 0.55 * coreDim;
+    col = mix(col, vec3(1.0,0.82,0.45), clamp(f*fuse, 0.0, 1.0));
+    psize += f * fuse * 2.6;
+  }
+  // (c) recombination — a brief brightening as the CMB is released, then it clears
+  alpha += smoothstep(0.275, 0.298, uT) * smoothstep(0.325, 0.302, uT) * 0.12;
 
   // ===== PHASE 2 — the dark ages → the cosmic dawn (cosmic web + first stars) =====
   if (uT > 0.27) {
@@ -321,7 +346,7 @@ export function mountEternity(opts: Opts): () => void {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.46, 0.70);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.26, 0.46, 0.80);
   composer.addPass(bloom);
 
   function resize() {
@@ -336,8 +361,12 @@ export function mountEternity(opts: Opts): () => void {
   let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false;
   function placeCamera(uT: number, now: number) {
     if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
-    const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
-    const dist = lerp(1.15, 9.0, expand);
+    // pull back IN SYNC with the cloud's inflation (same curve as the shader),
+    // so the rapidly-inflating fireball stays framed instead of flooding white.
+    const infl = smooth(clamp((uT - 0.040) / 0.040, 0, 1));
+    const slow = smooth(clamp((uT - 0.080) / 0.220, 0, 1));
+    const cexp = Math.min(infl * 0.5 + slow * 0.55, 1);
+    const dist = lerp(1.5, 9.2, cexp);
     const yaw = Math.sin(now * 0.00005) * 0.12 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);   // gentle bounded sway, not endless drift
     const cp = Math.cos(pitch);
     // the galaxy is built tilted in 3D, so the ordinary orbit camera reveals
@@ -361,8 +390,12 @@ export function mountEternity(opts: Opts): () => void {
     marker.style.top = `${(p * 100).toFixed(2)}%`;
   }
 
-  // ---- the journey plays itself, pausing at every pivotal moment ----
-  const PIVOTS = ERAS.map(e => e.s);
+  // ---- the journey plays itself ----
+  // The early universe (Big Bang → first light) is ONE continuous cinematic —
+  // it flows through every sub-second epoch without stopping. From "first light"
+  // (era index 10) onward it pauses at each pivotal moment. PIVOTS are the stops.
+  const FIRST_STOP = 10;
+  const PIVOTS = [0, ...ERAS.slice(FIRST_STOP).map(e => e.s)];
   let playhead = 0, pivotIdx = 0, playing = false, running = false, raf = 0, last = performance.now();
   let armed = false, bootHold = 0;
 
@@ -390,7 +423,9 @@ export function mountEternity(opts: Opts): () => void {
     const dist = next - playhead;
     if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
     else {
-      let speed = clamp(0.5 * dist, 0.04, 0.16);
+      // a steady cinematic cruise that eases as it nears a stop — slow enough
+      // that the long opening flow (Big Bang → first light) plays like a film.
+      let speed = clamp(0.30 * dist, 0.012, 0.024);
       if (playhead < 0.09) speed *= 0.30 + 0.70 * (playhead / 0.09);   // crawl through the ignition
       playhead = Math.min(next, playhead + speed * dtSec);
     }
