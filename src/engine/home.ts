@@ -1,13 +1,12 @@
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
-import { startClock, loadAPOD, renderTonightsPlanets, startISS, loadAurora } from "./living-sky";
+import { startClock, loadAPOD, startISS } from "./living-sky";
 import { initSound, playClick } from "./sound";
 import { cardVisual } from "./card-visual";
 import { playIntro } from "./intro";
 import { attachSpotlight } from "./spotlight";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
-import STORY from "../data/story";
 import DEPTH_PREVIEW from "../data/depth-preview";
 import EXPLORE from "../data/explore";
 
@@ -180,35 +179,6 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
   addEventListener("resize", onScrollZoom);
 })();
 
-/* ---------- scrollytelling ---------- */
-const steps = $("steps");
-STORY.forEach(s => {
-  const d = document.createElement("div");
-  d.className = "step";
-  d.innerHTML = `<div class="k">${s.k}</div><h3>${s.h}</h3><p>${s.p}</p>`;
-  steps.appendChild(d);
-});
-const cta = document.createElement("div");
-cta.className = "step";
-cta.innerHTML =
-  '<div class="k">The full account</div><h3>Read the whole discovery.</h3>' +
-  "<p>The Earth-sized telescope, the petabytes flown on aircraft, the ring that proved Einstein right — at the depth you choose.</p>" +
-  '<a href="/discoveries/black-hole-image/" class="btn fill" style="margin-top:30px;display:inline-block">Open the discovery →</a>';
-steps.appendChild(cta);
-
-const stEls = steps.querySelectorAll<HTMLElement>(".step");
-const bh = $("bh");
-const sio = new IntersectionObserver(es => es.forEach(e => {
-  if (e.isIntersecting) {
-    stEls.forEach(x => x.classList.remove("on"));
-    e.target.classList.add("on");
-    const idx = Array.prototype.indexOf.call(stEls, e.target);
-    bh.classList.toggle("lit", idx >= 2);
-    bh.style.transform = `scale(${1 + idx * 0.05})`;
-  }
-}), { threshold: 0.55 });
-stEls.forEach(el => sio.observe(el));
-
 /* ---------- depth preview ---------- */
 const rbody = $("rbody");
 const tog = $("toggle");
@@ -233,13 +203,38 @@ tog.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
 renderDepth(0);
 
 /* ---------- living sky ----------
-   The clock and computed planet positions are cheap and start at once.
-   The network fetches (NASA APOD, ISS, NOAA aurora) are deferred until
-   the section is near the viewport — so they don't compete with the
-   first paint, and a rate-limited APOD response never logs during the
-   audited load of a visitor who hasn't scrolled there yet. */
+   The clock and the live "deep universe pouring through you" counters are
+   cheap and start at once. The network fetches (NASA APOD, ISS) are deferred
+   until the section nears the viewport, so they never compete with first
+   paint or log a rate-limited response for a visitor who never scrolls there. */
 startClock();
-renderTonightsPlanets($("planets-card"));
+startCosmicCounters();
+
+/** Humanise a large running tally: 12,345 → "12,345"; 7.7e15 → "7.7 quadrillion". */
+function humanize(n: number): string {
+  const U: [string, number][] = [["quintillion", 1e18], ["quadrillion", 1e15], ["trillion", 1e12], ["billion", 1e9], ["million", 1e6]];
+  for (const [name, v] of U) if (n >= v) return `${(n / v).toFixed(n / v < 100 ? 1 : 0)} ${name}`;
+  return Math.floor(n).toLocaleString();
+}
+/** The deep universe, streaming through you in real time since the page opened. */
+function startCosmicCounters() {
+  const t0 = performance.now();
+  const ph = document.getElementById("cmb-photons");
+  const di = document.getElementById("cmb-dist");
+  const nu = document.getElementById("nu-count");
+  if (!ph && !di && !nu) return;
+  const CMB = 7.7e15;    // ancient CMB photons through a human body, per second
+  const NEU = 6.5e10;    // solar neutrinos through a fingertip (~1 cm²), per second
+  const SPD = 370;       // km/s, the Sun's motion relative to the CMB rest frame
+  const tick = () => {
+    const s = (performance.now() - t0) / 1000;
+    if (ph) ph.textContent = humanize(CMB * s);
+    if (nu) nu.textContent = humanize(NEU * s);
+    if (di) di.textContent = (SPD * s < 1e6) ? `${Math.floor(SPD * s).toLocaleString()}` : `${(SPD * s / 1e6).toFixed(2)} million`;
+    setTimeout(tick, 110);
+  };
+  tick();
+}
 
 let skyLoaded = false;
 function loadSky() {
@@ -247,7 +242,6 @@ function loadSky() {
   skyLoaded = true;
   loadAPOD($("apod-card"));
   startISS($("iss-card"));
-  loadAurora($("aurora-card"));
 }
 const skySec = document.getElementById("sky-sec");
 if (skySec && "IntersectionObserver" in window) {

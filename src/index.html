@@ -141,41 +141,28 @@
   </section>
 
   <!-- SCROLLYTELLING -->
-  <section id="story">
-    <div class="scrolly">
-      <div class="sticky">
-        <div class="bh" id="bh" aria-hidden="true">
-          <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <!-- the glowing emission ring: transparent shadow, hot bright ring, soft fade -->
-              <radialGradient id="bhdonut" cx="50%" cy="50%" r="50%">
-                <stop offset="0%"  stop-color="#000000" stop-opacity="0"/>
-                <stop offset="33%" stop-color="#000000" stop-opacity="0"/>
-                <stop offset="40%" stop-color="#f2d6a0" stop-opacity=".85"/>
-                <stop offset="47%" stop-color="#fff3d6" stop-opacity="1"/>
-                <stop offset="57%" stop-color="#e7a657" stop-opacity=".7"/>
-                <stop offset="73%" stop-color="#7a4516" stop-opacity="0"/>
-              </radialGradient>
-              <!-- doppler beaming: the lower-right of the ring blazes brightest -->
-              <radialGradient id="bhboost" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#fff6e2" stop-opacity=".9"/>
-                <stop offset="100%" stop-color="#fff6e2" stop-opacity="0"/>
-              </radialGradient>
-              <filter id="bhblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.2"/></filter>
-              <filter id="bhring2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.5"/></filter>
-            </defs>
-            <g class="bh-ring" opacity="0">
-              <circle cx="160" cy="160" r="150" fill="url(#bhdonut)" filter="url(#bhblur)"/>
-              <ellipse cx="178" cy="206" rx="82" ry="48" fill="url(#bhboost)" filter="url(#bhblur)"/>
-            </g>
-            <!-- the shadow + bright photon ring (always visible) -->
-            <circle cx="160" cy="160" r="55" fill="none" stroke="#fff6e0" stroke-width="3.5" filter="url(#bhring2)"/>
-            <circle cx="160" cy="160" r="55" fill="#000"/>
-            <circle cx="160" cy="160" r="55" fill="none" stroke="#ffe8c0" stroke-width="1.2" opacity=".8"/>
-          </svg>
-        </div>
+  <!-- FEATURED DISCOVERY -->
+  <section id="featured">
+    <div class="wrap">
+      <div class="shead reveal">
+        <p class="eyebrow">Featured discovery</p>
+        <h2>Start with<br>this one.</h2>
       </div>
-      <div class="steps" id="steps"></div>
+      <a class="feat reveal" href="/discoveries/gravitational-waves/">
+        <div class="feat-media">
+          <picture>
+            <source type="image/avif" srcset="/img/gravitational-waves-720.avif 720w, /img/gravitational-waves-1280.avif 1280w" sizes="(max-width:880px) 92vw, 52vw">
+            <source type="image/webp" srcset="/img/gravitational-waves-720.webp 720w, /img/gravitational-waves-1280.webp 1280w" sizes="(max-width:880px) 92vw, 52vw">
+            <img src="/img/gravitational-waves-1280.jpg" alt="Two black holes spiralling together, warping the spacetime around them." loading="lazy" decoding="async">
+          </picture>
+        </div>
+        <div class="feat-body">
+          <span class="feat-cat">Spacetime · 2015</span>
+          <h3>The night we <i>heard</i> two black holes collide.</h3>
+          <p>A billion years ago two black holes spiralled together and shook spacetime itself. In September 2015 that tremor reached Earth and moved a mirror by less than the width of a proton.</p>
+          <span class="feat-go">Read the discovery&nbsp;&nbsp;&#8594;</span>
+        </div>
+      </a>
     </div>
   </section>
 
@@ -202,53 +189,6 @@
     </div>
   </section>
 
-  <!-- LIVING SKY -->
-  <section id="sky-sec">
-    <div class="wrap">
-      <div class="shead reveal">
-        <h2>The sky is<br>not a museum.</h2>
-        <p><span class="beat"></span>It is happening now. A live readout of where the cosmos is, this very second, as you read.</p>
-      </div>
-      <div class="skygrid reveal">
-        <div class="card">
-          <div class="lab">Coordinated cosmic time</div>
-          <div class="big clock" id="clock">--:--:--</div>
-          <div class="sub" id="datestr">—</div>
-        </div>
-        <div class="card">
-          <div class="lab">Earth, this instant</div>
-          <div class="big"><span class="cnt" data-count="29.78" data-dec="2">29.78</span></div>
-          <div class="sub">km travelled around the Sun, every second you exist</div>
-        </div>
-        <div class="card" id="planets-card">
-          <div class="lab">Tonight, naked-eye</div>
-          <div class="big skel" style="font-size:1.8rem">Calculating…</div>
-          <div class="sub">Your sky, this evening, from low-precision orbital elements.</div>
-        </div>
-        <div class="card wide apod" id="apod-card">
-          <div class="lab">Astronomy picture of the day · NASA</div>
-          <div class="big skel" style="font-size:1.5rem">Loading from NASA…</div>
-          <div class="sub">The image the agency is showing the world today.</div>
-        </div>
-        <div class="card">
-          <div class="lab">Observable reach</div>
-          <div class="big"><span class="cnt" data-count="93" data-dec="0">93</span><span style="font-size:1.3rem"> Gly</span></div>
-          <div class="sub">diameter of everything light has let us see</div>
-        </div>
-        <div class="card wide" id="iss-card">
-          <div class="lab">The Space Station, right now</div>
-          <div class="big skel" style="font-size:1.6rem">Locating…</div>
-          <div class="sub">Live position of the ISS, refreshed every few seconds.</div>
-        </div>
-        <div class="card" id="aurora-card">
-          <div class="lab">Aurora · Kp index</div>
-          <div class="big skel" style="font-size:1.6rem">Reading the Sun…</div>
-          <div class="sub">Live geomagnetic activity from NOAA.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- FEATURED DISCOVERIES (a teaser; the full archive lives on /discoveries/) -->
   <section id="explore">
     <div class="wrap">
@@ -260,6 +200,48 @@
       <div class="grid reveal" id="grid"></div>
       <div class="explore-cta reveal">
         <a href="/discoveries/" class="btn fill">Explore all 15 discoveries &nbsp;&#8594;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVING SKY — the closing movement -->
+  <section id="sky-sec">
+    <div class="wrap">
+      <div class="shead reveal">
+        <h2>The sky is<br>not a museum.</h2>
+        <p><span class="beat"></span>It is happening now — and so is the deep universe, pouring through you this very second, as you read.</p>
+      </div>
+      <div class="skygrid reveal">
+        <div class="card">
+          <div class="lab">Coordinated cosmic time</div>
+          <div class="big clock" id="clock">--:--:--</div>
+          <div class="sub" id="datestr">—</div>
+        </div>
+        <div class="card">
+          <div class="lab">Light of the Big Bang</div>
+          <div class="big"><span id="cmb-photons">—</span></div>
+          <div class="sub">ancient photons from the universe's first light have passed through your body since you opened this page</div>
+        </div>
+        <div class="card wide apod" id="apod-card">
+          <div class="lab">Astronomy picture of the day · NASA</div>
+          <div class="big skel" style="font-size:1.5rem">Loading from NASA…</div>
+          <div class="sub">The image the agency is showing the world today.</div>
+        </div>
+        <div class="card">
+          <div class="lab">Your speed through the cosmos</div>
+          <div class="big">370<span style="font-size:1.3rem"> km/s</span></div>
+          <div class="sub"><span id="cmb-dist">—</span> km carried through space, relative to the Big Bang's afterglow, since you arrived</div>
+        </div>
+        <div class="card wide" id="iss-card">
+          <div class="lab">The Space Station, right now</div>
+          <div class="big skel" style="font-size:1.6rem">Locating…</div>
+          <div class="sub">Live position of the ISS, refreshed every few seconds.</div>
+        </div>
+        <div class="card">
+          <div class="lab">Ghosts from the Sun's core</div>
+          <div class="big"><span id="nu-count">—</span></div>
+          <div class="sub">solar neutrinos have streamed through your fingertip, touching nothing, since you opened this page</div>
+        </div>
       </div>
     </div>
   </section>
