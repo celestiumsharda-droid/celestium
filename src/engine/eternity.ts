@@ -29,17 +29,12 @@ interface Opts {
 interface Era { s: number; lt: number; name: string; temp: string; line: string; }
 export const ERAS: Era[] = [
   // ---- THE PAST: Big Bang → now ----
-  { s: 0.000, lt: -50.5, name: "The Planck epoch",        temp: "10³² K",  line: "Space, time and all four forces are a single thing, at a temperature beyond meaning. Quantum gravity rules; our physics cannot yet describe it." },
-  { s: 0.025, lt: -43.5, name: "Grand unification",       temp: "10³⁰ K",  line: "Gravity separates from the rest. The strong, weak and electromagnetic forces are still one single force." },
-  { s: 0.050, lt: -39.5, name: "Inflation",               temp: "—",       line: "In a sliver of an instant, space expands more than a trillion-trillion-fold — smoothing the cosmos and stretching quantum jitter into the seeds of every future galaxy. It ends in a flood of hot plasma." },
-  { s: 0.075, lt: -19.5, name: "The electroweak epoch",   temp: "10¹⁵ K",  line: "A blazing plasma of quarks and gluons. The electromagnetic and weak forces are still unified as one." },
-  { s: 0.100, lt: -19.3, name: "Electroweak breaking",    temp: "10¹⁵ K",  line: "The Higgs field switches on. The last forces split apart, and particles gain their mass." },
-  { s: 0.130, lt: -13.5, name: "The quark epoch",         temp: "10¹³ K",  line: "Quarks still roam free. A tiny asymmetry — about one part in a billion — favours matter over antimatter. That surplus is the reason anything exists at all." },
-  { s: 0.160, lt: -7.5,  name: "The hadron epoch",        temp: "10¹¹ K",  line: "Quarks confine into protons and neutrons. Matter and antimatter annihilate; the one-in-a-billion surplus is all that survives — and it is everything." },
-  { s: 0.190, lt: -7.3,  name: "Neutrino decoupling",     temp: "10¹⁰ K",  line: "Neutrinos stop interacting and stream free forever — a ghostly background still passing through you, unfelt, right now." },
-  { s: 0.220, lt: -5.24, name: "Nucleosynthesis",         temp: "10⁹ K",   line: "In a few minutes, protons and neutrons fuse into the first nuclei — hydrogen, a quarter helium, a trace of lithium. Then it is too cold to fuse, and the recipe is set." },
-  { s: 0.260, lt: 4.70,  name: "Matter meets radiation",  temp: "9,000 K", line: "The density of matter finally overtakes that of radiation. For the first time, gravity can begin to build structure." },
-  { s: 0.300, lt: 5.58,  name: "First light",             temp: "3,000 K", line: "After 380,000 years atoms form, the fog clears, and light flies free for the first time — the cosmic microwave background we still see across the whole sky today." },
+  { s: 0.030, lt: -50.5, name: "The first instant",       temp: "10³² K",  line: "Out of nothing we can describe, space, time and energy begin. In the first unimaginable sliver of a second, all four forces of nature are a single thing, at a temperature beyond meaning." },
+  { s: 0.085, lt: -39.5, name: "Inflation",               temp: "—",       line: "Space itself erupts — doubling over and over, more than a trillion-trillion-fold, in far less than a blink. It flattens the cosmos and freezes tiny quantum ripples into the seeds of every galaxy that will ever exist." },
+  { s: 0.130, lt: -7.5,  name: "The particle soup",       temp: "10¹² K",  line: "A blazing fog of quarks, gluons and light. Matter and antimatter annihilate on contact — and for every billion pairs that vanish, one particle of matter is left behind. That tiny surplus is everything that will ever exist." },
+  { s: 0.200, lt: -5.24, name: "The first nuclei",        temp: "10⁹ K",   line: "In the first few minutes, protons and neutrons fuse into the first atomic nuclei — three parts hydrogen to one of helium, with a trace of lithium. Then the universe thins too far to fuse, and the recipe is set for a billion years." },
+  { s: 0.260, lt: 4.70,  name: "The cooling fog",         temp: "9,000 K", line: "For 380,000 years the universe is an opaque, glowing fog of plasma — light cannot cross it without being scattered. Matter slowly wins out over radiation, and gravity begins, at last, to gather it." },
+  { s: 0.300, lt: 5.58,  name: "First light",             temp: "3,000 K", line: "The fog cools into neutral atoms and clears; light flies free for the first time — the oldest light there is, which we still catch today as the cosmic microwave background across the whole sky." },
   { s: 0.350, lt: 7.70,  name: "The dark ages",           temp: "~100 K",  line: "No stars yet. Cold hydrogen drifts along invisible threads of dark matter, gathering in the dark, lit only by the fading afterglow." },
   { s: 0.400, lt: 8.30,  name: "The cosmic dawn",         temp: "~50 K",   line: "The first stars ignite — colossal, brilliant, metal-free and short-lived. They forge the first heavy elements and die young as the first supernovae." },
   { s: 0.450, lt: 8.70,  name: "Reionization",            temp: "~30 K",   line: "Ultraviolet starlight floods space and re-ionizes the hydrogen between the galaxies; the universe turns transparent once more." },
@@ -63,16 +58,11 @@ export const ERAS: Era[] = [
 
 /* Extra glass info-tiles per era, parallel to ERAS: [governed by, what exists]. */
 const ERA_INFO: [string, string][] = [
-  ["Quantum gravity", "The unknown"],          // Planck
-  ["Radiation", "A single force"],             // Grand unification
+  ["Quantum gravity", "A single force"],       // The first instant
   ["The inflaton", "Pure energy"],             // Inflation
-  ["Radiation", "Quark–gluon plasma"],         // Electroweak
-  ["Radiation", "Plasma + the Higgs"],         // Electroweak breaking
-  ["Radiation", "Free quarks"],                // Quark epoch
-  ["Radiation", "Protons & neutrons"],         // Hadron epoch
-  ["Radiation", "Nuclei + free neutrinos"],    // Neutrino decoupling
-  ["Radiation", "Hydrogen & helium nuclei"],   // Nucleosynthesis
-  ["Matter (new)", "Glowing plasma"],          // Matter meets radiation
+  ["Radiation", "Quarks → protons"],           // The particle soup
+  ["Radiation", "Hydrogen & helium nuclei"],   // The first nuclei
+  ["Matter (new)", "Opaque plasma"],           // The cooling fog
   ["Matter", "Neutral atoms"],                 // First light
   ["Matter", "Cold hydrogen"],                 // The dark ages
   ["Matter", "The first stars"],               // Cosmic dawn
@@ -184,7 +174,7 @@ void main(){
     psize += spark * annih * 2.2;
   }
   // (b) nucleosynthesis — rarer, warmer fusion flares as the first nuclei bind
-  float fuse = smoothstep(0.195, 0.215, uT) * smoothstep(0.275, 0.235, uT);
+  float fuse = smoothstep(0.165, 0.185, uT) * smoothstep(0.255, 0.215, uT);   // peaks at the "first nuclei" beat
   if (fuse > 0.001) {
     float f = step(0.962, hash(dir + 7.0 + floor(uTime*2.5)*3.1));
     alpha += f * fuse * 0.55 * coreDim;
@@ -435,43 +425,43 @@ export function mountEternity(opts: Opts): () => void {
     marker.style.top = `${(p * 100).toFixed(2)}%`;
   }
 
-  // ---- the journey plays itself ----
-  // The early universe (Big Bang → first light) is ONE continuous cinematic —
-  // it flows through every sub-second epoch without stopping. From "first light"
-  // (era index 10) onward it pauses at each pivotal moment. PIVOTS are the stops.
-  const FIRST_STOP = 10;
-  const PIVOTS = [0, ...ERAS.slice(FIRST_STOP).map(e => e.s)];
-  let playhead = 0, pivotIdx = 0, playing = false, running = false, raf = 0, last = performance.now();
-  let armed = false, bootHold = 0;
+  // ---- the journey plays itself: a documentary that LINGERS ----
+  // It auto-plays, easing to a near-stop and HOLDING on each beat for a few
+  // seconds so you can read the title, the line and the tiles, then drifts on.
+  // Tap (or space) pauses & resumes; at the end, tap begins again.
+  const PIVOTS = ERAS.map(e => e.s);
+  const DWELL = 5.0;                              // seconds held at each beat to read
+  let playhead = 0, pivotIdx = -1, running = false, raf = 0, last = performance.now();
+  let armed = false, bootHold = 0, paused = false, dwell = 0, ended = false;
 
-  function showCont(end: boolean) { cont.innerHTML = end ? "Begin again&nbsp;&nbsp;↺" : "Continue&nbsp;&nbsp;→"; cont.classList.add("show"); }
-  function hideCont() { cont.classList.remove("show"); }
-  function goForward() {
-    if (!armed || playing) return;
-    if (pivotIdx >= PIVOTS.length - 1) { playhead = 0; pivotIdx = 0; }
-    playing = true; hideCont();
-  }
-  function goBack() {
-    if (!armed || playing || pivotIdx <= 0) return;
-    pivotIdx -= 1; playhead = PIVOTS[pivotIdx]!; showCont(false);
-  }
+  function pill(t: string) { cont.innerHTML = t; cont.classList.add("show"); }
+  function hidePill() { cont.classList.remove("show"); }
   function begin_() {
     if (armed) return;
-    armed = true; bootHold = 1.6; playing = true;
+    armed = true; bootHold = 1.6;
     startOverlay.classList.add("gone");
     try { playClick(); } catch (_e) { /* off */ }
   }
+  function togglePause() {
+    if (!armed) return;
+    if (ended) { playhead = 0; pivotIdx = -1; ended = false; dwell = 0; paused = false; hidePill(); return; }   // begin again
+    paused = !paused;
+    if (paused) pill("Paused&nbsp;·&nbsp;tap to resume"); else hidePill();
+  }
   function advance(dtSec: number) {
-    if (!playing) return;
-    if (bootHold > 0) { bootHold -= dtSec; return; }
-    const next = PIVOTS[Math.min(pivotIdx + 1, PIVOTS.length - 1)]!;
+    if (!armed || paused || ended) return;
+    if (bootHold > 0) { bootHold -= dtSec; return; }       // a beat of black, then it ignites
+    if (dwell > 0) { dwell -= dtSec; return; }              // lingering on a beat so you can read
+    const lastIdx = PIVOTS.length - 1;
+    const next = PIVOTS[Math.min(pivotIdx + 1, lastIdx)]!;
     const dist = next - playhead;
-    if (dist <= 0.004) { playhead = next; playing = false; pivotIdx = Math.min(pivotIdx + 1, PIVOTS.length - 1); showCont(pivotIdx >= PIVOTS.length - 1); }
-    else {
-      // a steady cinematic cruise that eases as it nears a stop — slow enough
-      // that the long opening flow (Big Bang → first light) plays like a film.
-      let speed = clamp(0.30 * dist, 0.012, 0.024);
-      if (playhead < 0.09) speed *= 0.30 + 0.70 * (playhead / 0.09);   // crawl through the ignition
+    if (dist <= 0.004) {
+      playhead = next; pivotIdx = Math.min(pivotIdx + 1, lastIdx);
+      if (pivotIdx >= lastIdx) { ended = true; pill("Begin again&nbsp;&nbsp;↺"); }
+      else dwell = DWELL;                                   // hold here
+    } else {
+      let speed = clamp(0.5 * dist, 0.02, 0.065);           // brisk-but-cinematic cruise between beats
+      if (playhead < 0.05) speed *= 0.55;                   // a slightly slower, dramatic ignition
       playhead = Math.min(next, playhead + speed * dtSec);
     }
   }
@@ -504,18 +494,15 @@ export function mountEternity(opts: Opts): () => void {
   canvas.style.cursor = "grab";
   canvas.addEventListener("pointerdown", e => { dragging = true; moved = false; lx = e.clientX; ly = e.clientY; canvas.style.cursor = "grabbing"; try { canvas.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ } });
   canvas.addEventListener("pointermove", e => { if (!dragging) return; const dx = e.clientX - lx, dy = e.clientY - ly; if (Math.abs(dx) + Math.abs(dy) > 6) moved = true; userYaw += dx * 0.005; userPitch = clamp(userPitch + dy * 0.004, -1.3, 1.3); lx = e.clientX; ly = e.clientY; });
-  canvas.addEventListener("pointerup", () => { dragging = false; canvas.style.cursor = "grab"; if (!moved) goForward(); });
+  canvas.addEventListener("pointerup", () => { dragging = false; canvas.style.cursor = "grab"; if (!moved) togglePause(); });   // tap = pause / resume
   canvas.addEventListener("pointercancel", () => { dragging = false; });
-  cont.addEventListener("click", e => { e.stopPropagation(); goForward(); });
+  cont.addEventListener("click", e => { e.stopPropagation(); togglePause(); });
   begin.addEventListener("click", e => { e.stopPropagation(); begin_(); });
   addEventListener("keydown", e => {
     const t = e.target as HTMLElement | null;
     if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
-    if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); armed ? goForward() : begin_(); }
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); goBack(); }
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); armed ? togglePause() : begin_(); }
   });
-  let wheelLock = 0;
-  addEventListener("wheel", e => { const n = performance.now(); if (n - wheelLock < 650) return; wheelLock = n; if (e.deltaY > 0) goForward(); else if (e.deltaY < 0) goBack(); }, { passive: true });
 
   placeCamera(0, 0); updateHud(scrollToLogT(0), 0); composer.render();
   start_();
