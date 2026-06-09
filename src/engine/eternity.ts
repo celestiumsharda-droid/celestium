@@ -20,7 +20,7 @@ import { playClick } from "./sound";
 
 interface Opts {
   canvas: HTMLCanvasElement;
-  age: HTMLElement; era: HTMLElement; temp: HTMLElement; line: HTMLElement; marker: HTMLElement;
+  age: HTMLElement; era: HTMLElement; tiles: HTMLElement; line: HTMLElement; marker: HTMLElement;
   cont: HTMLElement; prog: HTMLElement;
   startOverlay: HTMLElement; begin: HTMLElement;
 }
@@ -59,6 +59,39 @@ export const ERAS: Era[] = [
   { s: 0.920, lt: 36.00, name: "Proton decay",            temp: "10⁻¹² K", line: "If protons are unstable, even ordinary matter slowly evaporates into radiation — the last solid things quietly coming undone." },
   { s: 0.960, lt: 60.00, name: "The black hole era",      temp: "10⁻¹⁸ K", line: "Black holes are all that remain, bleeding away by Hawking radiation — the smallest first, the largest by 10¹⁰⁰ years — each ending in a final, soundless flash." },
   { s: 1.000, lt: 100.0, name: "Heat death",              temp: "10⁻²⁹ K", line: "Nothing left but a dilute, ever-cooling mist of particles drifting apart. Maximum entropy, eternal dark — not a bang, but the slow, final quiet." },
+];
+
+/* Extra glass info-tiles per era, parallel to ERAS: [governed by, what exists]. */
+const ERA_INFO: [string, string][] = [
+  ["Quantum gravity", "The unknown"],          // Planck
+  ["Radiation", "A single force"],             // Grand unification
+  ["The inflaton", "Pure energy"],             // Inflation
+  ["Radiation", "Quark–gluon plasma"],         // Electroweak
+  ["Radiation", "Plasma + the Higgs"],         // Electroweak breaking
+  ["Radiation", "Free quarks"],                // Quark epoch
+  ["Radiation", "Protons & neutrons"],         // Hadron epoch
+  ["Radiation", "Nuclei + free neutrinos"],    // Neutrino decoupling
+  ["Radiation", "Hydrogen & helium nuclei"],   // Nucleosynthesis
+  ["Matter (new)", "Glowing plasma"],          // Matter meets radiation
+  ["Matter", "Neutral atoms"],                 // First light
+  ["Matter", "Cold hydrogen"],                 // The dark ages
+  ["Matter", "The first stars"],               // Cosmic dawn
+  ["Matter", "Stars & ionized gas"],           // Reionization
+  ["Matter", "Galaxies"],                      // Age of galaxies
+  ["Matter", "Galaxies, fast star-birth"],     // Cosmic noon
+  ["Matter", "A molecular cloud"],             // Stellar nursery
+  ["Matter", "The Sun & its planets"],         // The Sun is born
+  ["Dark energy (new)", "Galaxies"],           // Dark energy awakens
+  ["Dark energy", "Stars, planets, you"],      // Now
+  ["Dark energy", "Two merging galaxies"],     // Andromeda
+  ["Dark energy", "A white dwarf Sun"],        // The Sun dies
+  ["Dark energy", "One lonely galaxy"],        // The long isolation
+  ["Dark energy", "The last red dwarfs"],      // Age of starlight ends
+  ["Dark energy", "Cold stellar remnants"],    // The last star dies
+  ["Dark energy", "Dwarfs & neutron stars"],   // The degenerate era
+  ["Dark energy", "Evaporating matter"],       // Proton decay
+  ["Dark energy", "Only black holes"],         // The black hole era
+  ["—", "A dilute, cold mist"],                // Heat death
 ];
 
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
@@ -254,7 +287,7 @@ void main(){
 }`;
 
 export function mountEternity(opts: Opts): () => void {
-  const { canvas, age, era, temp, line, marker, cont, prog, startOverlay, begin } = opts;
+  const { canvas, age, era, tiles, line, marker, cont, prog, startOverlay, begin } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
@@ -390,7 +423,12 @@ export function mountEternity(opts: Opts): () => void {
     let idx = 0; for (let i = 0; i < ERAS.length; i++) if (p >= ERAS[i]!.s - 1e-4) idx = i;
     if (idx !== eraIdx) {
       eraIdx = idx; const e = ERAS[idx]!;
-      era.textContent = e.name; temp.textContent = e.temp; line.textContent = e.line;
+      era.textContent = e.name; line.textContent = e.line;
+      const inf = ERA_INFO[idx] ?? ["", ""];
+      tiles.innerHTML =
+        `<div class="et-tile glass"><span class="et-tile-k">Temperature</span><span class="et-tile-v">${e.temp}</span></div>` +
+        `<div class="et-tile glass"><span class="et-tile-k">Governed by</span><span class="et-tile-v">${inf[0]}</span></div>` +
+        `<div class="et-tile glass"><span class="et-tile-k">Now exists</span><span class="et-tile-v">${inf[1]}</span></div>`;
       era.classList.remove("in"); void era.offsetWidth; era.classList.add("in");
       try { playClick(); } catch (_e) { /* off */ }
     }

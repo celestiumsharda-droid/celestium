@@ -41,7 +41,7 @@ if (section && canvas && cont && startOverlay && beginBtn && !reduce) {
       document.body.style.overflow = "hidden";   // the experience is a fixed, self-playing stage
       m.mountEternity({
         canvas, cont, prog, startOverlay, begin: beginBtn,
-        age: $("et-age"), era: $("et-era"), temp: $("et-temp"), line: $("et-line"), marker: $("et-marker"),
+        age: $("et-age"), era: $("et-era"), tiles: $("et-tiles"), line: $("et-line"), marker: $("et-marker"),
       });
     })
     .catch(err => console.warn("The Whole of Time is unavailable; keeping the written eras.", err));
