@@ -183,41 +183,18 @@ void main(){
       alpha = mix(alpha, galA, toGal);
       psize = mix(psize, galSz, toGal);
     }
-
-    // ===== PHASE 4 — our galaxy: zoom into one grand 3D spiral (the Milky Way) =====
-    if (uT > 0.52) {
-      float toSpiral = smoothstep(0.55, 0.63, uT);
-      float r = pow(aRand, 0.5) * 5.2;                       // disk radius, concentrated inward
-      float arm = floor(aRand2 * 2.0);                       // two spiral arms
-      float spread = (hash(dir + 2.0) - 0.5) * 0.7;          // scatter within the arm
-      float ang = arm*3.14159 + spread + 2.3*log(r + 0.5) + uTime*0.035;   // log spiral + slow spin
-      float bulge = 0.55 * exp(-r*0.9);                      // a round 3D bulge at the centre
-      float thick = (hash(dir + 9.0) - 0.5) * (bulge + 0.05 + 0.02*r);
-      vec3 sp = vec3(cos(ang)*r, sin(ang)*r, thick);         // disk in XY (faces the camera on +Z)
-      float ca = 0.878, sa = 0.479;                          // tilt ~0.5 rad around X → a 3/4 view
-      sp = vec3(sp.x, sp.y*ca - sp.z*sa, sp.y*sa + sp.z*ca);
-      // the Sun — a warm beacon out in an arm: "you are here"
-      float isSun = step(0.9994, hash(dir + 99.0));
-      vec3 sunP = vec3(2.4, 1.9, 0.0);
-      sunP = vec3(sunP.x, sunP.y*ca - sunP.z*sa, sunP.y*sa + sunP.z*ca);
-      sp = mix(sp, sunP + (vec3(hash(dir+1.0), hash(dir+2.0), hash(dir+3.0)) - 0.5)*0.12, isSun);
-      float coreS = 1.0 - smoothstep(0.0, 0.7, r);
-      float knot  = step(0.985, hash(dir + 4.0)) * smoothstep(1.2, 4.5, r);   // pink HII knots in arms
-      vec3 armCol = mix(vec3(0.62,0.74,1.12), vec3(1.0,0.55,0.72), knot);
-      vec3 spCol  = mix(vec3(1.0,0.85,0.55), armCol, smoothstep(0.4, 2.2, r));  // warm core → arms
-      spCol = mix(spCol, vec3(1.0,0.93,0.70), isSun);
-      float spA  = 0.08 + 0.12*aRand2 + coreS*0.25 + knot*0.4 + isSun*0.9;
-      float spSz = 0.5 + 0.8*aRand + coreS*1.6 + knot*1.0 + isSun*3.2;
-      pos   = mix(pos, sp, toSpiral);
-      col   = mix(col, spCol, toSpiral);
-      alpha = mix(alpha, spA, toSpiral);
-      psize = mix(psize, spSz, toSpiral);
-    }
   }
 
-  // ---- optional morph toward an image reference target (inactive for now) ----
-  pos = mix(pos, aTarget, uMorph);
-  col = mix(col, aTargetCol, uMorph);
+  // ===== PHASE 4 — our galaxy: morph into the image-sampled 3D Milky Way =====
+  // uMorph is driven from the journey (0 until "the Sun is born", 1 by then),
+  // so the cosmic web of galaxies resolves into one real 3D galaxy.
+  float tlum = dot(aTargetCol, vec3(0.299, 0.587, 0.114));   // the photo's brightness
+  float galA  = 0.04 + 0.34*tlum + 0.05*aRand2;              // density/brightness follow the image
+  float galSz = 0.55 + 0.7*aRand + tlum*1.3;                 // bright core points are larger
+  pos   = mix(pos, aTarget, uMorph);
+  col   = mix(col, aTargetCol, uMorph);
+  alpha = mix(alpha, galA, uMorph);
+  psize = mix(psize, galSz, uMorph);
 
   vColor = col;
   vAlpha = alpha;
@@ -278,13 +255,16 @@ export function mountEternity(opts: Opts): () => void {
     uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix }, uMorph: { value: 0 },
   };
 
-  // ---- sample a real image into particle positions + colours ----
-  // density follows the image's brightness; black voids are skipped, so the
-  // photo becomes points of light on nothing. Maps the frame onto an XY plane.
-  function sampleImage(url: string, scale: number) {
+  // ---- sample a real photo into a TRUE 3D particle galaxy ----
+  // Each particle takes its position + real colour from a bright pixel of the
+  // image (density follows brightness; black void skipped), then gets real
+  // depth: a rounded 3D bulge at the bright core and a thin disk elsewhere.
+  // The whole disk is tilted so the orbit camera sees it at a 3/4 angle — the
+  // image's true structure and colour, but genuinely 3D you can fly around.
+  function sampleGalaxy(url: string, scale: number, tilt: number) {
     const img = new Image();
     img.onload = () => {
-      const cw = 540, ch = Math.max(1, Math.round(cw * img.height / img.width));
+      const cw = 560, ch = Math.max(1, Math.round(cw * img.height / img.width));
       const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
       const ctx = cv.getContext("2d", { willReadFrequently: true }); if (!ctx) return;
       ctx.drawImage(img, 0, 0, cw, ch);
@@ -294,25 +274,30 @@ export function mountEternity(opts: Opts): () => void {
       for (let py = 0; py < ch; py++) for (let px = 0; px < cw; px++) {
         const o = (py * cw + px) * 4, r = d[o]! / 255, g = d[o + 1]! / 255, b = d[o + 2]! / 255;
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        if (lum < 0.05) continue;
+        if (lum < 0.045) continue;
         cand.push(((px / cw) * 2 - 1) * aspect, -((py / ch) * 2 - 1), r, g, b, lum);
       }
       const m = cand.length / 6; if (m < 1) return;
+      const ca = Math.cos(tilt), sa = Math.sin(tilt);
       const tp = aTarget.array as Float32Array, tc = aTargetCol.array as Float32Array;
       for (let i = 0; i < COUNT; i++) {
         let k = 0;
         for (let t = 0; t < 8; t++) { k = (Math.random() * m) | 0; if (Math.random() < cand[k * 6 + 5]!) break; }
-        const o = k * 6;
-        tp[i * 3] = cand[o]! * scale + (Math.random() - 0.5) * 0.02;
-        tp[i * 3 + 1] = cand[o + 1]! * scale + (Math.random() - 0.5) * 0.02;
-        tp[i * 3 + 2] = (Math.random() - 0.5) * 0.22;
+        const o = k * 6, sx = cand[o]!, sy = cand[o + 1]!;
+        const x = sx * scale, y = sy * scale;
+        const rC = Math.hypot(sx, sy);                       // image-space radius (0 = core)
+        const bulge = 1.05 * Math.exp(-rC * 2.6);            // a rounded 3D bulge at the core
+        const z = (Math.random() - 0.5) * 2 * (0.09 + bulge);  // thin disk + fat bulge
+        tp[i * 3] = x + (Math.random() - 0.5) * 0.02;
+        tp[i * 3 + 1] = (y * ca - z * sa);                   // tilt the disk ~3/4
+        tp[i * 3 + 2] = (y * sa + z * ca);
         tc[i * 3] = cand[o + 2]!; tc[i * 3 + 1] = cand[o + 3]!; tc[i * 3 + 2] = cand[o + 4]!;
       }
       aTarget.needsUpdate = true; aTargetCol.needsUpdate = true;
     };
     img.src = url;
   }
-  void sampleImage;   // image→particle sampler kept for reference targets; 3D forms are built procedurally now
+  sampleGalaxy("/eternity/refs/milkyway.png", 3.3, 0.5);   // the Milky Way at "now"
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader: VERT, fragmentShader: FRAG,
     transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -336,18 +321,15 @@ export function mountEternity(opts: Opts): () => void {
   // ---- camera: orbit the origin, pulling back as the cloud inflates;
   //      swing to face-on while morphed into an image so the photo reads ----
   let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false, morph = 0;
-  const orbitPos = new THREE.Vector3(), faceOn = new THREE.Vector3();
   function placeCamera(uT: number, now: number) {
     if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
     const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
     const dist = lerp(1.15, 9.0, expand);
     const yaw = Math.sin(now * 0.00005) * 0.12 + userYaw, pitch = clamp(0.12 + userPitch, -1.3, 1.3);   // gentle bounded sway, not endless drift
     const cp = Math.cos(pitch);
-    orbitPos.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
-    if (morph > 0.001) {
-      faceOn.set(Math.sin(now * 0.00003) * 0.5 + userYaw, Math.sin(now * 0.000025) * 0.35 + userPitch, 7.8);
-      camera.position.lerpVectors(orbitPos, faceOn, morph);
-    } else camera.position.copy(orbitPos);
+    // the galaxy is built tilted in 3D, so the ordinary orbit camera reveals
+    // its depth — no face-on lock (that's what flattened it before).
+    camera.position.set(Math.sin(yaw) * dist * cp, Math.sin(pitch) * dist, Math.cos(yaw) * dist * cp);
     camera.lookAt(0, 0, 0);
   }
 
@@ -405,7 +387,9 @@ export function mountEternity(opts: Opts): () => void {
     raf = requestAnimationFrame(frame);
     const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
     advance(dtSec);
-    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;   // morph stays 0 until 3D image-acts are built
+    // the Milky Way forms by "the Sun is born" (s=0.58) and holds through "now"
+    morph = smooth(clamp((playhead - 0.55) / 0.025, 0, 1));
+    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;
     placeCamera(playhead, now);
     updateHud(scrollToLogT(playhead), playhead);
     prog.style.transform = `scaleX(${playhead.toFixed(4)})`;
