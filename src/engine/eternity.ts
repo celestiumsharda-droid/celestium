@@ -96,9 +96,10 @@ const VERT = /* glsl */`
 precision highp float;
 attribute float aRand;
 attribute float aRand2;
-attribute vec3 aTarget;        // image-sampled position (an act this particle morphs into)
-attribute vec3 aTargetCol;     // the colour sampled from that image
-uniform float uT, uTime, uSize, uPix, uMorph;
+attribute vec3 aNeb; attribute vec3 aNebCol;   // the stellar nursery (Pillars)
+attribute vec3 aPro; attribute vec3 aProCol;   // the protoplanetary disk
+attribute vec3 aGal; attribute vec3 aGalCol;   // the Milky Way
+uniform float uT, uTime, uSize, uPix, uImgOn, uNP, uPG;
 varying vec3 vColor;
 varying float vAlpha;
 
@@ -185,16 +186,20 @@ void main(){
     }
   }
 
-  // ===== PHASE 4 — our galaxy: morph into the image-sampled 3D Milky Way =====
-  // uMorph is driven from the journey (0 until "the Sun is born", 1 by then),
-  // so the cosmic web of galaxies resolves into one real 3D galaxy.
-  float tlum = dot(aTargetCol, vec3(0.299, 0.587, 0.114));   // the photo's brightness
-  float galA  = 0.04 + 0.34*tlum + 0.05*aRand2;              // density/brightness follow the image
-  float galSz = 0.55 + 0.7*aRand + tlum*1.3;                 // bright core points are larger
-  pos   = mix(pos, aTarget, uMorph);
-  col   = mix(col, aTargetCol, uMorph);
-  alpha = mix(alpha, galA, uMorph);
-  psize = mix(psize, galSz, uMorph);
+  // ===== PHASE 4 — image-sampled 3D forms: nursery → protoplanetary disk → galaxy =====
+  // uImgOn brings the photographic form in (over the procedural galaxies);
+  // uNP cross-fades nebula→disk (the Sun forming); uPG cross-fades disk→galaxy.
+  vec3 imgPos = mix(aNeb, aPro, uNP);
+  imgPos = mix(imgPos, aGal, uPG);
+  vec3 imgCol = mix(aNebCol, aProCol, uNP);
+  imgCol = mix(imgCol, aGalCol, uPG);
+  float tlum  = dot(imgCol, vec3(0.299, 0.587, 0.114));     // density/brightness follow the photo
+  float galA  = 0.04 + 0.34*tlum + 0.05*aRand2;
+  float galSz = 0.55 + 0.7*aRand + tlum*1.3;
+  pos   = mix(pos, imgPos, uImgOn);
+  col   = mix(col, imgCol, uImgOn);
+  alpha = mix(alpha, galA, uImgOn);
+  psize = mix(psize, galSz, uImgOn);
 
   vColor = col;
   vAlpha = alpha;
@@ -246,22 +251,27 @@ export function mountEternity(opts: Opts): () => void {
   geo.setAttribute("position", new THREE.BufferAttribute(dirs, 3));
   geo.setAttribute("aRand", new THREE.BufferAttribute(rand, 1));
   geo.setAttribute("aRand2", new THREE.BufferAttribute(rand2, 1));
-  // image-morph targets (filled asynchronously by sampling a real photo)
-  const aTarget = new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3);
-  const aTargetCol = new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3);
-  geo.setAttribute("aTarget", aTarget);
-  geo.setAttribute("aTargetCol", aTargetCol);
+  // image-morph targets — three real photos, sampled into 3D particle forms.
+  // The journey cross-fades nebula → protoplanetary disk → galaxy.
+  const mkBuf = () => new THREE.BufferAttribute(new Float32Array(COUNT * 3), 3);
+  const aNeb = mkBuf(), aNebCol = mkBuf();   // the stellar nursery (Pillars)
+  const aPro = mkBuf(), aProCol = mkBuf();   // the protoplanetary disk
+  const aGal = mkBuf(), aGalCol = mkBuf();   // the Milky Way
+  geo.setAttribute("aNeb", aNeb); geo.setAttribute("aNebCol", aNebCol);
+  geo.setAttribute("aPro", aPro); geo.setAttribute("aProCol", aProCol);
+  geo.setAttribute("aGal", aGal); geo.setAttribute("aGalCol", aGalCol);
   const uniforms = {
-    uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix }, uMorph: { value: 0 },
+    uT: { value: 0 }, uTime: { value: 0 }, uSize: { value: small ? 11 : 16 }, uPix: { value: pix },
+    uImgOn: { value: 0 }, uNP: { value: 0 }, uPG: { value: 0 },
   };
 
-  // ---- sample a real photo into a TRUE 3D particle galaxy ----
-  // Each particle takes its position + real colour from a bright pixel of the
-  // image (density follows brightness; black void skipped), then gets real
-  // depth: a rounded 3D bulge at the bright core and a thin disk elsewhere.
-  // The whole disk is tilted so the orbit camera sees it at a 3/4 angle — the
-  // image's true structure and colour, but genuinely 3D you can fly around.
-  function sampleGalaxy(url: string, scale: number, tilt: number) {
+  // ---- sample a real photo into a TRUE 3D particle form ----
+  // Each particle takes its position + real colour from a bright pixel (density
+  // follows brightness; black void skipped), then gets real depth: a "disk" gets
+  // a rounded 3D bulge + thin disk; a "cloud" gets volumetric depth. The whole
+  // form is tilted so the orbit camera sees it in 3D — the photo's true
+  // structure and colour, genuinely 3D you can fly around.
+  function sampleImage3D(url: string, posA: THREE.BufferAttribute, colA: THREE.BufferAttribute, scale: number, tilt: number, disk: boolean) {
     const img = new Image();
     img.onload = () => {
       const cw = 560, ch = Math.max(1, Math.round(cw * img.height / img.width));
@@ -279,25 +289,27 @@ export function mountEternity(opts: Opts): () => void {
       }
       const m = cand.length / 6; if (m < 1) return;
       const ca = Math.cos(tilt), sa = Math.sin(tilt);
-      const tp = aTarget.array as Float32Array, tc = aTargetCol.array as Float32Array;
+      const tp = posA.array as Float32Array, tc = colA.array as Float32Array;
       for (let i = 0; i < COUNT; i++) {
         let k = 0;
         for (let t = 0; t < 8; t++) { k = (Math.random() * m) | 0; if (Math.random() < cand[k * 6 + 5]!) break; }
         const o = k * 6, sx = cand[o]!, sy = cand[o + 1]!;
         const x = sx * scale, y = sy * scale;
-        const rC = Math.hypot(sx, sy);                       // image-space radius (0 = core)
-        const bulge = 1.05 * Math.exp(-rC * 2.6);            // a rounded 3D bulge at the core
-        const z = (Math.random() - 0.5) * 2 * (0.09 + bulge);  // thin disk + fat bulge
+        let z: number;
+        if (disk) { const rC = Math.hypot(sx, sy); z = (Math.random() - 0.5) * 2 * (0.09 + 1.05 * Math.exp(-rC * 2.6)); }
+        else { z = (Math.random() - 0.5) * 1.3; }            // a volumetric cloud (nebula)
         tp[i * 3] = x + (Math.random() - 0.5) * 0.02;
-        tp[i * 3 + 1] = (y * ca - z * sa);                   // tilt the disk ~3/4
+        tp[i * 3 + 1] = (y * ca - z * sa);                   // tilt for a 3D view
         tp[i * 3 + 2] = (y * sa + z * ca);
         tc[i * 3] = cand[o + 2]!; tc[i * 3 + 1] = cand[o + 3]!; tc[i * 3 + 2] = cand[o + 4]!;
       }
-      aTarget.needsUpdate = true; aTargetCol.needsUpdate = true;
+      posA.needsUpdate = true; colA.needsUpdate = true;
     };
     img.src = url;
   }
-  sampleGalaxy("/eternity/refs/milkyway.png", 3.3, 0.5);   // the Milky Way at "now"
+  sampleImage3D("/eternity/refs/nebula.png",    aNeb, aNebCol, 4.2, 0.18, false);  // the nursery
+  sampleImage3D("/eternity/refs/protodisk.png", aPro, aProCol, 3.0, 0.55, true);   // the Sun's disk
+  sampleImage3D("/eternity/refs/milkyway.png",  aGal, aGalCol, 3.3, 0.50, true);   // the Milky Way
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader: VERT, fragmentShader: FRAG,
     transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -320,7 +332,7 @@ export function mountEternity(opts: Opts): () => void {
 
   // ---- camera: orbit the origin, pulling back as the cloud inflates;
   //      swing to face-on while morphed into an image so the photo reads ----
-  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false, morph = 0;
+  let userYaw = 0, userPitch = 0, dragging = false, lx = 0, ly = 0, moved = false;
   function placeCamera(uT: number, now: number) {
     if (!dragging) { userYaw *= 0.95; userPitch *= 0.95; }
     const expand = smooth(clamp((uT - 0.02) / 0.28, 0, 1));
@@ -387,10 +399,14 @@ export function mountEternity(opts: Opts): () => void {
     raf = requestAnimationFrame(frame);
     const dtSec = Math.min((now - last) / 1000, 0.05); last = now;
     advance(dtSec);
-    // the Milky Way forms by "the Sun is born" (s=0.58) and holds through "now"
-    morph = smooth(clamp((playhead - 0.55) / 0.025, 0, 1));
-    uniforms.uT.value = playhead; uniforms.uTime.value = now * 0.001; uniforms.uMorph.value = morph;
-    placeCamera(playhead, now);
+    const ph = playhead;
+    // photographic forms enter after the cosmic web, then cross-fade:
+    //   nursery (Pillars) → protoplanetary disk (the Sun is born, s=0.58) → Milky Way (now, s=0.64)
+    uniforms.uImgOn.value = smooth(clamp((ph - 0.550) / 0.014, 0, 1));   // procedural → photo
+    uniforms.uNP.value    = smooth(clamp((ph - 0.566) / 0.010, 0, 1));   // nebula → protoplanetary disk
+    uniforms.uPG.value    = smooth(clamp((ph - 0.588) / 0.022, 0, 1));   // disk → galaxy (full by s≈0.61)
+    uniforms.uT.value = ph; uniforms.uTime.value = now * 0.001;
+    placeCamera(ph, now);
     updateHud(scrollToLogT(playhead), playhead);
     prog.style.transform = `scaleX(${playhead.toFixed(4)})`;
     composer.render();
