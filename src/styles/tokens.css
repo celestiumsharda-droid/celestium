@@ -27,14 +27,19 @@
      glass bevel (bright top edge, soft inner shade), and a specular highlight
      that follows the pointer (set via --gx/--gy by liquid-glass.ts) so the
      surface reads as a real curved sheet of glass catching light. */
-  --glass-tint: rgba(15, 18, 28, 0.46);
-  --glass-tint-strong: rgba(9, 11, 17, 0.74);
-  --glass-blur: saturate(185%) brightness(1.08) blur(24px);
-  --glass-edge: rgba(255, 255, 255, 0.14);
-  --glass-spec: rgba(255, 255, 255, 0.26);
-  --glass-hi: rgba(255, 255, 255, 0.11);                /* the moving specular highlight */
-  --glass-bevel: inset 0 1px 0 var(--glass-spec), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 -22px 44px -28px rgba(0,0,0,.55);
-  --glass-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+  --glass-tint: rgba(12, 15, 23, 0.22);                 /* mostly CLEAR — the slab refracts the sky through it */
+  --glass-tint-strong: rgba(9, 11, 17, 0.58);
+  --glass-blur: saturate(150%) brightness(1.04) blur(6px);   /* clear glass, lightly soft — not frosted */
+  --glass-edge: rgba(255, 255, 255, 0.2);               /* a brighter glass rim */
+  --glass-spec: rgba(255, 255, 255, 0.38);              /* bright top-edge bevel highlight */
+  --glass-hi: rgba(255, 255, 255, 0.06);                /* subtle catch-light, follows the pointer */
+  --glass-bevel:
+    inset 0 1.5px 0 var(--glass-spec),                  /* bright top edge of the slab */
+    inset 0 0 0 1px rgba(255,255,255,.06),              /* a thin bright rim all the way round */
+    inset 0 -1px 0 rgba(255,255,255,.07),               /* faint catch on the bottom edge */
+    inset 0 -26px 46px -30px rgba(0,0,0,.5);            /* inner depth toward the base */
+  --glass-textscrim: 0 1px 2px rgba(0,0,0,.62), 0 2px 18px rgba(0,0,0,.5);   /* the tint that pools only behind text */
+  --glass-shadow: 0 32px 74px rgba(0, 0, 0, 0.55);      /* it floats above the page */
   --radius: 20px;
   --radius-sm: 13px;
 }
@@ -45,20 +50,22 @@
 .glass {
   position: relative;
   background:
-    radial-gradient(230px 200px at var(--gx, 22%) var(--gy, -8%), var(--glass-hi), transparent 72%),
+    radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
     var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-shadow), var(--glass-bevel);
+  text-shadow: var(--glass-textscrim);   /* the tint pools behind the text, keeping the slab clear elsewhere */
 }
 .glass-soft {
   position: relative;
   background:
-    radial-gradient(230px 200px at var(--gx, 22%) var(--gy, -8%), var(--glass-hi), transparent 72%),
+    radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
     var(--glass-tint);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-bevel);
+  text-shadow: var(--glass-textscrim);
 }
 /* legacy hook kept as a no-op so existing markup that adds `.glass-sheen`
    still works — the sheen is now built into the glass surface itself. */
@@ -76,7 +83,7 @@
   /* limited to a few large showcase panes so the per-frame displacement over
      the animating starfield never costs the page its smoothness */
   .feat, nav.solid, .cmdk-panel {
-    backdrop-filter: url(#lg-refract) saturate(180%) brightness(1.06) blur(5px);
+    backdrop-filter: url(#lg-refract) saturate(155%) brightness(1.05) blur(2px);
   }
 }
 
