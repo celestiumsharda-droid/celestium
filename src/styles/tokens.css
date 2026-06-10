@@ -73,6 +73,25 @@
 /* legacy hook kept as a no-op so existing markup that adds `.glass-sheen`
    still works — the sheen is now built into the glass surface itself. */
 .glass-sheen { position: relative; }
+
+/* the rim light — light catches the physical edge of the slab, brightest
+   where it would strike real glass: upper-left and lower-right. Drawn as a
+   masked ring so only the 1px edge is lit, never the face. */
+.glass::after, .glass-soft::after, .card::after, .feat::after, .exp::after,
+.nextseries::after, .et-tile::after, .cm-chip::after, .cmdk-panel::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  padding: 1px; pointer-events: none;
+  background: conic-gradient(from 240deg,
+    transparent 0deg, rgba(255,255,255,.85) 32deg, rgba(255,255,255,.18) 70deg,
+    transparent 120deg, transparent 185deg,
+    rgba(255,255,255,.5) 222deg, transparent 268deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: .8;
+}
+.cm-chip, .et-tile, .nextseries { position: relative; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   /* No backdrop-filter support: fall back to a more opaque tint so text
      stays legible over the starfield. */

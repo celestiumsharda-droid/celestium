@@ -157,6 +157,22 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .reveal { opacity: 0; transform: translateY(28px); filter: blur(10px); transition: opacity 1s var(--ease), transform 1s var(--ease), filter 1s var(--ease); }
 .reveal.in { opacity: 1; transform: none; filter: none; }
 
+/* cards unfold like chapters: children of a revealed group rise with a slight
+   3D unfold, in sequence — each card a page turning open */
+.grid .cell, .exps .exp, .skygrid .card {
+  opacity: 0; transform: perspective(900px) rotateX(7deg) translateY(30px);
+  transform-origin: top center;
+  transition: opacity .9s var(--ease), transform .9s var(--ease);
+}
+.reveal.in .cell, .reveal.in .exp, .reveal.in .card {
+  opacity: 1; transform: none;
+}
+.reveal.in > :nth-child(2) { transition-delay: .08s; }
+.reveal.in > :nth-child(3) { transition-delay: .16s; }
+.reveal.in > :nth-child(4) { transition-delay: .24s; }
+.reveal.in > :nth-child(5) { transition-delay: .32s; }
+.reveal.in > :nth-child(6) { transition-delay: .4s; }
+
 /* ---- featured discovery card ---- */
 #featured { border-top: 1px solid var(--line-soft); }
 .feat {

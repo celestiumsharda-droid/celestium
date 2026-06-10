@@ -22,6 +22,18 @@ interface Star {
   z: number;
   r: number;
   t: number;
+  c: string;      // core colour
+  big: boolean;   // rare bright star — gets a glow and diffraction spikes
+}
+
+/* a real night-sky palette: mostly white, then blue-white, amber, and the
+   occasional deep orange-red — like a long-exposure deep field */
+function starColor(): string {
+  const r = Math.random();
+  if (r < 0.55) return "232,237,255";   // white
+  if (r < 0.75) return "186,205,255";   // blue-white
+  if (r < 0.92) return "255,221,170";   // warm amber
+  return "255,150,110";                 // orange-red
 }
 
 interface Meteor { x: number; y: number; vx: number; vy: number; life: number; max: number; len: number; }
@@ -68,16 +80,19 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     canvas.style.height = `${H}px`;
     ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const base = parallax ? 3400 : 3800;
-    const n = Math.min(420, Math.floor(((W * H) / base) * density));
+    const base = parallax ? 2100 : 2400;          // denser — a real deep field
+    const n = Math.min(720, Math.floor(((W * H) / base) * density));
     stars = [];
     for (let i = 0; i < n; i++) {
+      const z = Math.random();
       stars.push({
         x: Math.random() * W,
         y: Math.random() * H * (parallax ? 2 : 1),
-        z: Math.random(),
-        r: Math.random() * 1.3 + 0.2,
+        z,
+        r: Math.pow(Math.random(), 2.2) * 1.5 + 0.25,   // mostly fine grains, few brights
         t: Math.random() * 6.28,
+        c: starColor(),
+        big: Math.random() < 0.012,
       });
     }
   }
@@ -87,7 +102,7 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     for (const s of stars) {
       ctx!.beginPath();
       ctx!.arc(s.x, s.y, s.r * (0.6 + s.z), 0, 6.29);
-      ctx!.fillStyle = `rgba(220,228,255,${(0.18 + s.z * 0.7) * 0.85})`;
+      ctx!.fillStyle = `rgba(${s.c},${(0.2 + s.z * 0.7) * 0.85})`;
       ctx!.fill();
     }
   }
@@ -97,18 +112,30 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     ctx!.clearRect(0, 0, W, H);
     const t = Date.now() / 1000;
     for (const s of stars) {
-      let y = s.y - sc * s.z * 0.35;
+      // deeper layered parallax: far stars barely move, near stars drift fast
+      let y = s.y - sc * (0.08 + s.z * s.z * 0.55);
       if (parallax) y = ((y % (H * 2)) + H * 2) % (H * 2);
-      const tw = 0.55 + 0.45 * Math.sin(t * 1.4 + s.t);
-      const a = (0.18 + s.z * 0.7) * tw;
+      const tw = 0.6 + 0.4 * Math.sin(t * 1.4 + s.t);
+      const a = (0.2 + s.z * 0.7) * tw;
+      const r = s.r * (0.6 + s.z);
       ctx!.beginPath();
-      ctx!.arc(s.x, y, s.r * (0.6 + s.z), 0, 6.29);
-      ctx!.fillStyle = `rgba(220,228,255,${a})`;
+      ctx!.arc(s.x, y, r, 0, 6.29);
+      ctx!.fillStyle = `rgba(${s.c},${a})`;
       ctx!.fill();
-      if (s.z > 0.93) {
+      if (s.big) {
+        // a bright star: soft halo + slim diffraction spikes
+        const g = a * 0.9, L = r * 9;
+        ctx!.beginPath(); ctx!.arc(s.x, y, r * 3.2, 0, 6.29);
+        ctx!.fillStyle = `rgba(${s.c},${g * 0.14})`; ctx!.fill();
+        ctx!.strokeStyle = `rgba(${s.c},${g * 0.5})`; ctx!.lineWidth = 0.7;
+        ctx!.beginPath();
+        ctx!.moveTo(s.x - L, y); ctx!.lineTo(s.x + L, y);
+        ctx!.moveTo(s.x, y - L); ctx!.lineTo(s.x, y + L);
+        ctx!.stroke();
+      } else if (s.z > 0.93) {
         ctx!.beginPath();
         ctx!.arc(s.x, y, s.r * 2.4, 0, 6.29);
-        ctx!.fillStyle = `rgba(169,188,255,${a * 0.12})`;
+        ctx!.fillStyle = `rgba(${s.c},${a * 0.12})`;
         ctx!.fill();
       }
     }

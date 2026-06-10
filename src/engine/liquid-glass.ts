@@ -30,7 +30,24 @@ function injectRefraction(): void {
 export function initLiquidGlass(): void {
   injectRefraction();   // always — the static refraction is part of the material
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if (matchMedia("(hover: none)").matches) return;            // touch: no pointer sheen
+
+  // phones & tablets: the glass reacts to MOVEMENT — tilting the device slides
+  // the catch-light across every pane (custom properties inherit, so setting
+  // the root moves all glass at once; pointer values still win per-element).
+  if (matchMedia("(hover: none)").matches) {
+    let raf = 0, gx = 24, gy = -10;
+    addEventListener("deviceorientation", e => {
+      if (e.gamma == null || e.beta == null) return;
+      gx = 50 + Math.max(-30, Math.min(30, e.gamma)) * 1.8;          // left-right tilt
+      gy = 10 + Math.max(-30, Math.min(30, e.beta - 40)) * 1.6;      // toward-away tilt
+      if (!raf) raf = requestAnimationFrame(() => {
+        raf = 0;
+        document.documentElement.style.setProperty("--gx", `${gx.toFixed(1)}%`);
+        document.documentElement.style.setProperty("--gy", `${gy.toFixed(1)}%`);
+      });
+    }, { passive: true });
+    return;                                                          // no pointer sheen on touch
+  }
 
   let raf = 0;
   let pending: { el: HTMLElement; x: number; y: number } | null = null;
