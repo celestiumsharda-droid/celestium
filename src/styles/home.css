@@ -208,7 +208,8 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   padding: clamp(20px, 4vw, 54px);
   display: flex; flex-direction: column; justify-content: space-between;
 }
-.persp-hud .persp-head { max-width: 60%; }
+.persp-hud .persp-head { max-width: 60%; transition: opacity .7s ease, transform .7s ease; }
+.persp-hud .persp-head.away { opacity: 0; transform: translateY(-14px); pointer-events: none; }
 .persp-hud .eyebrow { margin-bottom: 14px; }
 .persp-head h2 {
   font-size: clamp(2rem, 5vw, 4.4rem);
@@ -222,11 +223,13 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   max-width: min(40ch, 84vw);
   padding: 22px 26px 24px;
   border-radius: var(--radius);
+  /* this panel floats over the section HEADLINE, not just sky — it needs a
+     strong tint + deep blur so text behind can never bleed through the glass */
   background:
     linear-gradient(157deg, rgba(255,255,255,.06), rgba(255,255,255,.012) 48%),
-    var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+    var(--glass-tint-strong);
+  -webkit-backdrop-filter: saturate(160%) blur(26px);
+  backdrop-filter: saturate(160%) blur(26px);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-shadow), var(--glass-bevel);
 }
@@ -363,11 +366,57 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 
 /* ---- timeline ---- */
 /* ---- homepage timeline teaser (the full experience lives on /timeline/) ---- */
-#tl-teaser { border-top: 1px solid var(--line-soft); padding: clamp(90px,14vh,170px) 0; text-align: center; }
-.tlt-inner { max-width: 660px; margin: 0 auto; }
-.tlt-inner h2 { font-family: var(--display); font-weight: 300; line-height: .98; letter-spacing: -.02em; font-size: clamp(2.4rem, 6vw, 4.6rem); margin: 16px 0 22px; }
-.tlt-inner p { color: var(--mut); max-width: 52ch; margin: 0 auto 34px; font-size: 1.05rem; line-height: 1.6; }
-.tlt-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+/* ---- immersive journeys showcase ---- */
+#experiences { border-top: 1px solid var(--line-soft); }
+.exps { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(14px, 1.8vw, 22px); }
+.exp {
+  position: relative; display: flex; flex-direction: column;
+  overflow: hidden; border-radius: var(--radius); color: inherit;
+  background:
+    radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), var(--glass-bevel);
+  transition: transform .5s cubic-bezier(.2,.7,.2,1), border-color .4s, box-shadow .4s;
+}
+.exp:hover { transform: translateY(-5px); border-color: rgba(255,255,255,.3); box-shadow: var(--glass-shadow), var(--glass-bevel); }
+.exp-main { grid-column: 1 / -1; flex-direction: row; align-items: stretch; }
+.exp picture { display: block; position: relative; overflow: hidden; flex: none; }
+.exp img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.exp:hover img { transform: scale(1.05); }
+.exp:not(.exp-main) picture { aspect-ratio: 16 / 8.2; }
+.exp-main picture { width: 56%; min-height: 300px; }
+.exp-main picture::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, rgba(5,6,9,.66)); }
+.exp:not(.exp-main) picture::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(5,6,9,.6)); }
+.exp-body { padding: clamp(20px, 2.4vw, 38px); display: flex; flex-direction: column; gap: 10px; justify-content: center; text-shadow: var(--glass-textscrim); }
+.exp-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--star); }
+.exp-main .exp-tag { color: var(--accent); }
+.exp h3 { font-family: var(--display); font-weight: 400; font-size: clamp(1.4rem, 2.6vw, 2.2rem); letter-spacing: -.01em; line-height: 1.08; }
+.exp-body p { color: var(--mut); font-size: clamp(.94rem, 1.3vw, 1.04rem); line-height: 1.6; max-width: 44ch; }
+.exp-go { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink); margin-top: 8px; transition: color .3s; }
+.exp:hover .exp-go { color: var(--accent); }
+@media (max-width: 880px) {
+  .exps { grid-template-columns: 1fr; }
+  .exp-main { flex-direction: column; }
+  .exp-main picture { width: 100%; min-height: 0; aspect-ratio: 16 / 8.2; }
+  .exp-main picture::after { background: linear-gradient(180deg, transparent 55%, rgba(5,6,9,.6)); }
+}
+
+/* the hero proof line + depth-preview footer link */
+.heroproof {
+  margin-top: 26px; font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--dim);
+  opacity: 0; animation: rise 1s 1.45s forwards cubic-bezier(.2,.7,.2,1);
+}
+.rmore {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 24px 44px; border-top: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--mut); transition: color .35s;
+}
+.rmore:hover { color: var(--ink); }
+@media (max-width: 560px) { .rmore { padding: 20px 22px; } }
 
 /* ---- STARDUST page ("You Are Stardust") ---- */
 .sd-track { display: none; position: relative; height: 800vh; }

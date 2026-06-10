@@ -25,6 +25,7 @@ export function sourcesHTML(slug: string): string {
     .join("");
   return (
     `<h2 class="srch">${esc(t("sources.heading"))}</h2>` +
+    `<div class="srcstamp"><span class="srcstamp-dot"></span>${list.length} primary ${list.length === 1 ? "source" : "sources"} · checked against the original papers</div>` +
     `<ol class="srclist">${items}</ol>` +
     `<p class="srcnote">Celestium retells peer-reviewed science for a general audience. Where a claim rests on a specific result, the primary work is cited above — read it at the source.</p>`
   );

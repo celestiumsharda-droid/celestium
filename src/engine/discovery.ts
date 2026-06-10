@@ -371,8 +371,15 @@ const SERIES = [
 ];
 const si = SERIES.indexOf(id);
 if (si >= 0) {
-  const nextSlug = SERIES[(si + 1) % SERIES.length]!;
-  const nm = RELATED_INDEX[nextSlug];
+  // walk forward to the first article that ISN'T already shown in the
+  // "Pull another thread" grid below — the page never repeats itself.
+  const shown = new Set(D.related ?? []);
+  let nextSlug = "";
+  for (let step = 1; step < SERIES.length; step++) {
+    const cand = SERIES[(si + step) % SERIES.length]!;
+    if (!shown.has(cand)) { nextSlug = cand; break; }
+  }
+  const nm = nextSlug ? RELATED_INDEX[nextSlug] : undefined;
   const nx = $<HTMLAnchorElement>("nextseries");
   if (nm && nx) {
     nx.href = `/discoveries/${nextSlug}/`;

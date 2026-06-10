@@ -82,8 +82,9 @@
     <p class="lede">Not a feed of headlines. A place to stand beneath the whole of what we know — from the first light after the Big Bang to the instrument humming in orbit <em>right now</em> — and feel how small, and how staggering, our understanding has become.</p>
     <div class="herocta">
       <a href="#scale" class="btn fill">Find your place</a>
-      <a href="/timeline/" class="btn">Walk the timeline</a>
+      <a href="/eternity/" class="btn">Play the whole of time</a>
     </div>
+    <p class="heroproof">15 immersive discoveries&nbsp;&nbsp;·&nbsp;&nbsp;3 particle journeys&nbsp;&nbsp;·&nbsp;&nbsp;the sky, live</p>
     <div class="scrollcue"><span>Descend</span><span class="ln"></span></div>
   </header>
 
@@ -125,22 +126,6 @@
     </div>
   </section>
 
-  <!-- IMMERSIVE EXPERIENCES → full-screen particle journeys on their own pages -->
-  <section id="tl-teaser">
-    <div class="wrap">
-      <div class="tlt-inner reveal">
-        <p class="eyebrow">Immersive experiences</p>
-        <h2>Step into<br>the story.</h2>
-        <p>Two full-screen journeys, each a living swarm of particles that materialises the science as you scroll.</p>
-        <div class="tlt-cta">
-          <a href="/timeline/" class="btn fill">The Timeline &nbsp;&#8594;</a>
-          <a href="/stardust/" class="btn">You Are Stardust &nbsp;&#8594;</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- SCROLLYTELLING -->
   <!-- FEATURED DISCOVERY -->
   <section id="featured">
     <div class="wrap">
@@ -167,10 +152,31 @@
   </section>
 
   <!-- DEPTH LAYERS -->
+  <!-- THE DISCOVERY SERIES (a teaser; the full archive lives on /discoveries/) -->
+  <section id="explore">
+    <div class="wrap">
+      <div class="shead reveal">
+        <div>
+          <p class="eyebrow">The Discovery Series</p>
+          <h2>Where to<br>begin.</h2>
+        </div>
+        <p>A handful of landmark pieces to start with — each written three times over, from a twenty-second glance to a full deep dive. The complete archive lives in Discoveries.</p>
+      </div>
+      <div class="grid reveal" id="grid"></div>
+      <div class="explore-cta reveal">
+        <a href="/discoveries/" class="btn fill">Explore all 15 discoveries &nbsp;&#8594;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW WE WRITE -->
   <section id="depth">
     <div class="wrap">
       <div class="shead reveal">
-        <h2>One article.<br>Three altitudes.</h2>
+        <div>
+          <p class="eyebrow">How we write</p>
+          <h2>One article.<br>Three altitudes.</h2>
+        </div>
         <p>Science writing is usually too shallow or too dense. Every Celestium piece is readable at the depth <em>you</em> choose.</p>
       </div>
       <div class="reader reveal">
@@ -184,22 +190,58 @@
           </div>
         </div>
         <div class="rbody" id="rbody"></div>
-        <a href="/discoveries/weighing-the-universe/" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 44px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);transition:.35s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--mut)'">This is a preview · open the full immersive piece<span>→</span></a>
+        <a class="rmore" href="/discoveries/weighing-the-universe/">This is a preview · open the full immersive piece<span>&#8594;</span></a>
       </div>
     </div>
   </section>
 
-  <!-- FEATURED DISCOVERIES (a teaser; the full archive lives on /discoveries/) -->
-  <section id="explore">
+  <!-- IMMERSIVE JOURNEYS — the three full-screen particle experiences -->
+  <section id="experiences">
     <div class="wrap">
       <div class="shead reveal">
-        <p class="eyebrow">The Discovery Series</p>
-        <h2>Where to<br>begin.</h2>
-        <p>A handful of landmark pieces to start with — each written three times over, from a twenty-second glance to a full deep dive. The complete archive lives in Discoveries.</p>
+        <div>
+          <p class="eyebrow">Immersive journeys</p>
+          <h2>Don't read it.<br>Stand in it.</h2>
+        </div>
+        <p>Three full-screen journeys built from living swarms of particles — the science materialising around you as you move through it.</p>
       </div>
-      <div class="grid reveal" id="grid"></div>
-      <div class="explore-cta reveal">
-        <a href="/discoveries/" class="btn fill">Explore all 15 discoveries &nbsp;&#8594;</a>
+      <div class="exps reveal">
+        <a class="exp exp-main" href="/eternity/">
+          <picture>
+            <source type="image/webp" srcset="/img/exp/eternity-640.webp 640w, /img/exp/eternity-960.webp 960w" sizes="(max-width:880px) 92vw, 60vw">
+            <img src="/img/exp/eternity-960.jpg" alt="" loading="lazy" decoding="async">
+          </picture>
+          <div class="exp-body">
+            <span class="exp-tag">The flagship</span>
+            <h3>The Whole of Time</h3>
+            <p>From the first instant to the last — the Big Bang, first light, the age of stars and the long dark after, played as one self-narrating journey.</p>
+            <span class="exp-go">Begin the journey&nbsp;&nbsp;&#8594;</span>
+          </div>
+        </a>
+        <a class="exp" href="/timeline/">
+          <picture>
+            <source type="image/webp" srcset="/img/exp/timeline-640.webp 640w, /img/exp/timeline-960.webp 960w" sizes="(max-width:880px) 92vw, 30vw">
+            <img src="/img/exp/timeline-960.jpg" alt="" loading="lazy" decoding="async">
+          </picture>
+          <div class="exp-body">
+            <span class="exp-tag">Two clocks, one story</span>
+            <h3>The Cosmic Timeline</h3>
+            <p>13.8 billion years of events — and the moments we finally understood them.</p>
+            <span class="exp-go">Walk the timeline&nbsp;&nbsp;&#8594;</span>
+          </div>
+        </a>
+        <a class="exp" href="/stardust/">
+          <picture>
+            <source type="image/webp" srcset="/img/exp/stardust-640.webp 640w, /img/exp/stardust-960.webp 960w" sizes="(max-width:880px) 92vw, 30vw">
+            <img src="/img/exp/stardust-960.jpg" alt="" loading="lazy" decoding="async">
+          </picture>
+          <div class="exp-body">
+            <span class="exp-tag">Personalised</span>
+            <h3>You Are Stardust</h3>
+            <p>The 13.8-billion-year story of your own atoms, told with your name on it.</p>
+            <span class="exp-go">Trace your atoms&nbsp;&nbsp;&#8594;</span>
+          </div>
+        </a>
       </div>
     </div>
   </section>

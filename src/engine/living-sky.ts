@@ -16,6 +16,14 @@ import { helio, julianCenturies, deg, norm360 } from "./ephemeris";
 
 const APOD_KEY: string = (import.meta.env.VITE_NASA_API_KEY as string) || "DEMO_KEY";
 
+/** fetch with a hard timeout — a stalled connection must NEVER leave a card
+ *  showing its loading skeleton forever; it resolves to the catch-fallback. */
+function fetchT(url: string, ms = 8000): Promise<Response> {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal }).finally(() => clearTimeout(t));
+}
+
 /* -------------------- UTC clock -------------------- */
 
 export function startClock(): void {
@@ -76,7 +84,7 @@ export async function loadAPOD(target: HTMLElement | null): Promise<void> {
   } catch (_e) { /* ignore cache errors */ }
 
   try {
-    const r = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${APOD_KEY}&thumbs=true`);
+    const r = await fetchT(`https://api.nasa.gov/planetary/apod?api_key=${APOD_KEY}&thumbs=true`);
     if (!r.ok) throw new Error(`APOD HTTP ${r.status}`);
     const j = (await r.json()) as ApodResponse;
     renderApod(target, j);
@@ -154,7 +162,7 @@ export function renderTonightsPlanets(target: HTMLElement | null): void {
 export async function loadISS(target: HTMLElement | null): Promise<void> {
   if (!target) return;
   try {
-    const r = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+    const r = await fetchT("https://api.wheretheiss.at/v1/satellites/25544");
     if (!r.ok) throw new Error(`ISS HTTP ${r.status}`);
     const j = await r.json();
     const lat = (j.latitude as number).toFixed(1);
@@ -213,7 +221,7 @@ export async function loadAurora(target: HTMLElement | null): Promise<void> {
   } catch (_e) { /* ignore cache errors */ }
 
   try {
-    const r = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
+    const r = await fetchT("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
     if (!r.ok) throw new Error(`SWPC HTTP ${r.status}`);
     const rows = (await r.json()) as string[][];
     const last = rows[rows.length - 1];

@@ -7,7 +7,7 @@
  * gradient (see tokens.css) renders the highlight. Cheap regardless of how
  * many cards are on the page, and a no-op on touch / reduced-motion.
  */
-const SURFACES = ".glass, .glass-soft, .card, .feat, .et-tile, .cmdk-panel, .navsearch, .soundtoggle";
+const SURFACES = ".glass, .glass-soft, .card, .feat, .exp, .nextseries, .et-tile, .cmdk-panel, .navsearch, .soundtoggle";
 
 /** Inject the shared SVG displacement filter once — it bends (refracts) the
  *  backdrop behind a glass pane like a real thick lens. Referenced from CSS

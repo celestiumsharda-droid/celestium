@@ -156,11 +156,16 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
   let loading = false;
 
   let activeChip = -1;
+  const perspHead = document.querySelector<HTMLElement>(".persp-head");
   function syncChips(z: number) {
     const active = Math.round(z);
     if (active === activeChip) return; // skip DOM writes when nothing changed
     activeChip = active;
     chips.forEach((c, i) => c.classList.toggle("on", i === active));
+    // the big section headline belongs to the OPENING of the journey —
+    // fade it away once the visitor has zoomed past Earth, so it never
+    // collides with the info panel at deeper levels.
+    if (perspHead) perspHead.classList.toggle("away", active > 0);
   }
 
   function onScrollZoom() {
@@ -291,7 +296,10 @@ async function buildExplore() {
   const DISCOVERIES = (await import("../data/discoveries")).default;
   const frag = document.createDocumentFragment();
   // A curated opening set — the full archive lives on /discoveries/.
-  EXPLORE.slice(0, 6).forEach(g => {
+  // Skip pieces the visitor has ALREADY seen on this page (the featured
+  // card and the depth-preview article), so the homepage never repeats itself.
+  const seenAbove = new Set(["gravitational-waves", "weighing-the-universe"]);
+  EXPLORE.filter(g => !seenAbove.has(g.slug)).slice(0, 6).forEach(g => {
     const a = document.createElement("a");
     a.className = "cell";
     a.href = `/discoveries/${g.slug}/`;
