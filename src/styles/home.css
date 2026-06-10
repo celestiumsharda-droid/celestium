@@ -15,8 +15,8 @@
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center; position: relative;
   padding: 120px 24px 80px;
-  /* a soft accent aura blooms behind the wordmark */
-  background: radial-gradient(58% 46% at 50% 42%, rgba(169,188,255,.085), transparent 72%);
+  /* pitch black behind the wordmark — only the faintest breath of light */
+  background: radial-gradient(50% 38% at 50% 42%, rgba(169,188,255,.04), transparent 70%);
 }
 .hero-layer { will-change: transform; }   /* pointer-parallax targets */
 .orbit {
@@ -47,6 +47,13 @@
 }
 @media (max-width: 560px) {
   .hero h1 { font-size: clamp(2.6rem, 13.5vw, 4rem); letter-spacing: 0; }
+  /* phones: the orbit recedes to a whisper and its star goes out — nothing
+     glows behind the lede text. CTAs share one clean equal width. */
+  .orbit { opacity: .22; }
+  .orbit::after { display: none; }
+  .lede { max-width: 30ch; }
+  .herocta { flex-direction: column; align-items: stretch; width: min(100%, 320px); gap: 12px; }
+  .herocta .btn { text-align: center; }
 }
 .hero h1 span {
   display: inline-block;
@@ -58,9 +65,10 @@
 @keyframes rise   { to { opacity: 1; transform: none; } }
 
 .lede {
-  max-width: 620px;
+  max-width: 560px;
   font-size: clamp(1.05rem, 1.7vw, 1.35rem);
   color: var(--mut); font-weight: 300; line-height: 1.7;
+  text-wrap: balance;                /* even, deliberate line breaks */
   opacity: 0; transform: translateY(20px);
   animation: rise 1s 1.05s forwards cubic-bezier(.2,.7,.2,1);
 }
@@ -75,7 +83,7 @@
 /* ---- cinematic intro (once per session) ---- */
 .intro {
   position: fixed; inset: 0; z-index: 300;
-  background: radial-gradient(120% 120% at 50% 40%, #0a0d16, var(--void) 70%);
+  background: radial-gradient(120% 120% at 50% 40%, #05060b, var(--void) 70%);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: opacity .76s ease, transform .76s cubic-bezier(.4,0,.2,1);
@@ -421,12 +429,6 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .exp-main picture::after { background: linear-gradient(180deg, transparent 55%, rgba(5,6,9,.6)); }
 }
 
-/* the hero proof line + depth-preview footer link */
-.heroproof {
-  margin-top: 26px; font-family: var(--mono); font-size: 10.5px;
-  letter-spacing: .24em; text-transform: uppercase; color: var(--dim);
-  opacity: 0; animation: rise 1s 1.45s forwards cubic-bezier(.2,.7,.2,1);
-}
 .rmore {
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 24px 44px; border-top: 1px solid var(--line-soft);

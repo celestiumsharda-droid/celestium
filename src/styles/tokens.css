@@ -3,10 +3,10 @@
    The whole brand sits in this one file. Do not redesign — extend.
    ===================================================================== */
 :root {
-  --void: #020309;          /* deeper, truer black — the space behind everything */
-  --deep: #070910;
-  --panel: #0d1018;
-  --panel2: #131722;
+  --void: #000000;          /* pitch black — true OLED space */
+  --deep: #06070c;
+  --panel: #0c0e15;
+  --panel2: #12151f;
   --ink: #f3f5fb;
   --mut: #9aa2b4;
   --dim: #828b9e;
