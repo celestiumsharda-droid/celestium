@@ -49,6 +49,7 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W = 0;
   let H = 0;
+  let neb: HTMLCanvasElement | null = null;   // pre-rendered nebula wisps
   let stars: Star[] = [];
   let meteors: Meteor[] = [];
   let nextMeteor = -1;          // absolute seconds; set on first frame
@@ -80,29 +81,61 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
     canvas.style.height = `${H}px`;
     ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const base = parallax ? 2100 : 2400;          // denser — a real deep field
-    const n = Math.min(720, Math.floor(((W * H) / base) * density));
+    const fieldH = H * (parallax ? 2 : 1);
+    const base = parallax ? 1250 : 1450;          // a genuinely rich deep field
+    const n = Math.min(1200, Math.floor(((W * H) / base) * density));
+    // the sky isn't uniform — stars gather: seed loose clusters that ~35% of
+    // stars fall around, so the field has texture instead of flat noise
+    const clusters = Array.from({ length: 3 + Math.round(W / 700) }, () => ({
+      cx: Math.random() * W, cy: Math.random() * fieldH, cr: 110 + Math.random() * 300,
+    }));
     stars = [];
     for (let i = 0; i < n; i++) {
       const z = Math.random();
+      let x: number, y: number;
+      if (Math.random() < 0.35 && clusters.length) {
+        const k = clusters[(Math.random() * clusters.length) | 0]!;
+        x = k.cx + (Math.random() + Math.random() - 1) * k.cr;
+        y = k.cy + (Math.random() + Math.random() - 1) * k.cr;
+        x = ((x % W) + W) % W; y = ((y % fieldH) + fieldH) % fieldH;
+      } else {
+        x = Math.random() * W; y = Math.random() * fieldH;
+      }
       stars.push({
-        x: Math.random() * W,
-        y: Math.random() * H * (parallax ? 2 : 1),
-        z,
-        r: Math.pow(Math.random(), 2.2) * 1.5 + 0.25,   // mostly fine grains, few brights
+        x, y, z,
+        r: Math.pow(Math.random(), 2) * 1.7 + 0.3,
         t: Math.random() * 6.28,
         c: starColor(),
-        big: Math.random() < 0.012,
+        big: Math.random() < 0.028,
       });
+    }
+    // faint nebula wisps, pre-rendered once — the breath between the stars
+    neb = document.createElement("canvas");
+    neb.width = W; neb.height = H;
+    const nc = neb.getContext("2d");
+    if (nc) {
+      const wisps = 4 + Math.round(W / 640);
+      for (let i = 0; i < wisps; i++) {
+        const wx = Math.random() * W, wy = Math.random() * H;
+        const wr = 160 + Math.random() * 420;
+        const warm = Math.random() < 0.4;
+        const g = nc.createRadialGradient(wx, wy, 0, wx, wy, wr);
+        g.addColorStop(0, warm ? "rgba(255,170,120,0.05)" : "rgba(120,145,255,0.055)");
+        g.addColorStop(0.6, warm ? "rgba(255,170,120,0.018)" : "rgba(120,145,255,0.02)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        nc.fillStyle = g;
+        nc.beginPath(); nc.arc(wx, wy, wr, 0, 6.29); nc.fill();
+      }
     }
   }
 
   function paintStatic() {
     ctx!.clearRect(0, 0, W, H);
+    if (neb) ctx!.drawImage(neb, 0, 0);
     for (const s of stars) {
       ctx!.beginPath();
       ctx!.arc(s.x, s.y, s.r * (0.6 + s.z), 0, 6.29);
-      ctx!.fillStyle = `rgba(${s.c},${(0.2 + s.z * 0.7) * 0.85})`;
+      ctx!.fillStyle = `rgba(${s.c},${(0.3 + s.z * 0.65) * 0.85})`;
       ctx!.fill();
     }
   }
@@ -110,13 +143,14 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
   function frame() {
     if (!alive) return;
     ctx!.clearRect(0, 0, W, H);
+    if (neb) ctx!.drawImage(neb, 0, 0);
     const t = Date.now() / 1000;
     for (const s of stars) {
       // deeper layered parallax: far stars barely move, near stars drift fast
       let y = s.y - sc * (0.08 + s.z * s.z * 0.55);
       if (parallax) y = ((y % (H * 2)) + H * 2) % (H * 2);
-      const tw = 0.6 + 0.4 * Math.sin(t * 1.4 + s.t);
-      const a = (0.2 + s.z * 0.7) * tw;
+      const tw = 0.7 + 0.3 * Math.sin(t * 1.4 + s.t);
+      const a = (0.3 + s.z * 0.65) * tw;
       const r = s.r * (0.6 + s.z);
       ctx!.beginPath();
       ctx!.arc(s.x, y, r, 0, 6.29);

@@ -27,18 +27,19 @@
      glass bevel (bright top edge, soft inner shade), and a specular highlight
      that follows the pointer (set via --gx/--gy by liquid-glass.ts) so the
      surface reads as a real curved sheet of glass catching light. */
-  --glass-tint: rgba(13, 16, 26, 0.26);                 /* mostly CLEAR — the slab refracts the sky through it */
+  --glass-tint: rgba(16, 20, 32, 0.3);                  /* mostly CLEAR — the slab refracts the sky through it */
   --glass-tint-strong: rgba(7, 9, 15, 0.6);
-  --glass-blur: saturate(160%) brightness(1.05) blur(10px);  /* milled clarity — soft, never frosted */
-  --glass-edge: rgba(255, 255, 255, 0.16);              /* a calm luminous hairline */
-  --glass-spec: rgba(255, 255, 255, 0.32);              /* the top edge catching light */
-  --glass-hi: rgba(255, 255, 255, 0.05);                /* the catch-light that follows the pointer */
+  --glass-blur: saturate(175%) brightness(1.12) blur(9px);   /* the slab gathers light — it glows faintly */
+  --glass-edge: rgba(255, 255, 255, 0.2);
+  --glass-spec: rgba(255, 255, 255, 0.4);               /* the top edge catching light */
+  --glass-hi: rgba(255, 255, 255, 0.07);                /* the catch-light that follows the pointer */
+  --glass-sheen-face: linear-gradient(118deg, rgba(255,255,255,.085), rgba(255,255,255,.015) 28%, transparent 55%, rgba(255,255,255,.045) 92%);   /* the milky light across the face */
   --glass-bevel:
     inset 0 1px 0 var(--glass-spec),                    /* lit top edge */
-    inset 0 0 0 1px rgba(255,255,255,.05),              /* uniform hairline rim */
-    inset 0 -12px 24px -20px rgba(0,0,0,.35);          /* the faintest inner depth */
+    inset 0 0 0 1px rgba(255,255,255,.06),              /* uniform hairline rim */
+    inset 0 -14px 26px -20px rgba(0,0,0,.38);          /* inner depth toward the base */
   --glass-textscrim: 0 1px 2px rgba(0,0,0,.55), 0 2px 16px rgba(0,0,0,.42);
-  --glass-shadow: 0 30px 70px rgba(0, 0, 0, 0.55);      /* it floats above the page */
+  --glass-shadow: 0 30px 70px rgba(0, 0, 0, 0.55), 0 0 44px rgba(169, 188, 255, 0.07);   /* floats — and spills a little light */
   --radius: 22px;
   --radius-sm: 14px;
 
@@ -54,6 +55,7 @@
   position: relative;
   background:
     radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -65,6 +67,7 @@
   position: relative;
   background:
     radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--glass-bevel);
@@ -80,16 +83,21 @@
 .glass::after, .glass-soft::after, .card::after, .feat::after, .exp::after,
 .nextseries::after, .et-tile::after, .cm-chip::after, .cmdk-panel::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  padding: 1px; pointer-events: none;
+  padding: 1.5px; pointer-events: none;
+  /* a jewel's rim: blazing white where light strikes, with a breath of
+     dispersion (cool violet / warm gold) trailing each glint */
   background: conic-gradient(from 240deg,
-    transparent 0deg, rgba(255,255,255,.85) 32deg, rgba(255,255,255,.18) 70deg,
-    transparent 120deg, transparent 185deg,
-    rgba(255,255,255,.5) 222deg, transparent 268deg, transparent 360deg);
+    transparent 0deg,
+    rgba(190,205,255,.55) 18deg, rgba(255,255,255,1) 34deg, rgba(255,236,200,.5) 52deg,
+    rgba(255,255,255,.14) 80deg, transparent 125deg,
+    transparent 178deg,
+    rgba(255,236,200,.35) 208deg, rgba(255,255,255,.8) 226deg, rgba(190,205,255,.4) 246deg,
+    transparent 285deg, transparent 360deg);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  opacity: .8;
+  opacity: .9;
 }
 .cm-chip, .et-tile, .nextseries { position: relative; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -102,10 +110,9 @@
    #lg-refract filter is injected by liquid-glass.ts). Everywhere else the plain
    vibrant blur above is used unchanged. */
 @supports (backdrop-filter: url(#lg-refract)) {
-  /* limited to a few large showcase panes so the per-frame displacement over
-     the animating starfield never costs the page its smoothness */
-  .feat, nav.solid, .cmdk-panel {
-    backdrop-filter: url(#lg-refract) saturate(155%) brightness(1.05) blur(2px);
+  /* the sky BENDS through every slab — real lensing, the jewel's substance */
+  .glass, .card, .feat, .exp, .nextseries, nav.solid, .cmdk-panel {
+    backdrop-filter: url(#lg-refract) saturate(170%) brightness(1.12) blur(2px);
   }
 }
 

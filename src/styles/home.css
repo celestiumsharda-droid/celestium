@@ -181,6 +181,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   position: relative;
   background:
     radial-gradient(360px 280px at var(--gx, 78%) var(--gy, 8%), var(--glass-hi), transparent 72%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   border: 1px solid var(--glass-edge);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
@@ -416,6 +417,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   overflow: hidden; border-radius: var(--radius); color: inherit;
   background:
     radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-edge);
@@ -752,6 +754,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   position: relative; overflow: hidden;
   background:
     radial-gradient(230px 200px at var(--gx, 22%) var(--gy, -8%), var(--glass-hi), transparent 72%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);

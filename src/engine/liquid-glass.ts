@@ -22,7 +22,7 @@ function injectRefraction(): void {
     '<filter id="lg-refract" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">' +
       '<feTurbulence type="fractalNoise" baseFrequency="0.004 0.0065" numOctaves="2" seed="11" result="n"/>' +
       '<feGaussianBlur in="n" stdDeviation="9" result="nb"/>' +
-      '<feDisplacementMap in="SourceGraphic" in2="nb" scale="32" xChannelSelector="R" yChannelSelector="G"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="nb" scale="44" xChannelSelector="R" yChannelSelector="G"/>' +
     "</filter>";
   document.body.appendChild(svg);
 }

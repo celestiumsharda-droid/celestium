@@ -446,6 +446,7 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
   border: 1px solid var(--glass-edge); border-radius: var(--radius);
   background:
     radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
     var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: 0 16px 40px rgba(0,0,0,.35), var(--glass-bevel);
