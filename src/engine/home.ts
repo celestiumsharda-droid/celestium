@@ -7,7 +7,6 @@ import { playIntro } from "./intro";
 import { attachSpotlight } from "./spotlight";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
-import DEPTH_PREVIEW from "../data/depth-preview";
 import EXPLORE from "../data/explore";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -218,29 +217,6 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
   addEventListener("scroll", onScrollZoom, { passive: true });
   addEventListener("resize", onScrollZoom);
 })();
-
-/* ---------- depth preview ---------- */
-const rbody = $("rbody");
-const tog = $("toggle");
-function renderDepth(l: number) {
-  rbody.innerHTML =
-    DEPTH_PREVIEW[l]!.join("") +
-    `<div class="rmeta">READING DEPTH ${l + 1} / 3 · SAME FACTS · YOUR ALTITUDE</div>`;
-}
-tog.querySelectorAll<HTMLButtonElement>("button").forEach(b => {
-  b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false");
-  b.addEventListener("click", () => {
-    tog.querySelectorAll<HTMLButtonElement>("button").forEach(o => {
-      o.classList.remove("on");
-      o.setAttribute("aria-pressed", "false");
-    });
-    b.classList.add("on");
-    b.setAttribute("aria-pressed", "true");
-    playClick();
-    renderDepth(Number(b.dataset["l"]));
-  });
-});
-renderDepth(0);
 
 /* ---------- living sky ----------
    The clock and the live "deep universe pouring through you" counters are

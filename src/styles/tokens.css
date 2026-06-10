@@ -82,7 +82,7 @@
    masked ring so only the 1px edge is lit, never the face. */
 .glass::after, .glass-soft::after, .card::after, .feat::after, .exp::after,
 .nextseries::after, .et-tile::after, .cm-chip::after, .cmdk-panel::after,
-.btn:not(.fill)::after, .reader::after, .toggle::after, .seg::after,
+.btn::after, .seg::after,
 .et-begin::after, .et-continue::after, .sd-personalize::after, .cat-card::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   padding: 2px; pointer-events: none; z-index: 4;
@@ -103,8 +103,7 @@
   opacity: .95;
   transition: opacity .3s;
 }
-.cm-chip, .et-tile, .nextseries, .btn, .reader, .toggle, .seg,
-.sd-personalize { position: relative; }
+.cm-chip, .et-tile, .nextseries, .btn, .seg, .sd-personalize { position: relative; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   /* No backdrop-filter support: fall back to a more opaque tint so text
      stays legible over the starfield. */
@@ -180,20 +179,22 @@ main { position: relative; z-index: 2; }
    Transparent over a hero by default; add .solid (on scroll, or always
    on inner pages) to bring up the glass.
    ===================================================================== */
+/* the bar is ALWAYS liquid glass — one material everywhere; .solid (added
+   on scroll) only tightens it */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 32px;
-  transition: padding .5s, background .5s, backdrop-filter .5s, border-color .5s;
-}
-nav.solid {
-  background: var(--glass-tint);
+  background:
+    var(--glass-sheen-face),
+    var(--glass-tint);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-bevel);
-  padding: 14px 32px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+  transition: padding .5s var(--ease);
 }
+nav.solid { padding: 14px 32px; box-shadow: var(--glass-bevel); }
 .brand {
   display: flex; align-items: center; gap: 13px;
   font-family: var(--display); font-size: 19px;
@@ -246,8 +247,16 @@ nav.solid {
   box-shadow: var(--glass-bevel), 0 10px 30px rgba(0,0,0,.35);
 }
 .btn:hover { border-color: rgba(255,255,255,.32); letter-spacing: .3em; box-shadow: var(--glass-shadow), var(--glass-bevel); }
-.btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 10px 34px rgba(243,245,251,.14); }
-.btn.fill:hover { background: var(--accent); border-color: var(--accent); }
+/* the primary CTA is the LUMINOUS jewel — same glass, lit from within */
+.btn.fill {
+  color: var(--ink); border-color: rgba(255,255,255,.3);
+  background:
+    radial-gradient(200px 160px at var(--gx, 26%) var(--gy, -12%), rgba(255,255,255,.14), transparent 74%),
+    linear-gradient(118deg, rgba(255,255,255,.16), rgba(255,255,255,.05) 38%, rgba(169,188,255,.1) 72%, rgba(255,255,255,.1)),
+    rgba(190, 204, 248, 0.13);
+  box-shadow: var(--glass-bevel), 0 10px 36px rgba(169,188,255,.2);
+}
+.btn.fill:hover { border-color: rgba(255,255,255,.45); box-shadow: var(--glass-bevel), 0 14px 48px rgba(169,188,255,.32); }
 
 /* mobile menu (used by both pages) */
 #menu {

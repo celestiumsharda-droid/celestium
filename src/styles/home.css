@@ -47,9 +47,9 @@
 }
 @media (max-width: 560px) {
   .hero h1 { font-size: clamp(2.6rem, 13.5vw, 4rem); letter-spacing: 0; }
-  /* phones: the orbit recedes to a whisper and its star goes out — nothing
-     glows behind the lede text. CTAs share one clean equal width. */
-  .orbit { opacity: .22; }
+  /* phones: the orbit stays present (its star goes out so nothing glows
+     behind the lede text). CTAs share one clean equal width. */
+  .orbit { opacity: .46; }
   .orbit::after { display: none; }
   .lede { max-width: 30ch; }
   .herocta { flex-direction: column; align-items: stretch; width: min(100%, 320px); gap: 12px; }
@@ -447,15 +447,6 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .exp-main picture::after { background: linear-gradient(180deg, transparent 55%, rgba(5,6,9,.6)); }
 }
 
-.rmore {
-  display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  padding: 24px 44px; border-top: 1px solid var(--line-soft);
-  font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--mut); transition: color .35s;
-}
-.rmore:hover { color: var(--ink); }
-@media (max-width: 560px) { .rmore { padding: 20px 22px; } }
-
 /* ---- STARDUST page ("You Are Stardust") ---- */
 .sd-track { display: none; position: relative; height: 800vh; }
 #stardust.live .sd-track { display: block; }
@@ -686,63 +677,6 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   padding-top: 14px;
 }
 .discov b { color: var(--star); font-weight: 500; }
-
-/* ---- depth preview ---- */
-#depth { border-top: 1px solid var(--line-soft); background: linear-gradient(180deg, transparent, rgba(10,12,18,.55)); }
-.reader {
-  max-width: 760px; margin: 0 auto;
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--radius);
-  background:
-    radial-gradient(280px 220px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
-    var(--glass-sheen-face),
-    var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-bevel), 0 16px 44px rgba(0,0,0,.4);
-  text-shadow: var(--glass-textscrim);
-  overflow: hidden;
-}
-.rtop { padding: 32px 44px 0; }
-.rtop .cat { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--accent); text-transform: uppercase; }
-.rtop h3 { font-size: clamp(1.7rem, 3.4vw, 2.6rem); margin: 14px 0 22px; }
-.toggle {
-  display: flex; gap: 6px;
-  border: 1px solid var(--glass-edge);
-  border-radius: 14px; padding: 5px;
-  width: fit-content; margin-bottom: 6px;
-  background: rgba(255,255,255,.03);
-  box-shadow: var(--glass-bevel);
-}
-.toggle button {
-  font-family: var(--mono); font-size: 11px;
-  letter-spacing: .2em; text-transform: uppercase;
-  color: var(--mut);
-  background: none; border: none;
-  padding: 11px 20px; border-radius: 10px;
-  cursor: pointer; transition: .35s; white-space: nowrap;
-}
-.toggle button.on { background: var(--ink); color: var(--void); }
-@media (max-width: 560px) {
-  .toggle { width: 100%; }
-  .toggle button { flex: 1; min-height: 44px; padding: 10px 4px; font-size: 9px; letter-spacing: .04em; }
-}
-.toggle button:not(.on):hover { color: var(--ink); }
-.rbody { padding: 30px 44px 46px; min-height: 230px; }
-.rbody p {
-  font-size: 1.12rem; line-height: 1.8;
-  color: #cdd3e0; font-weight: 300;
-  opacity: 0; animation: fade .7s forwards;
-}
-.rbody p + p { margin-top: 18px; }
-@keyframes fade { to { opacity: 1; } }
-.rmeta {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--dim); letter-spacing: .16em;
-  margin-top: 26px;
-  border-top: 1px solid var(--line-soft);
-  padding-top: 18px;
-}
 
 /* ---- living sky ---- */
 #sky-sec { border-top: 1px solid var(--line-soft); position: relative; isolation: isolate; }
