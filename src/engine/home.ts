@@ -157,6 +157,16 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
 
   let activeChip = -1;
   const perspHead = document.querySelector<HTMLElement>(".persp-head");
+  const info = document.getElementById("persp-info");
+  // the depth rail: one tick per scale, a marker that travels as you zoom
+  const rail = document.getElementById("cm-rail");
+  const railMarker = document.getElementById("cm-rail-marker");
+  if (rail) STAGES.forEach((_s, i) => {
+    const t = document.createElement("span");
+    t.className = "cm-rail-tick";
+    t.style.top = `${(i / lastIdx) * 100}%`;
+    rail.appendChild(t);
+  });
   function syncChips(z: number) {
     const active = Math.round(z);
     if (active === activeChip) return; // skip DOM writes when nothing changed
@@ -166,12 +176,15 @@ if (!matchMedia("(hover: none), (pointer: coarse), (prefers-reduced-motion: redu
     // fade it away once the visitor has zoomed past Earth, so it never
     // collides with the info panel at deeper levels.
     if (perspHead) perspHead.classList.toggle("away", active > 0);
+    // re-run the entrance animation as the readout text changes level
+    if (info) { info.classList.remove("swap"); void info.offsetWidth; info.classList.add("swap"); }
   }
 
   function onScrollZoom() {
     const z = progress() * lastIdx;
     if (map) map.setZoom(z);
     syncChips(z);
+    if (railMarker) railMarker.style.top = `${(z / lastIdx) * 100}%`;
   }
 
   // Lazy-load Three.js + the map module. The perspective section sits one
