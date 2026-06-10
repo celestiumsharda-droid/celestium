@@ -7,7 +7,7 @@
  * gradient (see tokens.css) renders the highlight. Cheap regardless of how
  * many cards are on the page, and a no-op on touch / reduced-motion.
  */
-const SURFACES = ".glass, .glass-soft, .card, .feat, .exp, .nextseries, .et-tile, .cmdk-panel, .navsearch, .soundtoggle";
+const SURFACES = ".glass, .glass-soft, .card, .feat, .exp, .nextseries, .et-tile, .cmdk-panel, .navsearch, .soundtoggle, .btn, .reader, .toggle, .seg, .cat-card, .et-begin, .et-continue, .sd-personalize";
 
 /** Inject the shared SVG displacement filter once — it bends (refracts) the
  *  backdrop behind a glass pane like a real thick lens. Referenced from CSS
@@ -35,27 +35,31 @@ export function initLiquidGlass(): void {
   // the catch-light across every pane (custom properties inherit, so setting
   // the root moves all glass at once; pointer values still win per-element).
   if (matchMedia("(hover: none)").matches) {
-    let raf = 0, gx = 24, gy = -10;
+    let raf = 0, gx = 24, gy = -10, ga = 240;
     addEventListener("deviceorientation", e => {
       if (e.gamma == null || e.beta == null) return;
       gx = 50 + Math.max(-30, Math.min(30, e.gamma)) * 1.8;          // left-right tilt
       gy = 10 + Math.max(-30, Math.min(30, e.beta - 40)) * 1.6;      // toward-away tilt
+      ga = 240 + Math.max(-30, Math.min(30, e.gamma)) * 2.4;         // the rim glints swing with the tilt
       if (!raf) raf = requestAnimationFrame(() => {
         raf = 0;
-        document.documentElement.style.setProperty("--gx", `${gx.toFixed(1)}%`);
-        document.documentElement.style.setProperty("--gy", `${gy.toFixed(1)}%`);
+        const s = document.documentElement.style;
+        s.setProperty("--gx", `${gx.toFixed(1)}%`);
+        s.setProperty("--gy", `${gy.toFixed(1)}%`);
+        s.setProperty("--ga", `${ga.toFixed(1)}deg`);
       });
     }, { passive: true });
     return;                                                          // no pointer sheen on touch
   }
 
   let raf = 0;
-  let pending: { el: HTMLElement; x: number; y: number } | null = null;
+  let pending: { el: HTMLElement; x: number; y: number; a: number } | null = null;
   const flush = () => {
     raf = 0;
     if (!pending) return;
     pending.el.style.setProperty("--gx", `${pending.x}%`);
     pending.el.style.setProperty("--gy", `${pending.y}%`);
+    pending.el.style.setProperty("--ga", `${pending.a}deg`);
   };
 
   document.addEventListener("pointermove", e => {
@@ -65,7 +69,11 @@ export function initLiquidGlass(): void {
     if (r.width < 2 || r.height < 2) return;
     const x = ((e.clientX - r.left) / r.width) * 100;
     const y = ((e.clientY - r.top) / r.height) * 100;
-    pending = { el, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+    // the rim's bright glint swings around the edge to FACE the pointer —
+    // conic 0deg points up, so convert pointer bearing and centre the glint
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const a = (Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI + 90 - 34;
+    pending = { el, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, a: Math.round(a * 10) / 10 };
     if (!raf) raf = requestAnimationFrame(flush);
   }, { passive: true });
 
@@ -75,6 +83,7 @@ export function initLiquidGlass(): void {
     if (el && !el.contains(e.relatedTarget as Node | null)) {
       el.style.removeProperty("--gx");
       el.style.removeProperty("--gy");
+      el.style.removeProperty("--ga");
     }
   }, { passive: true });
 }

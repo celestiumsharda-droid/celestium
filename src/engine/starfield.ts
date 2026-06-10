@@ -109,19 +109,24 @@ export function mount(canvas: HTMLCanvasElement, options: StarfieldOptions = {})
         big: Math.random() < 0.028,
       });
     }
-    // faint nebula wisps, pre-rendered once — the breath between the stars
+    // faint nebula wisps, pre-rendered once — the breath between the stars.
+    // sized to the viewport and dimmed on phones, so a wisp is always a local
+    // patch of colour: the screen itself stays pitch black, OLED-true.
     neb = document.createElement("canvas");
     neb.width = W; neb.height = H;
     const nc = neb.getContext("2d");
     if (nc) {
-      const wisps = 4 + Math.round(W / 640);
+      const m = Math.min(W, H);
+      const phone = W < 640;
+      const dim = phone ? 0.45 : 1;
+      const wisps = phone ? 3 : 4 + Math.round(W / 640);
       for (let i = 0; i < wisps; i++) {
         const wx = Math.random() * W, wy = Math.random() * H;
-        const wr = 160 + Math.random() * 420;
+        const wr = m * (0.14 + Math.random() * 0.2);
         const warm = Math.random() < 0.4;
         const g = nc.createRadialGradient(wx, wy, 0, wx, wy, wr);
-        g.addColorStop(0, warm ? "rgba(255,170,120,0.05)" : "rgba(120,145,255,0.055)");
-        g.addColorStop(0.6, warm ? "rgba(255,170,120,0.018)" : "rgba(120,145,255,0.02)");
+        g.addColorStop(0, warm ? `rgba(255,170,120,${0.05 * dim})` : `rgba(120,145,255,${0.055 * dim})`);
+        g.addColorStop(0.6, warm ? `rgba(255,170,120,${0.018 * dim})` : `rgba(120,145,255,${0.02 * dim})`);
         g.addColorStop(1, "rgba(0,0,0,0)");
         nc.fillStyle = g;
         nc.beginPath(); nc.arc(wx, wy, wr, 0, 6.29); nc.fill();

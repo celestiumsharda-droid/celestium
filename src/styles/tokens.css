@@ -81,25 +81,30 @@
    where it would strike real glass: upper-left and lower-right. Drawn as a
    masked ring so only the 1px edge is lit, never the face. */
 .glass::after, .glass-soft::after, .card::after, .feat::after, .exp::after,
-.nextseries::after, .et-tile::after, .cm-chip::after, .cmdk-panel::after {
+.nextseries::after, .et-tile::after, .cm-chip::after, .cmdk-panel::after,
+.btn:not(.fill)::after, .reader::after, .toggle::after, .seg::after,
+.et-begin::after, .et-continue::after, .sd-personalize::after, .cat-card::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  padding: 1.5px; pointer-events: none;
-  /* a jewel's rim: blazing white where light strikes, with a breath of
-     dispersion (cool violet / warm gold) trailing each glint */
-  background: conic-gradient(from 240deg,
+  padding: 2px; pointer-events: none; z-index: 4;
+  /* a jewel's rim: blazing white where light strikes, with dispersion
+     (cool violet / warm gold) trailing each glint. The whole ring TURNS
+     toward the pointer / device tilt via --ga (set by liquid-glass.ts). */
+  background: conic-gradient(from var(--ga, 240deg),
     transparent 0deg,
-    rgba(190,205,255,.55) 18deg, rgba(255,255,255,1) 34deg, rgba(255,236,200,.5) 52deg,
-    rgba(255,255,255,.14) 80deg, transparent 125deg,
-    transparent 178deg,
-    rgba(255,236,200,.35) 208deg, rgba(255,255,255,.8) 226deg, rgba(190,205,255,.4) 246deg,
-    transparent 285deg, transparent 360deg);
+    rgba(185,200,255,.7) 16deg, rgba(255,255,255,1) 34deg, rgba(255,232,190,.65) 54deg,
+    rgba(255,255,255,.18) 84deg, transparent 128deg,
+    transparent 175deg,
+    rgba(255,232,190,.45) 206deg, rgba(255,255,255,.92) 226deg, rgba(185,200,255,.5) 248deg,
+    transparent 288deg, transparent 360deg);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  opacity: .9;
+  opacity: .95;
+  transition: opacity .3s;
 }
-.cm-chip, .et-tile, .nextseries { position: relative; }
+.cm-chip, .et-tile, .nextseries, .btn, .reader, .toggle, .seg,
+.sd-personalize { position: relative; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   /* No backdrop-filter support: fall back to a more opaque tint so text
      stays legible over the starfield. */
@@ -223,17 +228,25 @@ nav.solid {
   .mark { width: 26px; height: 26px; }
 }
 
-/* shared button primitive (hero CTAs, explore CTA, join page) */
+/* shared button primitive (hero CTAs, explore CTA, join page) —
+   the ghost variant is a true glass slab; .fill stays solid ink */
 .btn {
   display: inline-block;
   font-family: var(--mono); font-size: 12px; letter-spacing: .24em; text-transform: uppercase;
-  padding: 16px 30px;
-  border: 1px solid var(--line); border-radius: 2px;
-  transition: .4s; cursor: pointer;
-  background: none; color: var(--ink);
+  padding: 17px 32px;
+  border: 1px solid var(--glass-edge); border-radius: 16px;
+  transition: border-color .4s, background .4s, letter-spacing .4s, box-shadow .4s;
+  cursor: pointer; color: var(--ink);
+  background:
+    radial-gradient(200px 160px at var(--gx, 26%) var(--gy, -12%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-bevel), 0 10px 30px rgba(0,0,0,.35);
 }
-.btn:hover { border-color: var(--accent); background: var(--accent-dim); letter-spacing: .3em; }
-.btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); }
+.btn:hover { border-color: rgba(255,255,255,.32); letter-spacing: .3em; box-shadow: var(--glass-shadow), var(--glass-bevel); }
+.btn.fill { background: var(--ink); color: var(--void); border-color: var(--ink); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 10px 34px rgba(243,245,251,.14); }
 .btn.fill:hover { background: var(--accent); border-color: var(--accent); }
 
 /* mobile menu (used by both pages) */
