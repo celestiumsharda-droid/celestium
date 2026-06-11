@@ -12,7 +12,7 @@
    to travel, drag to orbit, tap a name to fly there.
    ===================================================================== */
 import * as THREE from "three";
-import { planetPosition, PLANETS, type PlanetName } from "./ephemeris";
+import { planetPosition, PLANETS, kepler, rad, norm360, julianCenturies, type PlanetName } from "./ephemeris";
 import { playClick } from "./sound";
 
 const AU = 1.495978707e8;            // km
@@ -24,6 +24,30 @@ interface Opts {
   name: HTMLElement;                 // HUD: focused body
   dist: HTMLElement;                 // HUD: camera distance readout
   line: HTMLElement;                 // HUD: one-line description
+  more: HTMLElement;                 // "Read more" jewel button
+  sheet: HTMLElement;                // the jewel info sheet (refracts the world behind it)
+  time: HTMLElement;                 // time-control chip row
+  date: HTMLElement;                 // simulated date readout
+}
+
+/* Pluto — Standish mean elements (valid 1800–2050), kept local to the Atlas */
+const PLUTO = {
+  a: [39.48211675, -0.00031596], e: [0.24882730, 0.00005170], I: [17.14001206, 0.00004818],
+  L: [238.92903833, 145.20780515], LP: [224.06891629, -0.04062942], N: [110.30393684, -0.01183482],
+} as const;
+function plutoPosition(date: Date): { x: number; y: number; z: number } {
+  const T = julianCenturies(date);
+  const a = PLUTO.a[0] + PLUTO.a[1] * T, e = PLUTO.e[0] + PLUTO.e[1] * T;
+  const I = rad(PLUTO.I[0] + PLUTO.I[1] * T);
+  const L = PLUTO.L[0] + PLUTO.L[1] * T;
+  const N = rad(PLUTO.N[0] + PLUTO.N[1] * T);
+  const w = rad(PLUTO.LP[0] + PLUTO.LP[1] * T) - N;
+  const M = rad(norm360(L - PLUTO.LP[0] - PLUTO.LP[1] * T));
+  const E = kepler(M, e);
+  const xv = a * (Math.cos(E) - e), yv = a * Math.sqrt(1 - e * e) * Math.sin(E);
+  const v = Math.atan2(yv, xv), r = Math.hypot(xv, yv), u = v + w;
+  const cN = Math.cos(N), sN = Math.sin(N), cI = Math.cos(I), sI = Math.sin(I), cU = Math.cos(u), sU = Math.sin(u);
+  return { x: r * (cN * cU - sN * sU * cI), y: r * (sN * cU + cN * sU * cI), z: r * (sU * sI) };
 }
 
 interface Body {
@@ -37,6 +61,8 @@ interface Body {
   minD: number;                      // closest approach (km from centre)
   dot?: THREE.Sprite;                // the point of light it becomes at distance
   clouds?: THREE.Mesh;               // Earth's cloud shell
+  labelMax?: number;                 // hide label/dot beyond this camera distance (moons)
+  update?: (date: Date, simDays: number) => void;   // live orbital motion
 }
 
 /* ecliptic (x toward equinox, z north) → three.js (y up) */
@@ -53,11 +79,81 @@ const LINES: Record<string, string> = {
   Saturn: "Rings of ice a quarter-million kilometres wide — and almost nowhere thicker than a house.",
   Uranus: "An ice giant rolled onto its side, orbiting once in 84 years.",
   Neptune: "The outermost planet: supersonic winds in the dark, 30 times farther from the Sun than Earth.",
+  Pluto: "The heart-bearing dwarf at the edge — a world, whatever we call it.",
+  Io: "Jupiter's tortured moon — the most volcanic body we know.",
+  Europa: "An ocean world in an ice shell; the best place to look for neighbours.",
+  Ganymede: "The largest moon in the Solar System — bigger than Mercury.",
+  Callisto: "An ancient, crater-saturated archive of the early Solar System.",
+  Titan: "Saturn's giant moon, with rain, rivers and seas — of methane.",
 };
 
 const RADII: Record<string, number> = {
   Sun: 696340, Mercury: 2439.7, Venus: 6051.8, Earth: 6371, Moon: 1737.4,
   Mars: 3389.5, Jupiter: 69911, Saturn: 58232, Uranus: 25362, Neptune: 24622,
+  Io: 1821.6, Europa: 1560.8, Ganymede: 2634.1, Callisto: 2410.3, Titan: 2574.7, Pluto: 1188.3,
+};
+
+/* the full reading for each world — facts + a real piece of writing */
+const INFO: Record<string, { facts: [string, string][]; text: string[] }> = {
+  Sun: { facts: [["Age", "4.6 billion years"], ["Diameter", "109 Earths"], ["Surface", "5,505 °C"], ["Mass", "99.86% of the system"], ["Rotation", "~25 days"]], text: [
+    "Every second, deep in its core, the Sun fuses six hundred million tonnes of hydrogen into helium — and the missing four million tonnes become the light that warms your face. A photon born in that furnace takes perhaps a hundred thousand years to stagger out of the dense interior, then just over eight minutes to fall the rest of the way to Earth.",
+    "It is an utterly ordinary star, one of several hundred billion in this galaxy alone. That ordinariness is the point: what happened around this one can have happened around others.",
+  ] },
+  Mercury: { facts: [["Year", "88 days"], ["Day (rotation)", "59 Earth days"], ["Temperature", "−173 to 427 °C"], ["Gravity", "0.38 g"], ["Moons", "0"]], text: [
+    "The innermost world is a body of contradictions: daytime hot enough to melt zinc, yet with permanently shadowed polar craters that hoard water ice older than complex life. With almost no atmosphere to carry heat around, Mercury's day and night differ by six hundred degrees.",
+    "Its enormous iron core — most of the planet by radius — suggests Mercury was once larger, stripped to the metal by a colossal early impact.",
+  ] },
+  Venus: { facts: [["Year", "225 days"], ["Day (rotation)", "243 days, backwards"], ["Surface", "464 °C everywhere"], ["Pressure", "92 atmospheres"], ["Gravity", "0.9 g"]], text: [
+    "Venus is what a greenhouse effect looks like when it wins. Beneath its unbroken cloud deck of sulphuric acid lies a surface hot enough to glow faintly red in the dark — hotter than Mercury, despite being nearly twice as far from the Sun. The pressure is that of a kilometre under Earth's ocean.",
+    "It rotates backwards, so slowly that its day outlasts its year. The Soviet Venera landers that reached its surface survived, at best, two hours.",
+  ] },
+  Earth: { facts: [["Day", "23.9 hours"], ["Year", "365.25 days"], ["Surface", "71% ocean"], ["Atmosphere", "78% N₂ · 21% O₂"], ["Moons", "1"]], text: [
+    "Two facts make this dot unlike every other place the Atlas can show you. Liquid water has flowed here, unbroken, for around four billion years. And for at least 3.7 billion of those, chemistry on this rock has been copying itself — lately, well enough to build instruments and wonder what it is looking at.",
+    "The oxygen in this sky is not a given; it is the exhaust of two billion years of photosynthesis. Seen from orbit at night, the dark side glitters — the only world we know that lights itself.",
+  ] },
+  Moon: { facts: [["Distance", "384,400 km"], ["Day = orbit", "27.3 days"], ["Gravity", "0.165 g"], ["Visitors", "12 people"], ["Origin", "a planetary collision"]], text: [
+    "The Moon is the frozen record of a catastrophe: four and a half billion years ago a Mars-sized world struck the young Earth, and the splash became this. The same face has watched us forever — its rotation locked to its orbit — and the craters on it are old enough to predate every fossil on Earth.",
+    "Twelve human beings have stood on it. Their bootprints are still there, sharp as the day they were made; nothing on a world without wind ever fades.",
+  ] },
+  Mars: { facts: [["Day", "24.6 hours"], ["Year", "687 days"], ["Gravity", "0.38 g"], ["Tallest volcano", "21.9 km — Olympus Mons"], ["Moons", "2"]], text: [
+    "Mars is a planet with a past. Dry riverbeds, deltas and lakebeds are written across its surface; three and a half billion years ago it had rain, seas, and a thicker sky. Then its core cooled, the magnetic field faltered, and the Sun stripped its atmosphere into space, leaving the cold red desert we know.",
+    "It is still the most habitable world we know beyond our own — a day almost exactly Earth-length, polar ice, buried glaciers — and the only planet currently inhabited entirely by robots.",
+  ] },
+  Jupiter: { facts: [["Day", "9.9 hours"], ["Year", "11.9 years"], ["Mass", "2.5× all other planets"], ["Gravity", "2.5 g"], ["Moons", "95 known"]], text: [
+    "Jupiter is the Solar System's other body of consequence: everything else, including Earth, is rounding error. A ball of hydrogen with no surface to land on, spinning so fast its day is under ten hours, wearing a storm — the Great Red Spot — that has been raging since before the telescope was pointed at it.",
+    "Its gravity has shaped everything; it flings comets, herds asteroids, and may have shielded the inner worlds long enough for one of them to grow quiet and wet.",
+  ] },
+  Saturn: { facts: [["Day", "10.7 hours"], ["Year", "29.4 years"], ["Rings", "270,000 km wide, ~10 m thick"], ["Density", "less than water"], ["Moons", "146 known"]], text: [
+    "The rings are the thing, and they are almost nothing: billions of shards of nearly pure water ice, a quarter of a million kilometres across yet mostly thinner than a house is tall. Proportionally, a sheet of paper the size of a football pitch is a thousand times too thick.",
+    "They are young — perhaps younger than the dinosaurs — and they are temporary. Ring rain is falling into Saturn constantly; in another hundred million years or so, the Solar System's most beautiful structure may simply be gone. We are lucky to be here while it lasts.",
+  ] },
+  Uranus: { facts: [["Day", "17.2 hours"], ["Year", "84 years"], ["Axial tilt", "98° — it rolls"], ["Coldest recorded", "−224 °C"], ["Moons", "28 known"]], text: [
+    "Something enormous once knocked Uranus over. The planet orbits on its side, poles where equators should be, so each pole takes a 42-year day followed by a 42-year night. It is the coldest planet — colder than more-distant Neptune — as if the blow that tipped it also let its ancient heat escape.",
+    "It has been visited exactly once, by Voyager 2 in 1986, for a single afternoon.",
+  ] },
+  Neptune: { facts: [["Day", "16.1 hours"], ["Year", "165 years"], ["Winds", "2,100 km/h"], ["Distance", "30 AU"], ["Moons", "16 known"]], text: [
+    "The outermost planet was found with mathematics before it was found with a telescope: Uranus kept straying from its predicted path, and in 1846 the missing mass was calculated, then seen within a degree of where the arithmetic said to look.",
+    "It receives a thousandth of the sunlight Earth does, yet hosts the fastest winds in the Solar System — supersonic rivers of frozen methane in near-darkness. Since its discovery, it has completed one orbit.",
+  ] },
+  Pluto: { facts: [["Year", "248 years"], ["Day", "6.4 Earth days"], ["Surface", "−229 °C"], ["Moons", "5"], ["Reclassified", "2006"]], text: [
+    "Pluto was supposed to be a dead ice ball; New Horizons found a world. A glacier of frozen nitrogen the size of Texas, mountains of water ice the height of the Rockies, a thin blue haze — and almost no craters on its young heart, meaning something still renews this surface, three decades of sunlight-hours from the Sun.",
+    "Its demotion in 2006 changed nothing about it and everything about us: the Solar System turned out to be richer than nine tidy planets.",
+  ] },
+  Io: { facts: [["Orbit", "1.77 days"], ["Volcanoes", "400+ active"], ["Cause", "tidal kneading"]], text: [
+    "Io is the most volcanically violent body known. Jupiter's gravity kneads it like dough on every 42-hour orbit, melting its interior; its plumes throw sulphur three hundred kilometres into space and repaint the surface faster than craters can form.",
+  ] },
+  Europa: { facts: [["Orbit", "3.55 days"], ["Crust", "ice, ~15–25 km"], ["Beneath", "a 60–150 km ocean"]], text: [
+    "Under Europa's cracked shell of ice lies a salt-water ocean holding perhaps twice the water of all Earth's seas — kept liquid for four billion years by the same tidal flexing that torments Io. It is, by most reckonings, the most promising address for life beyond Earth.",
+  ] },
+  Ganymede: { facts: [["Orbit", "7.15 days"], ["Size", "larger than Mercury"], ["Field", "its own magnetosphere"]], text: [
+    "The largest moon in the Solar System — bigger than the planet Mercury — and the only moon that generates its own magnetic field. It too hides an ocean, buried deeper than Europa's, sandwiched between layers of exotic ice.",
+  ] },
+  Callisto: { facts: [["Orbit", "16.7 days"], ["Surface", "the most cratered known"], ["Age", "~4 billion years untouched"]], text: [
+    "Callisto is the Solar System's archive: a surface so old and unchanged that it remembers the era of heavy bombardment every other world has erased. Far enough from Jupiter's radiation to be quiet, it is a leading candidate for a future crewed base.",
+  ] },
+  Titan: { facts: [["Orbit", "15.9 days"], ["Atmosphere", "denser than Earth's"], ["Lakes", "liquid methane"]], text: [
+    "Titan is the only moon with a thick atmosphere and the only world besides Earth with standing liquid on its surface — rivers, rain and seas of methane at −179 °C. Beneath the orange haze, a complete hydrological cycle runs on hydrocarbons instead of water. A drone named Dragonfly is on its way.",
+  ] },
 };
 
 function fmtDist(km: number): string {
@@ -102,7 +198,7 @@ const ATMO_FRAG = `varying vec3 vN; varying vec3 vV;
 void main(){ float rim = pow(1.0 - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(0.42, 0.62, 1.0, 1.0) * rim * 1.15; }`;
 
 export function mountAtlas(opts: Opts): () => void {
-  const { canvas, labels, name, dist, line } = opts;
+  const { canvas, labels, name, dist, line, more, sheet, time, date } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
@@ -212,19 +308,72 @@ export function mountAtlas(opts: Opts): () => void {
       ring.rotation.x = Math.PI / 2;
       m.add(ring);
     }
-    addBody(pn, km, m, 0.00012);
+    const pb = addBody(pn, km, m, 0.00012);
+    // the system RUNS: every planet recomputes its true position as sim time flows
+    pb.update = (date) => {
+      const q = planetPosition(pn, date);
+      const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
+    };
+    pb.update(now, 0);
   }
 
-  // the Moon — mean circular orbit (good to a few degrees; refined in S2)
-  const dDays = (now.getTime() - Date.UTC(2000, 0, 1, 12)) / 86400000;
-  const moonAng = (218.316 + 13.176396 * dDays) * D2R;
+  // the Moon — mean circular orbit (good to a few degrees)
   const earth = bodies.find(b => b.name === "Earth")!;
-  const moonOff = { x: Math.cos(moonAng) * 384400, y: 0, z: -Math.sin(moonAng) * 384400 };
   const moonMesh = new THREE.Mesh(
     new THREE.SphereGeometry(RADII["Moon"]!, 48, 24),
     new THREE.MeshPhongMaterial({ map: T("moon.jpg"), shininess: 2 }),
   );
-  addBody("Moon", { x: earth.pos.x + moonOff.x, y: earth.pos.y + moonOff.y, z: earth.pos.z + moonOff.z }, moonMesh, 0.00001);
+  const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0.00001);
+  moon.labelMax = 2.5e7;
+  moon.update = (_d, simDays) => {
+    const ang = (218.316 + 13.176396 * simDays) * D2R;
+    moon.pos.x = earth.pos.x + Math.cos(ang) * 384400;
+    moon.pos.y = earth.pos.y;
+    moon.pos.z = earth.pos.z - Math.sin(ang) * 384400;
+  };
+
+  // the great moons of Jupiter and Saturn — circular orbits, true radii/periods
+  const jupiter = bodies.find(b => b.name === "Jupiter")!;
+  const saturn = bodies.find(b => b.name === "Saturn")!;
+  const MOONS: { n: string; parent: Body; orbR: number; perD: number; col: number; lblMax: number }[] = [
+    { n: "Io",       parent: jupiter, orbR: 421700,  perD: 1.769,  col: 0xd8c060, lblMax: 8e7 },
+    { n: "Europa",   parent: jupiter, orbR: 671034,  perD: 3.551,  col: 0xd8cdb8, lblMax: 8e7 },
+    { n: "Ganymede", parent: jupiter, orbR: 1070412, perD: 7.155,  col: 0x9a8d7d, lblMax: 8e7 },
+    { n: "Callisto", parent: jupiter, orbR: 1882709, perD: 16.689, col: 0x6f665c, lblMax: 8e7 },
+    { n: "Titan",    parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 8e7 },
+  ];
+  for (const mn of MOONS) {
+    const mm = new THREE.Mesh(
+      new THREE.SphereGeometry(RADII[mn.n]!, 32, 16),
+      new THREE.MeshPhongMaterial({ color: mn.col, shininess: 3 }),
+    );
+    const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0.00002);
+    mb.labelMax = mn.lblMax;
+    const phase = Math.random() * 6.2832;
+    mb.update = (_d, simDays) => {
+      const ang = phase + (simDays / mn.perD) * 6.2832;
+      mb.pos.x = mn.parent.pos.x + Math.cos(ang) * mn.orbR;
+      mb.pos.y = mn.parent.pos.y;
+      mb.pos.z = mn.parent.pos.z - Math.sin(ang) * mn.orbR;
+    };
+    mb.update(now, 0);
+  }
+
+  // Pluto — the heart-bearing dwarf, on its true inclined orbit
+  {
+    const pm = new THREE.Mesh(
+      new THREE.SphereGeometry(RADII["Pluto"]!, 32, 16),
+      new THREE.MeshPhongMaterial({ color: 0xc7b29a, shininess: 3 }),
+    );
+    const pb = addBody("Pluto", { x: 0, y: 0, z: 0 }, pm, 0.00002);
+    pb.update = (date) => {
+      const q = plutoPosition(date);
+      const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
+    };
+    pb.update(now, 0);
+  }
 
   /* ---------- orbit lines (sampled true orbits, faint) ---------- */
   const orbitGroup = new THREE.Group();
@@ -238,6 +387,18 @@ export function mountAtlas(opts: Opts): () => void {
       const d = new Date(now.getTime() + (i / N) * yearDays[pn]! * 86400000);
       const p = planetPosition(pn, d);
       const k = E2T({ x: p.x * AU, y: p.y * AU, z: p.z * AU });
+      pts.push(new THREE.Vector3(k.x, k.y, k.z));
+    }
+    orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat));
+  }
+  {
+    // Pluto's inclined, eccentric path — 248 years in one faint line
+    const pts: THREE.Vector3[] = [];
+    const N = 256;
+    for (let i = 0; i <= N; i++) {
+      const d = new Date(now.getTime() + (i / N) * 90560 * 86400000);
+      const q = plutoPosition(d);
+      const k = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
       pts.push(new THREE.Vector3(k.x, k.y, k.z));
     }
     orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat));
@@ -290,14 +451,59 @@ export function mountAtlas(opts: Opts): () => void {
     name.textContent = b.name;
     line.textContent = b.line;
     name.classList.remove("in"); void name.offsetWidth; name.classList.add("in");
+    if (sheet.classList.contains("open")) fillSheet(b);   // the open sheet follows the journey
   }
 
   const camKm = { x: 0, y: 0, z: 0 };          // doubles — the true camera position
   const v = new THREE.Vector3();
 
+  /* ---------- simulated time: the system actually runs ---------- */
+  let simMs = now.getTime();
+  let speed = 1;                                // sim-seconds per real second
+  let lastDateTxt = "";
+  function bindTime() {
+    time.querySelectorAll<HTMLButtonElement>("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        speed = Number(btn.dataset["speed"] ?? "1");
+        time.querySelectorAll("button").forEach(o => o.classList.toggle("on", o === btn));
+        try { playClick(); } catch (_e) { /* off */ }
+      });
+    });
+  }
+  bindTime();
+
+  /* ---------- the jewel info sheet ---------- */
+  const shName = sheet.querySelector<HTMLElement>(".at-sheet-name")!;
+  const shFacts = sheet.querySelector<HTMLElement>(".at-sheet-facts")!;
+  const shProse = sheet.querySelector<HTMLElement>(".at-sheet-prose")!;
+  const shClose = sheet.querySelector<HTMLElement>(".at-sheet-close")!;
+  function fillSheet(b: Body) {
+    const inf = INFO[b.name];
+    shName.textContent = b.name;
+    shFacts.innerHTML = (inf?.facts ?? []).map(([k, val]) =>
+      `<div class="at-fact"><span class="at-fact-k">${k}</span><span class="at-fact-v">${val}</span></div>`).join("");
+    shProse.innerHTML = (inf?.text ?? [b.line]).map(p => `<p>${p}</p>`).join("");
+  }
+  more.addEventListener("click", () => {
+    fillSheet(focus);
+    sheet.classList.add("open");
+    sheet.removeAttribute("hidden");
+    try { playClick(); } catch (_e) { /* off */ }
+  });
+  shClose.addEventListener("click", () => { sheet.classList.remove("open"); });
+  addEventListener("keydown", e => { if (e.key === "Escape") sheet.classList.remove("open"); });
+
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
+
+    // time flows — at whatever rate the visitor chose — and the worlds move
+    simMs += dt * 1000 * speed;
+    const simDate = new Date(simMs);
+    const simDays = (simMs - Date.UTC(2000, 0, 1, 12)) / 86400000;
+    for (const b of bodies) b.update?.(simDate, simDays);
+    const dTxt = speed === 1 ? "now" : simDate.toUTCString().slice(5, 16);
+    if (dTxt !== lastDateTxt) { date.textContent = dTxt; lastDateTxt = dTxt; }
 
     // eased camera state
     yaw += (tgtYaw - yaw) * Math.min(1, dt * 7);
@@ -328,7 +534,7 @@ export function mountAtlas(opts: Opts): () => void {
         const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
-        if (ang > 0.004) { mat.opacity = 0; }
+        if (ang > 0.004 || (b.labelMax !== undefined && d > b.labelMax)) { mat.opacity = 0; }
         else {
           // a planet must OUTSHINE the background stars — never become a label
           // floating over nothing
@@ -350,7 +556,6 @@ export function mountAtlas(opts: Opts): () => void {
 
     // labels: project each body, place its name beside it
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    const earthD = Math.hypot(earth.pos.x - camKm.x, earth.pos.y - camKm.y, earth.pos.z - camKm.z);
     for (const b of bodies) {
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
@@ -358,8 +563,8 @@ export function mountAtlas(opts: Opts): () => void {
       const behind = v.z > 1;
       const sx = (v.x * 0.5 + 0.5) * w, sy = (-v.y * 0.5 + 0.5) * h;
       const tooClose = b === focus && d < b.radius * 24;
-      const moonFar = b.name === "Moon" && earthD > 2.5e7;   // at system scale the Moon merges with Earth
-      if (behind || tooClose || moonFar || sx < -40 || sx > w + 40 || sy < -20 || sy > h + 20) {
+      const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
+      if (behind || tooClose || tooFar || sx < -40 || sx > w + 40 || sy < -20 || sy > h + 20) {
         b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
       } else {
         b.label.style.opacity = b === focus ? "1" : "0.78";

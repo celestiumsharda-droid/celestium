@@ -590,13 +590,108 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-dist { font-family: var(--mono); font-size: 13px; color: var(--star); letter-spacing: .05em; margin-bottom: 12px; }
 .at-line { color: var(--mut); font-size: clamp(.96rem, 1.4vw, 1.1rem); line-height: 1.6; max-width: 46ch; }
 .at-hint { position: absolute; bottom: clamp(20px,4vh,34px); left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+
+/* the Read-more jewel + the info sheet that refracts the world behind it */
+.at-more {
+  pointer-events: auto; margin-top: 18px;
+  display: inline-block; font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--ink);
+  background:
+    radial-gradient(160px 120px at var(--gx, 26%) var(--gy, -12%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge); border-radius: 999px;
+  padding: 12px 22px; cursor: pointer; position: relative;
+  box-shadow: var(--glass-bevel), 0 8px 26px rgba(0,0,0,.35);
+  transition: border-color .3s, color .3s, box-shadow .3s;
+}
+.at-more:hover { border-color: rgba(255,255,255,.35); color: var(--accent); box-shadow: var(--glass-shadow), var(--glass-bevel); }
+.at-sheet {
+  position: absolute; z-index: 5;
+  top: clamp(86px, 12vh, 130px); right: clamp(18px, 3vw, 44px); bottom: clamp(18px, 5vh, 44px);
+  width: min(430px, calc(100vw - 36px));
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-edge);
+  background:
+    radial-gradient(280px 220px at var(--gx, 30%) var(--gy, -8%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
+    rgba(10, 13, 21, 0.34);
+  -webkit-backdrop-filter: saturate(170%) brightness(1.1) blur(7px);
+  backdrop-filter: saturate(170%) brightness(1.1) blur(7px);
+  box-shadow: var(--glass-shadow), var(--glass-bevel);
+  text-shadow: var(--glass-textscrim);
+  padding: clamp(24px, 3vh, 38px) clamp(22px, 2.4vw, 34px);
+  overflow-y: auto; overscroll-behavior: contain;
+  opacity: 0; transform: translateX(40px) scale(.985); pointer-events: none;
+  transition: opacity .55s var(--ease), transform .55s var(--ease);
+}
+.at-sheet.open { opacity: 1; transform: none; pointer-events: auto; }
+.at-sheet[hidden] { display: block; }   /* [hidden] only marks the pre-JS state; .open animates it in */
+@supports (backdrop-filter: url(#lg-refract)) {
+  .at-sheet { backdrop-filter: url(#lg-refract) saturate(170%) brightness(1.1) blur(4px); }
+}
+.at-sheet::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  padding: 2px; pointer-events: none; z-index: 4;
+  background: conic-gradient(from var(--ga, 240deg),
+    transparent 0deg,
+    rgba(185,200,255,.7) 16deg, rgba(255,255,255,1) 34deg, rgba(255,232,190,.65) 54deg,
+    rgba(255,255,255,.18) 84deg, transparent 128deg,
+    transparent 175deg,
+    rgba(255,232,190,.45) 206deg, rgba(255,255,255,.92) 226deg, rgba(185,200,255,.5) 248deg,
+    transparent 288deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: .95;
+}
+.at-sheet-close {
+  position: absolute; top: 14px; right: 14px; z-index: 6;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,.06); border: 1px solid var(--glass-edge);
+  color: var(--mut); font-size: 13px; cursor: pointer;
+  transition: color .3s, border-color .3s, background .3s;
+}
+.at-sheet-close:hover { color: var(--ink); border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.1); }
+.at-sheet-name { font-family: var(--display); font-weight: 300; font-size: clamp(2rem, 4vw, 2.9rem); letter-spacing: -.02em; margin: 2px 0 18px; }
+.at-sheet-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 22px; }
+.at-fact {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.035);
+  padding: 10px 13px; display: flex; flex-direction: column; gap: 4px;
+}
+.at-fact-k { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+.at-fact-v { font-family: var(--display); font-size: .98rem; color: var(--ink); line-height: 1.25; }
+.at-sheet-prose p { color: var(--mut); font-size: .98rem; line-height: 1.7; }
+.at-sheet-prose p + p { margin-top: 14px; }
+
+/* time controls — the system runs at the visitor's pace */
+.at-timewrap { position: absolute; right: clamp(18px, 3vw, 44px); bottom: clamp(20px, 4vh, 36px); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+.at-time { display: flex; gap: 6px; pointer-events: auto; }
+.at-time button {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mut); background: rgba(8,10,16,.4);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-edge); border-radius: 999px;
+  padding: 8px 13px; cursor: pointer; transition: .3s;
+}
+.at-time button:hover { color: var(--ink); border-color: rgba(255,255,255,.3); }
+.at-time button.on { color: #06070b; background: var(--accent); border-color: var(--accent); }
+.at-date { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
 .at-fallback { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
 .at-fallback h1 { font-family: var(--display); font-weight: 300; font-size: clamp(2.4rem, 7vw, 4.6rem); letter-spacing: -.025em; margin: 16px 0 20px; }
 @media (max-width: 760px) {
   .at-hint { display: none; }
-  .at-hud { padding-bottom: 30px; }
+  .at-hud { padding-bottom: 96px; }
   .at-readout { max-width: none; }
   .at-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* the sheet becomes a bottom sheet; time controls tuck under the readout */
+  .at-sheet { top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 68vh; border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99); }
+  .at-sheet.open { transform: none; }
+  .at-timewrap { left: clamp(18px,6vw,24px); right: auto; bottom: 22px; align-items: flex-start; }
+  .at-time { flex-wrap: wrap; }
 }
 
 /* ---- TIMELINE page: spiral/genesis flight (also used on /timeline/) ---- */

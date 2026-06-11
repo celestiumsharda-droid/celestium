@@ -38,6 +38,7 @@ if (section && canvas && labels && !reduce) {
       m.mountAtlas({
         canvas, labels,
         name: $("at-name"), dist: $("at-dist"), line: $("at-line"),
+        more: $("at-more"), sheet: $("at-sheet"), time: $("at-time"), date: $("at-date"),
       });
     })
     .catch(err => console.warn("The Atlas is unavailable; keeping the written summary.", err));

@@ -76,9 +76,28 @@
           <h1 class="at-name" id="at-name">Earth</h1>
           <p class="at-dist mono"><span id="at-dist">—</span> above the surface</p>
           <p class="at-line" id="at-line"></p>
+          <button class="at-more" id="at-more" type="button">Read more&nbsp;&nbsp;&#8594;</button>
         </div>
         <div class="at-hint" aria-hidden="true">Scroll or pinch to travel · drag to orbit · tap a name to fly there</div>
+        <div class="at-timewrap">
+          <div class="at-time" id="at-time" role="group" aria-label="Flow of time">
+            <button type="button" data-speed="0">Pause</button>
+            <button type="button" data-speed="1" class="on">Now</button>
+            <button type="button" data-speed="86400">Day/s</button>
+            <button type="button" data-speed="2629800">Month/s</button>
+            <button type="button" data-speed="31557600">Year/s</button>
+          </div>
+          <p class="at-date mono" id="at-date">now</p>
+        </div>
       </div>
+
+      <!-- the jewel sheet — the world itself refracts through it -->
+      <aside class="at-sheet" id="at-sheet" hidden aria-label="About this world">
+        <button class="at-sheet-close" type="button" aria-label="Close">&#10005;</button>
+        <h2 class="at-sheet-name">—</h2>
+        <div class="at-sheet-facts"></div>
+        <div class="at-sheet-prose"></div>
+      </aside>
     </div>
 
     <!-- base experience: no-JS / no-WebGL / reduced motion -->
