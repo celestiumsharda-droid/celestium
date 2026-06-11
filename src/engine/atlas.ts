@@ -191,6 +191,63 @@ function discTexture(): THREE.Texture {
   return t;
 }
 
+/** procedural surface maps for worlds without photographic textures —
+ *  blobs and features painted on a 512×256 equirect canvas (drawn thrice,
+ *  ±width, so the seam wraps cleanly). Believable at the scale moons are seen. */
+function worldTexture(kind: string): THREE.Texture {
+  const W = 512, H = 256;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d")!;
+  const blob = (cx: number, cy: number, r: number, col: string, a: number) => {
+    for (const ox of [-W, 0, W]) {
+      const g = x.createRadialGradient(cx + ox, cy, 0, cx + ox, cy, r);
+      g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
+      x.globalAlpha = a; x.fillStyle = g;
+      x.beginPath(); x.arc(cx + ox, cy, r, 0, 6.29); x.fill();
+    }
+    x.globalAlpha = 1;
+  };
+  const R = (n: number) => Math.random() * n;
+  if (kind === "Io") {
+    x.fillStyle = "#c9a23c"; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 90; i++) blob(R(W), R(H), 14 + R(46), ["#e0c068", "#a87830", "#d8d8a8", "#906028"][i % 4]!, 0.5);
+    for (let i = 0; i < 26; i++) { const px = R(W), py = R(H); blob(px, py, 5 + R(9), "#3a2410", 0.9); blob(px, py, 12 + R(14), "#e85820", 0.28); }
+  } else if (kind === "Europa") {
+    x.fillStyle = "#d9d2c4"; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 50; i++) blob(R(W), R(H), 20 + R(60), ["#e8e2d6", "#c4b8a4"][i % 2]!, 0.4);
+    x.strokeStyle = "rgba(150,84,52,.5)"; x.lineWidth = 1.3;
+    for (let i = 0; i < 34; i++) {
+      let px = R(W), py = R(H);
+      x.beginPath(); x.moveTo(px, py);
+      for (let s = 0; s < 7; s++) { px += 18 + R(34); py += R(26) - 13; x.lineTo(px, py); }
+      x.stroke();
+    }
+  } else if (kind === "Ganymede") {
+    x.fillStyle = "#8a7d6c"; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 70; i++) blob(R(W), R(H), 18 + R(56), ["#a89a86", "#6a5e50", "#998b78"][i % 3]!, 0.5);
+    for (let i = 0; i < 60; i++) { const px = R(W), py = R(H), r = 1.5 + R(3.5); blob(px, py, r, "#cfc4b2", 0.8); }
+  } else if (kind === "Callisto") {
+    x.fillStyle = "#564d42"; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 60; i++) blob(R(W), R(H), 14 + R(40), ["#6a6054", "#473e34"][i % 2]!, 0.5);
+    for (let i = 0; i < 170; i++) { const px = R(W), py = R(H), r = 1 + R(3); blob(px, py, r, "#b8ac98", 0.75); }
+  } else if (kind === "Titan") {
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#b67f33"); g.addColorStop(0.5, "#cf9440"); g.addColorStop(1, "#a87328");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 26; i++) blob(R(W), R(H), 30 + R(80), "#daa64e", 0.18);
+  } else { // Pluto
+    x.fillStyle = "#b59f86"; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 60; i++) blob(R(W), R(H), 16 + R(50), ["#8a6e52", "#cbb89e", "#6e503c"][i % 3]!, 0.5);
+    blob(W * 0.62, H * 0.58, 56, "#efe6d4", 0.95);          // the heart — Sputnik Planitia
+    blob(W * 0.7, H * 0.62, 40, "#f4ecdc", 0.9);
+    for (let i = 0; i < 5; i++) blob(W * (0.15 + R(0.3)), H * (0.45 + R(0.2)), 22 + R(20), "#41281c", 0.55);   // the dark whale
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+
 /** the blue limb of an atmosphere — fresnel rim, additive */
 const ATMO_VERT = `varying vec3 vN; varying vec3 vV;
 void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
@@ -345,8 +402,8 @@ export function mountAtlas(opts: Opts): () => void {
   ];
   for (const mn of MOONS) {
     const mm = new THREE.Mesh(
-      new THREE.SphereGeometry(RADII[mn.n]!, 32, 16),
-      new THREE.MeshPhongMaterial({ color: mn.col, shininess: 3 }),
+      new THREE.SphereGeometry(RADII[mn.n]!, 48, 24),
+      new THREE.MeshPhongMaterial({ map: worldTexture(mn.n), shininess: 3 }),
     );
     const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0.00002);
     mb.labelMax = mn.lblMax;
@@ -363,8 +420,8 @@ export function mountAtlas(opts: Opts): () => void {
   // Pluto — the heart-bearing dwarf, on its true inclined orbit
   {
     const pm = new THREE.Mesh(
-      new THREE.SphereGeometry(RADII["Pluto"]!, 32, 16),
-      new THREE.MeshPhongMaterial({ color: 0xc7b29a, shininess: 3 }),
+      new THREE.SphereGeometry(RADII["Pluto"]!, 48, 24),
+      new THREE.MeshPhongMaterial({ map: worldTexture("Pluto"), shininess: 3 }),
     );
     const pb = addBody("Pluto", { x: 0, y: 0, z: 0 }, pm, 0.00002);
     pb.update = (date) => {
@@ -447,6 +504,16 @@ export function mountAtlas(opts: Opts): () => void {
     if (!b || b === focus) return;
     prevFocus = focus; focus = b; focusBlend = 0;
     tgtDist = Math.max(b.radius * 5, b.minD * 2);
+    // arrive on the DAY side: come in from the Sun's direction (offset a
+    // little for three-quarter light), never into a black hemisphere
+    const sl = Math.hypot(b.pos.x, b.pos.y, b.pos.z);
+    if (sl > 1) {
+      tgtYaw = Math.atan2(-b.pos.x, -b.pos.z) + 0.5;
+      tgtPitch = Math.min(0.5, Math.max(-0.5, Math.asin(-b.pos.y / sl))) + 0.14;
+      // unwind yaw so the eased camera takes the short way around
+      while (tgtYaw - yaw > Math.PI) tgtYaw -= 2 * Math.PI;
+      while (tgtYaw - yaw < -Math.PI) tgtYaw += 2 * Math.PI;
+    }
     if (click) { try { playClick(); } catch (_e) { /* off */ } }
     name.textContent = b.name;
     line.textContent = b.line;
