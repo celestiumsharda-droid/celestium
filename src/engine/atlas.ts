@@ -544,6 +544,10 @@ export function mountAtlas(opts: Opts): () => void {
       }
     }
     orbitGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
+    // orbit lines belong to the SYSTEM view — near a world they'd streak the
+    // sky, so they fade out below ~1M km and return as you pull away
+    const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
+    orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
 
@@ -564,7 +568,7 @@ export function mountAtlas(opts: Opts): () => void {
       const sx = (v.x * 0.5 + 0.5) * w, sy = (-v.y * 0.5 + 0.5) * h;
       const tooClose = b === focus && d < b.radius * 24;
       const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
-      if (behind || tooClose || tooFar || sx < -40 || sx > w + 40 || sy < -20 || sy > h + 20) {
+      if (behind || tooClose || tooFar || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
         b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
       } else {
         b.label.style.opacity = b === focus ? "1" : "0.78";
