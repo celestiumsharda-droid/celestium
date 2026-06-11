@@ -56,6 +56,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         home: resolve(__dirname, "src/index.html"),
+        atlas: resolve(__dirname, "src/atlas/index.html"),
         discovery: resolve(__dirname, "src/discovery.html"),
         discoveriesIndex: resolve(__dirname, "src/discoveries/index.html"),
         about: resolve(__dirname, "src/about/index.html"),

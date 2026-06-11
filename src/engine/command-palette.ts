@@ -41,6 +41,7 @@ function buildItems(): Item[] {
     { title: t("surprise"), sub: "Open a random discovery", href: "#random", kind: "page", q: "surprise me random shuffle lucky any discovery roll dice" },
     { title: "All discoveries", sub: "The series index", href: "/discoveries/", kind: "page", q: "all discoveries series index browse" },
     { title: "Home", sub: "The front page", href: "/", kind: "page", q: "home front cover" },
+    { title: "The Atlas", sub: "Fly the known universe", href: "/atlas/", kind: "page", q: "atlas universe map solar system planets fly explore moon sun earth mars jupiter saturn space 3d journey" },
     { title: "The universe map", sub: "You are here", href: "/#scale", kind: "page", q: "universe map perspective scale you are here zoom" },
     { title: "Cosmic timeline", sub: "13.8 billion years", href: "/timeline/", kind: "page", q: "timeline history big bang cosmic" },
     { title: "You are stardust", sub: "Your atoms' origin story", href: "/stardust/", kind: "page", q: "stardust you are atoms origin supernova made of stars personal" },
