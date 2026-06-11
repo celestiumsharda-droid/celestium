@@ -63,6 +63,63 @@ interface Body {
   clouds?: THREE.Mesh;               // Earth's cloud shell
   labelMax?: number;                 // hide label/dot beyond this camera distance (moons)
   update?: (date: Date, simDays: number) => void;   // live orbital motion
+  kind?: "star";                     // catalogue stars live by different label rules
+}
+
+/* ---- the stellar neighbourhood: real stars, real places ----
+   Every system within ~13 light-years plus the famous beacons. RA (hours),
+   Dec (degrees), distance (ly), photosphere colour, radius in suns, type. */
+const LY = 9.4607e12;                // km
+interface StarRow { n: string; ra: number; dec: number; ly: number; c: number; r: number; t: string; }
+const STARS: StarRow[] = [
+  { n: "Proxima Centauri", ra: 14.495, dec: -62.68, ly: 4.25, c: 0xff6b4a, r: 0.15, t: "red dwarf — the nearest star" },
+  { n: "Alpha Centauri", ra: 14.66, dec: -60.83, ly: 4.37, c: 0xfff3d8, r: 1.22, t: "sun-like double star" },
+  { n: "Barnard's Star", ra: 17.963, dec: 4.69, ly: 5.96, c: 0xff7a50, r: 0.2, t: "red dwarf" },
+  { n: "Wolf 359", ra: 10.94, dec: 7.01, ly: 7.86, c: 0xff5c3c, r: 0.16, t: "red dwarf" },
+  { n: "Lalande 21185", ra: 11.06, dec: 35.97, ly: 8.31, c: 0xff8a5e, r: 0.39, t: "red dwarf" },
+  { n: "Sirius", ra: 6.752, dec: -16.72, ly: 8.66, c: 0xcfe2ff, r: 1.71, t: "the brightest star in our sky" },
+  { n: "Luyten 726-8", ra: 1.65, dec: -17.95, ly: 8.79, c: 0xff6448, r: 0.14, t: "red-dwarf pair" },
+  { n: "Ross 154", ra: 18.83, dec: -23.84, ly: 9.71, c: 0xff7a52, r: 0.24, t: "red dwarf" },
+  { n: "Ross 248", ra: 23.70, dec: 44.18, ly: 10.29, c: 0xff6448, r: 0.16, t: "red dwarf" },
+  { n: "Epsilon Eridani", ra: 3.55, dec: -9.46, ly: 10.48, c: 0xffc890, r: 0.74, t: "young orange star with a dust ring" },
+  { n: "Lacaille 9352", ra: 23.10, dec: -35.85, ly: 10.74, c: 0xff9468, r: 0.47, t: "red dwarf" },
+  { n: "Ross 128", ra: 11.79, dec: 0.80, ly: 11.01, c: 0xff7a52, r: 0.21, t: "quiet red dwarf with a temperate world" },
+  { n: "61 Cygni", ra: 21.115, dec: 38.75, ly: 11.40, c: 0xffb87e, r: 0.66, t: "orange double — first star ever measured" },
+  { n: "Procyon", ra: 7.655, dec: 5.22, ly: 11.46, c: 0xf4f0e0, r: 2.05, t: "bright yellow-white star" },
+  { n: "Epsilon Indi", ra: 22.06, dec: -56.78, ly: 11.87, c: 0xffb87e, r: 0.73, t: "orange star with brown-dwarf companions" },
+  { n: "Tau Ceti", ra: 1.735, dec: -15.94, ly: 11.91, c: 0xffe9c0, r: 0.79, t: "the nearest single sun-like star" },
+  { n: "Groombridge 34", ra: 0.31, dec: 44.02, ly: 11.62, c: 0xff8a5e, r: 0.38, t: "red-dwarf pair" },
+  { n: "Luyten's Star", ra: 7.456, dec: 5.23, ly: 12.35, c: 0xff7a52, r: 0.29, t: "red dwarf with a temperate world" },
+  { n: "Kapteyn's Star", ra: 5.195, dec: -44.95, ly: 12.83, c: 0xff8a5e, r: 0.29, t: "ancient halo star, orbiting backwards" },
+  { n: "Gliese 581", ra: 15.32, dec: -7.72, ly: 20.5, c: 0xff7a52, r: 0.30, t: "red dwarf with a packed planet system" },
+  { n: "TRAPPIST-1", ra: 23.108, dec: -5.04, ly: 40.66, c: 0xff5038, r: 0.121, t: "seven Earth-sized worlds" },
+  { n: "Altair", ra: 19.846, dec: 8.87, ly: 16.7, c: 0xe8ecf8, r: 1.8, t: "fast-spinning white star" },
+  { n: "Vega", ra: 18.615, dec: 38.78, ly: 25.0, c: 0xcfe0ff, r: 2.36, t: "the once and future pole star" },
+  { n: "Fomalhaut", ra: 22.96, dec: -29.62, ly: 25.1, c: 0xd8e4fa, r: 1.84, t: "white star ringed by debris" },
+  { n: "Pollux", ra: 7.755, dec: 28.03, ly: 33.8, c: 0xffcf96, r: 8.8, t: "orange giant with a planet" },
+  { n: "Arcturus", ra: 14.26, dec: 19.18, ly: 36.7, c: 0xffc080, r: 25.4, t: "orange giant — the northern sky's brightest" },
+  { n: "Capella", ra: 5.28, dec: 46.0, ly: 42.9, c: 0xffe2ac, r: 12, t: "a pair of yellow giants" },
+  { n: "Castor", ra: 7.576, dec: 31.89, ly: 51, c: 0xd8e4fa, r: 2.4, t: "six stars in one point of light" },
+  { n: "Aldebaran", ra: 4.598, dec: 16.51, ly: 65.3, c: 0xffb87e, r: 45.1, t: "the orange eye of the Bull" },
+  { n: "Regulus", ra: 10.14, dec: 11.97, ly: 79.3, c: 0xc4d6ff, r: 4.35, t: "blue-white heart of the Lion" },
+  { n: "Mizar", ra: 13.42, dec: 54.93, ly: 83, c: 0xd8e4fa, r: 2.4, t: "the double in the Plough's handle" },
+  { n: "Achernar", ra: 1.628, dec: -57.24, ly: 139, c: 0xbcd2ff, r: 9.3, t: "the flattest star known — spun into an ellipsoid" },
+  { n: "Spica", ra: 13.42, dec: -11.16, ly: 250, c: 0xb4c8ff, r: 7.5, t: "blue double star" },
+  { n: "Bellatrix", ra: 5.418, dec: 6.35, ly: 250, c: 0xb8ccff, r: 5.75, t: "blue giant — Orion's shoulder" },
+  { n: "Canopus", ra: 6.40, dec: -52.70, ly: 310, c: 0xf0f0e2, r: 71, t: "the second-brightest star in our sky" },
+  { n: "Polaris", ra: 2.53, dec: 89.26, ly: 433, c: 0xf0ecd8, r: 37.5, t: "the North Star — a pulsing supergiant" },
+  { n: "Betelgeuse", ra: 5.919, dec: 7.41, ly: 548, c: 0xff6038, r: 764, t: "red supergiant, due to explode" },
+  { n: "Antares", ra: 16.49, dec: -26.43, ly: 554, c: 0xff5e3a, r: 680, t: "the rival of Mars — a dying red giant" },
+  { n: "Rigel", ra: 5.242, dec: -8.20, ly: 863, c: 0xc8dcff, r: 79, t: "blue supergiant — Orion's foot" },
+  { n: "Deneb", ra: 20.69, dec: 45.28, ly: 2615, c: 0xd4e2ff, r: 203, t: "one of the most luminous stars known" },
+];
+/** RA/Dec (equatorial) → our ecliptic km frame */
+function starPos(s: StarRow): { x: number; y: number; z: number } {
+  const ra = s.ra * 15 * D2R, dec = s.dec * D2R, eps = 23.439 * D2R;
+  const xe = Math.cos(dec) * Math.cos(ra), ye = Math.cos(dec) * Math.sin(ra), ze = Math.sin(dec);
+  const x = xe, y = ye * Math.cos(eps) + ze * Math.sin(eps), z = -ye * Math.sin(eps) + ze * Math.cos(eps);
+  const d = s.ly * LY;
+  return E2T({ x: x * d, y: y * d, z: z * d });
 }
 
 /* ecliptic (x toward equinox, z north) → three.js (y up) */
@@ -153,6 +210,35 @@ const INFO: Record<string, { facts: [string, string][]; text: string[] }> = {
   ] },
   Titan: { facts: [["Orbit", "15.9 days"], ["Atmosphere", "denser than Earth's"], ["Lakes", "liquid methane"]], text: [
     "Titan is the only moon with a thick atmosphere and the only world besides Earth with standing liquid on its surface — rivers, rain and seas of methane at −179 °C. Beneath the orange haze, a complete hydrological cycle runs on hydrocarbons instead of water. A drone named Dragonfly is on its way.",
+  ] },
+  "Proxima Centauri": { facts: [["Distance", "4.25 light-years"], ["Type", "red dwarf"], ["Planets", "at least 2"], ["Lifespan", "trillions of years"]], text: [
+    "The nearest star to the Sun is one you will never see with your eyes — a dim red ember a seventh the size of our star. Yet it holds a planet, Proxima b, in its temperate zone: the closest possibly-habitable world that will ever exist for us, four and a quarter light-years away.",
+    "Our fastest spacecraft would take seventy thousand years to reach it. Red dwarfs like Proxima will still be burning, unchanged, when every sun-like star in the universe has died.",
+  ] },
+  "Alpha Centauri": { facts: [["Distance", "4.37 light-years"], ["Stars", "two sun-like, + Proxima"], ["Discovered double", "1689"]], text: [
+    "The nearest sun-like stars: a pair much like our own, circling each other every eighty years, with little Proxima drifting far around them both. From a planet there, our Sun would be a bright star in Cassiopeia — and someone looking back would see our sky's brightest constellation missing one star: theirs.",
+  ] },
+  Sirius: { facts: [["Distance", "8.66 light-years"], ["Brightness", "−1.46 — the brightest"], ["Companion", "a white dwarf"]], text: [
+    "The brightest star in Earth's night sky has a secret: a dead star circles it. Sirius B was once the heavier of the pair; it burned out first, collapsed to the size of the Earth with the mass of a Sun, and now a teaspoon of it would weigh tonnes. The Dog Star's brilliance marked the flooding of the Nile and the 'dog days' of summer.",
+  ] },
+  Betelgeuse: { facts: [["Distance", "~550 light-years"], ["Size", "~764 Suns wide"], ["Fate", "supernova, 'soon'"]], text: [
+    "Put Betelgeuse where the Sun is and it would swallow Mercury, Venus, Earth, Mars and most of Jupiter's orbit. It is a star at the end of its life — fusing heavier and heavier elements in shells, swelling and dimming erratically — and within the next hundred thousand years it will detonate as a supernova bright enough to read by at night.",
+    "When it goes, it will outshine the full Moon for weeks. Astronomers are, frankly, hoping.",
+  ] },
+  Vega: { facts: [["Distance", "25 light-years"], ["Type", "white A-class"], ["Pole star", "in 12,000 years — again"]], text: [
+    "Vega was the first star ever photographed and the standard against which stellar brightness was long measured. Earth's axis slowly traces a 26,000-year circle, and Vega sits on it: it was the pole star when mammoths walked, and it will be again around the year 13,700.",
+  ] },
+  Polaris: { facts: [["Distance", "433 light-years"], ["Type", "pulsing supergiant"], ["Holds the pole", "for now"]], text: [
+    "The North Star is not the brightest in the sky — it is simply the one that happens to stand above Earth's axis in this era. It is a Cepheid, a supergiant that swells and brightens on a four-day heartbeat; the same kind of star Henrietta Leavitt used to give humanity its first ruler for measuring the universe.",
+  ] },
+  "TRAPPIST-1": { facts: [["Distance", "40.7 light-years"], ["Star", "barely bigger than Jupiter"], ["Planets", "seven, Earth-sized"]], text: [
+    "Around a star scarcely larger than Jupiter circle seven worlds the size of our own, three of them in the temperate zone — the densest system of Earth-sized planets known. The whole architecture would fit inside Mercury's orbit; from any one of those worlds, the others hang in the sky like moons.",
+  ] },
+  Deneb: { facts: [["Distance", "~2,600 light-years"], ["Luminosity", "~200,000 Suns"], ["Size", "~200 Suns wide"]], text: [
+    "The farthest thing your naked eye can easily see as a single star. Deneb burns with the light of two hundred thousand Suns — the light leaving it tonight left around the time of Homer. That it still ranks among our brightest stars, across such a gulf, is the measure of what a supergiant is.",
+  ] },
+  "Barnard's Star": { facts: [["Distance", "5.96 light-years"], ["Motion", "fastest in our sky"], ["Age", "~10 billion years"]], text: [
+    "The fastest-moving star in Earth's sky — old, quiet, and rushing toward us. In about 11,800 years it will pass within 3.8 light-years and briefly become the closest star. It has been the favourite target of interstellar-travel dreamers for a century.",
   ] },
 };
 
@@ -271,7 +357,7 @@ export function mountAtlas(opts: Opts): () => void {
   renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1e15);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1e18);
   scene.add(new THREE.AmbientLight(0x223044, 0.55));
   const sunLight = new THREE.PointLight(0xfff2dc, 2.6, 0, 0);
   scene.add(sunLight);
@@ -430,6 +516,31 @@ export function mountAtlas(opts: Opts): () => void {
       pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
     };
     pb.update(now, 0);
+  }
+
+  /* ---------- the stellar neighbourhood: real stars at their true places ---------- */
+  for (const s of STARS) {
+    const p = starPos(s);
+    const rKm = s.r * 696340;
+    const g = new THREE.Group();
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(rKm, 32, 16),
+      new THREE.MeshBasicMaterial({ color: s.c }),
+    );
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture(), color: s.c, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+    }));
+    halo.scale.setScalar(rKm * 7);
+    g.add(ball); g.add(halo);
+    const sb = addBody(s.n, p, g, 0);
+    sb.kind = "star";
+    sb.line = `${s.t.charAt(0).toUpperCase() + s.t.slice(1)} · ${s.ly < 100 ? s.ly : Math.round(s.ly)} light-years from home.`;
+    sb.minD = rKm * 4;
+    if (!INFO[s.n]) INFO[s.n] = {
+      facts: [["Distance", `${s.ly < 100 ? s.ly : Math.round(s.ly)} light-years`], ["Type", s.t], ["Size", `${s.r < 3 ? s.r : Math.round(s.r)} Suns`]],
+      text: [sb.line],
+    };
+    if (sb.dot) (sb.dot.material as THREE.SpriteMaterial).color.set(s.c);
   }
 
   /* ---------- orbit lines (sampled true orbits, faint) ---------- */
@@ -601,7 +712,8 @@ export function mountAtlas(opts: Opts): () => void {
         const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
-        if (ang > 0.004 || (b.labelMax !== undefined && d > b.labelMax)) { mat.opacity = 0; }
+        const planetRetired = b.kind !== "star" && b.name !== "Sun" && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
+        if (ang > 0.004 || planetRetired || (b.labelMax !== undefined && d > b.labelMax)) { mat.opacity = 0; }
         else {
           // a planet must OUTSHINE the background stars — never become a label
           // floating over nothing
@@ -625,8 +737,11 @@ export function mountAtlas(opts: Opts): () => void {
       glow.scale.setScalar(Math.max(RADII["Sun"]! * 6.5, ds * 0.05));
     }
 
-    // labels: project each body, place its name beside it
+    // labels: project each body, place its name beside it. The Atlas has
+    // scales — inside the system, planet names; pull past ~Neptune and the
+    // star names wake while the planets retire.
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    const sunD = Math.hypot(camKm.x, camKm.y, camKm.z);
     for (const b of bodies) {
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
@@ -635,7 +750,11 @@ export function mountAtlas(opts: Opts): () => void {
       const sx = (v.x * 0.5 + 0.5) * w, sy = (-v.y * 0.5 + 0.5) * h;
       const tooClose = b === focus && d < b.radius * 24;
       const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
-      if (behind || tooClose || tooFar || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
+      const wrongScale = b !== focus && (
+        (b.kind === "star" && sunD < 2e10) ||                      // stars sleep inside the system
+        (b.kind !== "star" && b.name !== "Sun" && sunD > 2.5e11)   // planets retire among the stars
+      );
+      if (behind || tooClose || tooFar || wrongScale || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
         b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
       } else {
         b.label.style.opacity = b === focus ? "1" : "0.78";
@@ -653,7 +772,7 @@ export function mountAtlas(opts: Opts): () => void {
   }
 
   /* ---------- controls: scroll/pinch = travel, drag = orbit ---------- */
-  function clampDist() { tgtDist = Math.min(Math.max(tgtDist, focus.minD), 9e9); }
+  function clampDist() { tgtDist = Math.min(Math.max(tgtDist, focus.minD), 6e16); }
   canvas.addEventListener("wheel", e => {
     e.preventDefault();
     tgtDist *= Math.exp(Math.sign(e.deltaY) * 0.16 * Math.min(Math.abs(e.deltaY) / 100, 3));
