@@ -140,7 +140,6 @@ const LINES: Record<string, string> = {
   Pluto: "The heart-bearing dwarf at the edge — a world, whatever we call it.",
   "Halley's Comet": "Once every 76 years — the comet that keeps its appointments. Next: 2061.",
   "Hale–Bopp": "The great comet of 1997, climbing away on a 2,500-year ellipse.",
-  "Oort Cloud": "The Sun's farthest country: a trillion sleeping comets.",
   "Voyager 1": "The farthest human-made object — and still calling home.",
   "Voyager 2": "The only machine ever to visit Uranus and Neptune.",
   "New Horizons": "The mission that turned Pluto into a world.",
@@ -343,30 +342,47 @@ function worldTexture(kind: string): THREE.Texture {
   return t;
 }
 
-/** the blue limb of an atmosphere — fresnel rim, additive */
-const ATMO_VERT = `varying vec3 vN; varying vec3 vV;
-void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
-const ATMO_FRAG = `varying vec3 vN; varying vec3 vV;
-void main(){ float rim = pow(1.0 - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(0.42, 0.62, 1.0, 1.0) * rim * 1.15; }`;
+/** the blue limb of an atmosphere — fresnel rim, additive.
+ *  ALL custom shaders here must carry the log-depth chunks: the renderer
+ *  runs a logarithmic depth buffer, and a shader that skips them writes
+ *  garbage depth — surfaces z-fight the sky and look transparent. */
+const ATMO_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec3 vN; varying vec3 vV;
+void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv;
+#include <logdepthbuf_vertex>
+}`;
+const ATMO_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
+varying vec3 vN; varying vec3 vV;
+void main(){
+#include <logdepthbuf_fragment>
+float rim = pow(1.0 - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(0.42, 0.62, 1.0, 1.0) * rim * 1.15; }`;
 
 /* ---- THE LIVING STAR ----
    A star's photosphere is weather: convection granulation that churns,
    bright active regions drifting, darkening toward the limb — and at the
    limb itself, prominences licking into space. Two passes: the boiling
    surface, and an additive flare shell that only lives at the edge. */
-const STAR_VERT = `varying vec3 vN; varying vec3 vV; varying vec3 vP;
-void main(){ vN = normalize(normalMatrix * normal); vP = normalize(position); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
+const STAR_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec3 vN; varying vec3 vV; varying vec3 vP;
+void main(){ vN = normalize(normalMatrix * normal); vP = normalize(position); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv;
+#include <logdepthbuf_vertex>
+}`;
 const STAR_NOISE = `
 float h31(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
 float vno(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
 float fbm3(vec3 p){ float v=0.0,a=0.55; for(int i=0;i<4;i++){ v+=a*vno(p); p=p*2.04+vec3(3.7,1.3,7.1); a*=0.5; } return v; }`;
-const STAR_FRAG = `
+const STAR_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
 uniform vec3 uCol; uniform vec3 uHot; uniform float uTime; uniform float uScale;
 varying vec3 vN; varying vec3 vV; varying vec3 vP;
 ${STAR_NOISE}
 void main(){
+#include <logdepthbuf_fragment>
   vec3 p = vP;
   // convection: two scales of churn, drifting against each other
   float g1 = fbm3(p*uScale        + vec3( uTime*0.020, -uTime*0.013,  uTime*0.016));
@@ -384,11 +400,13 @@ void main(){
   col *= 0.5 + 0.5*pow(mu, 0.58);
   gl_FragColor = vec4(col * 1.25, 1.0);
 }`;
-const FLARE_FRAG = `
+const FLARE_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
 uniform vec3 uCol; uniform vec3 uHot; uniform float uTime; uniform float uScale;
 varying vec3 vN; varying vec3 vV; varying vec3 vP;
 ${STAR_NOISE}
 void main(){
+#include <logdepthbuf_fragment>
   float mu = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
   float rim = pow(1.0 - mu, 2.2);
   // prominences: tongues of plasma that rise, lean and collapse at the limb
@@ -417,6 +435,10 @@ function livingStar(radiusKm: number, color: number, granScale: number, seg = 64
   }));
   halo.scale.setScalar(radiusKm * 7);
   g.add(halo);
+  // the halo belongs to the DISTANT star — close up it would fog the living
+  // surface, so the frame loop fades it with proximity via userData
+  g.userData["halo"] = halo;
+  g.userData["starR"] = radiusKm;
   return g;
 }
 
@@ -644,36 +666,67 @@ export function mountAtlas(opts: Opts): () => void {
     { n: "Halley's Comet", el: { a: 17.834, e: 0.96714, i: 162.26, N: 58.42, w: 111.33, periMs: Date.UTC(1986, 1, 9), periodD: 27510 } },
     { n: "Hale–Bopp", el: { a: 186.0, e: 0.99492, i: 89.43, N: 282.47, w: 130.59, periMs: Date.UTC(1997, 3, 1), periodD: 925000 } },
   ];
+  /** a comet's nucleus: an irregular, crusted lump of dirty ice */
+  function cometNucleus(): THREE.Mesh {
+    const geo = new THREE.IcosahedronGeometry(60, 2);
+    const posA = geo.attributes["position"] as THREE.BufferAttribute;
+    for (let i = 0; i < posA.count; i++) {
+      const vx = posA.getX(i), vy = posA.getY(i), vz = posA.getZ(i);
+      const j = 0.72 + 0.45 * Math.abs(Math.sin(vx * 0.11 + vy * 0.07) * Math.cos(vz * 0.09 - vx * 0.05));
+      posA.setXYZ(i, vx * j * 1.25, vy * j * 0.9, vz * j);   // lumpy, elongated
+    }
+    geo.computeVertexNormals();
+    return new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ map: worldTexture("Callisto"), color: 0x8a857c, shininess: 6 }));
+  }
+  /** one tail: particles laid along +Z, flaring laterally with distance */
+  function cometTail(count: number, color: number, spread: number, lenScale: number): THREE.Points {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const f = Math.pow(Math.random(), 1.4);            // denser near the nucleus
+      const lat = Math.pow(f, 0.8) * spread;
+      arr[i * 3] = (Math.random() - 0.5) * 2 * lat;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 2 * lat;
+      arr[i * 3 + 2] = f * lenScale;
+    }
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    return new THREE.Points(tg, new THREE.PointsMaterial({
+      color, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+  }
   for (const cm of COMETS) {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(60, 16, 8), new THREE.MeshBasicMaterial({ color: 0xdfe8f8 })));
-    // the tail: a chain of fading sprites, pointing away from the Sun,
-    // waking as the comet falls inside ~4 AU
-    const tail: THREE.Sprite[] = [];
-    for (let i = 0; i < 10; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: glowTexture(), color: 0xbfe0ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
-      }));
-      g.add(sp); tail.push(sp);
-    }
-    const cb = addBody(cm.n, { x: 0, y: 0, z: 0 }, g, 0);
+    g.add(cometNucleus());
+    // the coma — a soft envelope that brightens near the Sun
+    const coma = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture(), color: 0xd8ecff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+    }));
+    coma.scale.setScalar(2.4e5);
+    g.add(coma);
+    // TWO tails, as in life: a broad warm dust tail and a straight blue ion tail
+    const tails = new THREE.Group();
+    const dust = cometTail(170, 0xffe2c4, 9e5, 1.05e7);
+    const ion = cometTail(110, 0x7ec8ff, 3.2e5, 1.7e7);
+    tails.add(dust); tails.add(ion);
+    g.add(tails);
+    const cb = addBody(cm.n, { x: 0, y: 0, z: 0 }, g, 0.00004);
     cb.minD = 2500;
     cb.dotK = 0.007;
     if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xbfe0ff);
+    const Z = new THREE.Vector3(0, 0, 1), dirV = new THREE.Vector3();
     cb.update = (date) => {
       const q = cometPos(cm.el, date);
       const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
       cb.pos.x = kk.x; cb.pos.y = kk.y; cb.pos.z = kk.z;
       const rAU = Math.hypot(q.x, q.y, q.z);
       const wake = Math.max(0, Math.min(1, (4 - rAU) / 3.2));
-      const dir = new THREE.Vector3(kk.x, kk.y, kk.z).normalize();   // anti-sunward
-      const len = 1.2e7 * wake + 1;
-      tail.forEach((sp, i) => {
-        const f = (i + 1) / tail.length;
-        sp.position.copy(dir).multiplyScalar(len * f);
-        sp.scale.setScalar(2.2e6 * wake * (0.35 + f));
-        (sp.material as THREE.SpriteMaterial).opacity = wake * (1 - f) * 0.5;
-      });
+      // both tails point away from the Sun, always
+      dirV.set(kk.x, kk.y, kk.z).normalize();
+      tails.quaternion.setFromUnitVectors(Z, dirV);
+      tails.scale.setScalar(Math.max(wake, 1e-4));
+      (dust.material as THREE.PointsMaterial).opacity = wake * 0.75;
+      (ion.material as THREE.PointsMaterial).opacity = wake * 0.6;
+      (coma.material as THREE.SpriteMaterial).opacity = wake * 0.5;
     };
     cb.update(now, 0);
     // its long ellipse, drawn once
@@ -702,22 +755,112 @@ export function mountAtlas(opts: Opts): () => void {
       color: 0xa8c0e8, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.28, depthWrite: false,
     }));
     // the cloud is SUN-centred (orbitGroup already carries the floating-origin
-    // offset); the tappable label anchors out on the shell itself
+    // offset) — pure atmosphere, no label
     orbitGroup.add(cloud);
-    const ob = addBody("Oort Cloud", E2T({ x: 20000 * AU, y: 0, z: 6000 * AU }), new THREE.Object3D(), 0);
-    ob.kind = "star";                 // appears with the stellar scale
-    ob.radius = 3e11; ob.minD = 1.2e12;
-    if (ob.dot) ob.dot.visible = false;
   }
 
-  /* ---------- the machines: humanity's farthest emissaries ---------- */
-  const craftGeo = new THREE.OctahedronGeometry(14, 0);
-  const craftMat = new THREE.MeshBasicMaterial({ color: 0xe8eef8 });
-  function addCraft(n: string, pos: { x: number; y: number; z: number }, labelMax?: number): Body {
+  /* ---------- the machines: humanity's farthest emissaries ----------
+     Each spacecraft is BUILT, part by part, at icon scale (1 unit = 1 km):
+     dishes, booms, gold foil, mirrors, sunshields — recognisably itself. */
+  const M = {
+    white: new THREE.MeshPhongMaterial({ color: 0xe9ecf2, shininess: 30 }),
+    silver: new THREE.MeshPhongMaterial({ color: 0xb9c0cc, shininess: 80, specular: 0x888888 }),
+    dark: new THREE.MeshPhongMaterial({ color: 0x2c2f36, shininess: 10 }),
+    gold: new THREE.MeshPhongMaterial({ color: 0xc89530, shininess: 36, specular: 0x6a531a, emissive: 0x4a380c }),
+    foil: new THREE.MeshPhongMaterial({ color: 0xc9a23c, shininess: 60, emissive: 0x2c2208 }),
+    panel: new THREE.MeshPhongMaterial({ color: 0x27355c, shininess: 60, side: THREE.DoubleSide }),
+    shield: new THREE.MeshPhongMaterial({ color: 0xd6dae2, shininess: 70, side: THREE.DoubleSide, specular: 0xaaaaaa }),
+  };
+  function buildVoyager(): THREE.Group {
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(craftGeo, craftMat));
-    const cb = addBody(n, pos, g, 0);
-    cb.radius = 14; cb.minD = 120; cb.dotK = 0.006;
+    // the 3.7 m high-gain dish — the icon
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(4.6, 32, 12, 0, Math.PI * 2, 0, 0.62), M.white);
+    dish.rotation.x = Math.PI / 2; dish.scale.z = 0.55;
+    g.add(dish);
+    const feed = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2.4, 10), M.dark);
+    feed.rotation.x = -Math.PI / 2; feed.position.z = 2.2; g.add(feed);
+    // ten-sided bus behind the dish
+    const bus = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 1.1, 10), M.dark);
+    bus.rotation.x = Math.PI / 2; bus.position.z = -1.2; g.add(bus);
+    // the golden record on the bus
+    const rec = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 24), M.gold);
+    rec.rotation.x = Math.PI / 2; rec.position.set(-1.2, 1.1, -1.2); g.add(rec);
+    // RTG boom (three dark drums) + science boom + the long magnetometer boom
+    const rtgArm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 5.6, 6), M.silver);
+    rtgArm.rotation.z = Math.PI / 2; rtgArm.position.set(-4, 0, -1.2); g.add(rtgArm);
+    for (let i = 0; i < 3; i++) {
+      const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 12), M.dark);
+      drum.rotation.z = Math.PI / 2; drum.position.set(-5 - i * 1.3, 0, -1.2); g.add(drum);
+    }
+    const sciArm = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 7.2, 6), M.silver);
+    sciArm.rotation.z = Math.PI / 2; sciArm.rotation.y = 0.5; sciArm.position.set(3.4, 0.6, -1.4); g.add(sciArm);
+    const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 16, 5), M.silver);
+    mag.rotation.z = Math.PI / 2; mag.rotation.y = -0.35; mag.position.set(7.4, -0.8, -1.0); g.add(mag);
+    return g;
+  }
+  function buildNewHorizons(): THREE.Group {
+    const g = new THREE.Group();
+    const bus = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 1.4, 6), M.foil);
+    bus.rotation.x = Math.PI / 2; g.add(bus);
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(3.1, 28, 10, 0, Math.PI * 2, 0, 0.6), M.white);
+    dish.rotation.x = Math.PI / 2; dish.scale.z = 0.5; dish.position.z = 1.3; g.add(dish);
+    const rtg = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 4.2, 8), M.dark);
+    rtg.rotation.z = Math.PI / 2; rtg.position.set(-3.6, 0, -0.4); g.add(rtg);
+    return g;
+  }
+  function buildJWST(): THREE.Group {
+    const g = new THREE.Group();
+    // 18 gold hexagons in the honeycomb — rings 1 and 2 around an empty centre
+    const hexGeo = new THREE.CylinderGeometry(1.18, 1.18, 0.12, 6);
+    const axial: [number, number][] = [];
+    for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+      const s = -q - r, d = Math.max(Math.abs(q), Math.abs(r), Math.abs(s));
+      if (d === 1 || d === 2) axial.push([q, r]);
+    }
+    for (const [q, r] of axial) {
+      const hx = 1.25 * 1.732 * (q + r / 2), hy = 1.25 * 1.5 * r;
+      const hex = new THREE.Mesh(hexGeo, M.gold);
+      hex.rotation.x = Math.PI / 2; hex.rotation.y = Math.PI / 6;
+      hex.position.set(hx, hy + 1.8, 0); g.add(hex);
+    }
+    // secondary mirror on three struts
+    const sec = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.12, 16), M.dark);
+    sec.rotation.x = Math.PI / 2; sec.position.set(0, 1.8, 5.4); g.add(sec);
+    for (const sx of [-3.4, 0, 3.4]) {
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 6.6, 5), M.silver);
+      strut.position.set(sx / 2, 1.8 + (sx === 0 ? 1.6 : -0.4), 2.7);
+      strut.lookAt(0, 1.8, 5.4); strut.rotateX(Math.PI / 2);
+      g.add(strut);
+    }
+    // the five-layer kite sunshield beneath
+    for (let i = 0; i < 5; i++) {
+      const sheet = new THREE.Mesh(new THREE.PlaneGeometry(14.2 - i * 0.5, 8.6 - i * 0.35), M.shield);
+      sheet.rotation.x = Math.PI / 2; sheet.position.set(0, -1.6 - i * 0.42, 0); g.add(sheet);
+    }
+    return g;
+  }
+  function buildHubble(): THREE.Group {
+    const g = new THREE.Group();
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 13.2, 28), M.silver);
+    tube.rotation.x = Math.PI / 2; g.add(tube);
+    const aft = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 1.7, 2.6, 28), M.white);
+    aft.rotation.x = Math.PI / 2; aft.position.z = -7.4; g.add(aft);
+    // the open aperture door
+    const door = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.05, 0.12, 28), M.dark);
+    door.position.set(0, 1.6, 8.2); door.rotation.x = Math.PI / 4; g.add(door);
+    // twin solar wings
+    for (const sx of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.2, 6), M.silver);
+      arm.rotation.z = Math.PI / 2; arm.position.set(sx * 3.1, 0, 0.6); g.add(arm);
+      const wing = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 2.6), M.panel);
+      wing.position.set(sx * 7.4, 0, 0.6); g.add(wing);
+    }
+    return g;
+  }
+
+  function addCraft(n: string, pos: { x: number; y: number; z: number }, model: THREE.Group, labelMax?: number): Body {
+    const cb = addBody(n, pos, model, 0.00005);   // a slow, living tumble
+    cb.radius = 14; cb.minD = 90; cb.dotK = 0.006;
     if (labelMax) cb.labelMax = labelMax;
     if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xdfe8f8);
     return cb;
@@ -727,18 +870,18 @@ export function mountAtlas(opts: Opts): () => void {
     const xe = Math.cos(dec) * Math.cos(ra), ye = Math.cos(dec) * Math.sin(ra), ze = Math.sin(dec);
     return E2T({ x: xe * distKmV, y: (ye * Math.cos(eps) + ze * Math.sin(eps)) * distKmV, z: (-ye * Math.sin(eps) + ze * Math.cos(eps)) * distKmV });
   };
-  addCraft("Voyager 1", raDec(17.27, 12.45, 167 * AU));
-  addCraft("Voyager 2", raDec(20.12, -58.96, 139 * AU));
-  addCraft("New Horizons", raDec(19.6, -20.5, 61 * AU));
+  addCraft("Voyager 1", raDec(17.27, 12.45, 167 * AU), buildVoyager());
+  addCraft("Voyager 2", raDec(20.12, -58.96, 139 * AU), buildVoyager());
+  addCraft("New Horizons", raDec(19.6, -20.5, 61 * AU), buildNewHorizons());
   {
-    const jwst = addCraft("JWST", { x: 0, y: 0, z: 0 }, 4e8);
+    const jwst = addCraft("JWST", { x: 0, y: 0, z: 0 }, buildJWST(), 4e8);
     jwst.update = () => {
       const d = Math.hypot(earth.pos.x, earth.pos.y, earth.pos.z) || 1;
       const f = (d + 1.5e6) / d;      // Sun–Earth L2: 1.5M km anti-sunward of Earth
       jwst.pos.x = earth.pos.x * f; jwst.pos.y = earth.pos.y * f; jwst.pos.z = earth.pos.z * f;
     };
     jwst.update(now, 0);
-    const hst = addCraft("Hubble", { x: 0, y: 0, z: 0 }, 6e5);
+    const hst = addCraft("Hubble", { x: 0, y: 0, z: 0 }, buildHubble(), 6e5);
     hst.update = (_d, simDays) => {
       const ang = (simDays * 86400 / 5760) * 2 * Math.PI;   // a 96-minute orbit
       hst.pos.x = earth.pos.x + Math.cos(ang) * 6911;
@@ -754,10 +897,6 @@ export function mountAtlas(opts: Opts): () => void {
   ] };
   INFO["Hale–Bopp"] = { facts: [["Seen", "1996–97, for 18 months"], ["Nucleus", "~60 km — a giant"], ["Next return", "~year 4385"]], text: [
     "The great comet of 1997 — visible to the naked eye for a record eighteen months, watched by more humans than any comet in history. Its nucleus is some sixty kilometres across, ten times Halley's width. It is now far beyond Neptune, climbing away on a 2,500-year ellipse.",
-  ] };
-  INFO["Oort Cloud"] = { facts: [["Distance", "~5,000–50,000 AU"], ["Contents", "trillions of icy bodies"], ["Status", "never observed directly"]], text: [
-    "Beyond the planets, beyond Pluto, beyond everything we have ever photographed, the Sun keeps a vast spherical cloud of frozen leftovers from the Solar System's construction — trillions of comets-in-waiting, so far away that the Sun is merely the brightest star in their sky. A passing star's gravity occasionally tips one inward, and decades later we see a new comet.",
-    "No spacecraft has reached it. Voyager 1, our farthest machine, will take three hundred years to arrive at its inner edge.",
   ] };
   INFO["Voyager 1"] = { facts: [["Launched", "1977"], ["Distance", "~167 AU — the farthest"], ["Status", "still calling home"]], text: [
     "The farthest human-made object. Launched in 1977 with a golden record of Earth's sounds, it crossed into interstellar space in 2012 and still whispers data home daily — a signal that takes nearly a full day to arrive, transmitted with the power of a refrigerator light bulb.",
@@ -939,6 +1078,13 @@ export function mountAtlas(opts: Opts): () => void {
       if (b.spin) b.mesh.rotation.y += b.spin * dt * 60;
       const cl = (b.mesh as THREE.Object3D & { userData: { clouds?: THREE.Mesh } }).userData["clouds"];
       if (cl) cl.rotation.y += 0.000016 * dt * 60;
+      // a star's halo fades as you approach, so the boiling surface owns the view
+      const sh = b.mesh.userData["halo"] as THREE.Sprite | undefined;
+      if (sh) {
+        const sr = b.mesh.userData["starR"] as number;
+        const ds = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+        (sh.material as THREE.SpriteMaterial).opacity = Math.min(1, Math.max(0.06, (ds - sr * 6) / (sr * 40)));
+      }
       if (b.dot) {
         // hold every world at a minimum apparent size; hand over to the real
         // disk as you get close enough for it to be visibly round
