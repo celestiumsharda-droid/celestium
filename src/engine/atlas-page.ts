@@ -39,6 +39,8 @@ if (section && canvas && labels && !reduce) {
         canvas, labels,
         name: $("at-name"), dist: $("at-dist"), line: $("at-line"),
         more: $("at-more"), sheet: $("at-sheet"), time: $("at-time"), date: $("at-date"),
+        nav: $("at-nav"), consoleEl: $("at-console"), conList: $("at-con-list"),
+        conSearch: $<HTMLInputElement>("at-con-search"), conClose: $("at-con-close"),
       });
     })
     .catch(err => console.warn("The Atlas is unavailable; keeping the written summary.", err));

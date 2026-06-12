@@ -28,6 +28,11 @@ interface Opts {
   sheet: HTMLElement;                // the jewel info sheet (refracts the world behind it)
   time: HTMLElement;                 // time-control chip row
   date: HTMLElement;                 // simulated date readout
+  nav: HTMLElement;                  // the Navigate jewel button
+  consoleEl: HTMLElement;            // the destination console
+  conList: HTMLElement;              // its list body
+  conSearch: HTMLInputElement;       // its search field
+  conClose: HTMLElement;             // its close button
 }
 
 /* Pluto — Standish mean elements (valid 1800–2050), kept local to the Atlas */
@@ -443,7 +448,7 @@ function livingStar(radiusKm: number, color: number, granScale: number, seg = 64
 }
 
 export function mountAtlas(opts: Opts): () => void {
-  const { canvas, labels, name, dist, line, more, sheet, time, date } = opts;
+  const { canvas, labels, name, dist, line, more, sheet, time, date, nav, consoleEl, conList, conSearch, conClose } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
 
   let renderer: THREE.WebGLRenderer;
@@ -1038,7 +1043,60 @@ export function mountAtlas(opts: Opts): () => void {
     try { playClick(); } catch (_e) { /* off */ }
   });
   shClose.addEventListener("click", () => { sheet.classList.remove("open"); });
-  addEventListener("keydown", e => { if (e.key === "Escape") sheet.classList.remove("open"); });
+  addEventListener("keydown", e => { if (e.key === "Escape") { sheet.classList.remove("open"); closeConsole(); } });
+
+  /* ---------- the navigation console: every destination, one tap away ---------- */
+  const REALMS: [string, (b: Body) => boolean][] = [
+    ["The Sun & its worlds", b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"].includes(b.name)],
+    ["Moons", b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name)],
+    ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
+    ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
+    ["The stars", b => b.kind === "star"],
+  ];
+  function conDistance(b: Body): string {
+    const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+    return fmtDist(d);
+  }
+  function dotColorOf(b: Body): string {
+    if (b.dot) return `#${(b.dot.material as THREE.SpriteMaterial).color.getHexString()}`;
+    return "#f2e6c4";   // the Sun
+  }
+  function buildConsole(filter = "") {
+    const q = filter.trim().toLowerCase();
+    let html = "";
+    for (const [label, match] of REALMS) {
+      const members = bodies.filter(b => match(b) && (!q || b.name.toLowerCase().includes(q)));
+      if (label === "The stars") members.sort((a, b2) =>
+        Math.hypot(a.pos.x, a.pos.y, a.pos.z) - Math.hypot(b2.pos.x, b2.pos.y, b2.pos.z));
+      if (!members.length) continue;
+      html += `<div class="at-con-group">${label}</div>`;
+      for (const b of members) {
+        html += `<button type="button" class="at-con-item${b === focus ? " on" : ""}" data-n="${b.name}">` +
+          `<i style="--c:${dotColorOf(b)}"></i><span>${b.name}</span><b>${conDistance(b)}</b></button>`;
+      }
+    }
+    conList.innerHTML = html || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
+    conList.querySelectorAll<HTMLButtonElement>(".at-con-item").forEach(btn => {
+      btn.addEventListener("click", () => {
+        focusBody(btn.dataset["n"]!, true);
+        closeConsole();
+      });
+    });
+  }
+  function openConsole() {
+    sheet.classList.remove("open");      // one panel at a time
+    buildConsole(conSearch.value);
+    consoleEl.removeAttribute("hidden");
+    requestAnimationFrame(() => consoleEl.classList.add("open"));
+    if (matchMedia("(hover: hover)").matches) conSearch.focus();
+  }
+  function closeConsole() { consoleEl.classList.remove("open"); }
+  nav.addEventListener("click", () => {
+    if (consoleEl.classList.contains("open")) closeConsole(); else { openConsole(); try { playClick(); } catch (_e) { /* off */ } }
+  });
+  conClose.addEventListener("click", closeConsole);
+  conSearch.addEventListener("input", () => buildConsole(conSearch.value));
+  canvas.addEventListener("pointerdown", closeConsole);
 
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
