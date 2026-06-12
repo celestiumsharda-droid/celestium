@@ -608,7 +608,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 }
 .at-more:hover { border-color: rgba(255,255,255,.35); color: var(--accent); box-shadow: var(--glass-shadow), var(--glass-bevel); }
 .at-sheet {
-  position: absolute; z-index: 5;
+  position: absolute; z-index: 7;
   top: clamp(86px, 12vh, 130px); right: clamp(18px, 3vw, 44px); bottom: clamp(18px, 5vh, 44px);
   width: min(430px, calc(100vw - 36px));
   border-radius: var(--radius);
@@ -784,16 +784,33 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-date { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
 .at-fallback { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
 .at-fallback h1 { font-family: var(--display); font-weight: 300; font-size: clamp(2.4rem, 7vw, 4.6rem); letter-spacing: -.025em; margin: 16px 0 20px; }
+/* panels own the stage: while the sheet is open, the HUD and controls bow out */
+.at-readout, .at-nav, .at-timewrap { transition: opacity .35s var(--ease); }
+.at-stage:has(.at-sheet.open) .at-readout,
+.at-stage:has(.at-sheet.open) .at-nav,
+.at-stage:has(.at-sheet.open) .at-timewrap,
+.at-stage:has(.at-console.open) .at-timewrap { opacity: 0; pointer-events: none; }
+
 @media (max-width: 760px) {
   .at-hint { display: none; }
-  .at-hud { padding-bottom: 96px; }
+  .at-hud { padding-bottom: 122px; }
   .at-readout { max-width: none; }
   .at-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  /* the sheet becomes a bottom sheet; time controls tuck under the readout */
-  .at-sheet { top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 68vh; border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99); }
+  /* the sheet becomes a bottom sheet — stronger tint so prose reads clean */
+  .at-sheet {
+    top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 68vh;
+    border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99);
+    background:
+      var(--glass-sheen-face),
+      rgba(7, 9, 15, 0.62);
+  }
   .at-sheet.open { transform: none; }
-  .at-timewrap { left: clamp(18px,6vw,24px); right: auto; bottom: 22px; align-items: flex-start; }
-  .at-time { flex-wrap: wrap; }
+  /* one clean control row: time chips scroll in a single line on the left,
+     Navigate holds the right — nothing stacks, nothing collides */
+  .at-timewrap { left: 14px; right: auto; bottom: 14px; align-items: flex-start; gap: 6px; }
+  .at-time { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100vw - 168px); scrollbar-width: none; padding-bottom: 2px; }
+  .at-time::-webkit-scrollbar { display: none; }
+  .at-nav { top: auto; bottom: 16px; right: 14px; padding: 11px 16px; }
 }
 
 /* ---- TIMELINE page: spiral/genesis flight (also used on /timeline/) ---- */

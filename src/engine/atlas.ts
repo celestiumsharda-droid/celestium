@@ -259,7 +259,8 @@ function fmtDist(km: number): string {
   if (km < 1e6) return `${Math.round(km).toLocaleString()} km`;
   if (km < 0.1 * AU) return `${(km / 1e6).toPrecision(3)} million km`;
   if (km < 60 * AU) return `${(km / AU).toPrecision(3)} AU`;
-  return `${(km / 9.4607e12).toPrecision(3)} light-years`;
+  const ly = km / 9.4607e12;
+  return ly >= 1000 ? `${Math.round(ly).toLocaleString()} light-years` : `${ly.toPrecision(3)} light-years`;
 }
 
 /** soft round glow texture for the Sun */
@@ -464,7 +465,7 @@ export function mountAtlas(opts: Opts): () => void {
   renderer.toneMappingExposure = 1.05;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1e18);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 2e19);
   scene.add(new THREE.AmbientLight(0x223044, 0.55));
   const sunLight = new THREE.PointLight(0xfff2dc, 2.6, 0, 0);
   scene.add(sunLight);
@@ -920,6 +921,85 @@ export function mountAtlas(opts: Opts): () => void {
     "Thirty-five years of the sharpest eyes humanity has owned. Hubble measured the age of the universe, proved its expansion is accelerating, and took the Deep Fields — pictures of 'empty' sky that turned out to hold thousands of galaxies each. Much of what this Atlas shows, Hubble taught us.",
   ] };
 
+  /* ---------- S4: THE GALAXY — the neighbourhood dissolves into the Milky Way ----------
+     Ninety thousand points form the real thing: a four-arm logarithmic spiral
+     100,000 ly across, warm bulge, thin disk — CENTRED on Sagittarius A*'s true
+     sky position (26,660 ly toward Sagittarius) with the disk aligned to the
+     real galactic plane. It fades in as you rise above the stellar
+     neighbourhood, while the camera-glued panorama fades out — the backdrop
+     becoming the OBJECT. */
+  const GAL_C = raDec(17.7611, -29.008, 26660 * LY);
+  const poleK = raDec(12.8567, 27.13, 1);
+  const galaxy = new THREE.Group();
+  galaxy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(poleK.x, poleK.y, poleK.z).normalize());
+  scene.add(galaxy);
+  const GAL_N = small ? 46000 : 92000;
+  {
+    const pos = new Float32Array(GAL_N * 3);
+    const col = new Float32Array(GAL_N * 3);
+    const cWarm = new THREE.Color(0xffd9a8), cBlue = new THREE.Color(0xaecbff),
+      cWhite = new THREE.Color(0xf2ecff), cPink = new THREE.Color(0xff9bb4), tmp = new THREE.Color();
+    for (let i = 0; i < GAL_N; i++) {
+      const kind = Math.random();
+      let x = 0, y = 0, z = 0;
+      if (kind < 0.24) {            // the bulge — warm, flattened
+        const r = Math.pow(Math.random(), 1.6) * 3600 * LY;
+        const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+        x = r * rr * Math.cos(th); y = r * rr * Math.sin(th); z = r * u * 0.62;
+        tmp.copy(cWarm).lerp(cWhite, Math.random() * 0.4);
+      } else if (kind < 0.94) {     // the disk + four log-spiral arms
+        const r = Math.min(47000, 2600 + (-Math.log(1 - Math.random()) * 11500)) * LY;
+        const arm = (i % 4) * (Math.PI / 2);
+        const theta = arm + Math.log(r / (1800 * LY)) * 2.05 + (Math.random() - 0.5) * 0.55;
+        x = Math.cos(theta) * r; y = Math.sin(theta) * r;
+        z = (Math.random() + Math.random() + Math.random() - 1.5) * (260 + 800 * Math.exp(-r / (8000 * LY))) * LY * 0.8;
+        const blue = Math.min(1, r / (16000 * LY));
+        tmp.copy(cWarm).lerp(cBlue, 0.25 + blue * 0.6);
+        if (Math.random() < 0.05) tmp.copy(cPink);          // HII regions along the arms
+      } else {                      // a sparse halo
+        const r = Math.pow(Math.random(), 0.6) * 58000 * LY;
+        const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+        x = r * rr * Math.cos(th); y = r * rr * Math.sin(th); z = r * u * 0.75;
+        tmp.copy(cWhite).multiplyScalar(0.7);
+      }
+      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+      col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+    }
+    const gg = new THREE.BufferGeometry();
+    gg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    gg.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    galaxy.add(new THREE.Points(gg, new THREE.PointsMaterial({
+      size: 1.7, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    })));
+    const core = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture(), color: 0xffe2b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+    }));
+    core.scale.setScalar(11000 * LY);
+    galaxy.add(core);
+  }
+  const galPts = galaxy.children[0] as THREE.Points;
+  const galCore = galaxy.children[1] as THREE.Sprite;
+
+  // Sagittarius A* — the four-million-Sun heart, a destination of its own
+  {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(4e7, 32, 16), new THREE.MeshBasicMaterial({ color: 0x000000 })));
+    const acc = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture(), color: 0xffb060, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+    }));
+    acc.scale.setScalar(6e8);
+    g.add(acc);
+    const sgr = addBody("Sagittarius A*", GAL_C, g, 0);
+    sgr.kind = "star"; sgr.radius = 4e7; sgr.minD = 3e8; sgr.dotK = 0.015;
+    sgr.line = "Four million Suns crushed into a single point — the still centre our galaxy turns around, 26,660 light-years in.";
+    if (sgr.dot) (sgr.dot.material as THREE.SpriteMaterial).color.set(0xffc890);
+  }
+  INFO["Sagittarius A*"] = { facts: [["Mass", "4.3 million Suns"], ["Distance", "26,660 light-years"], ["Imaged", "2022, by the EHT"], ["Nobel Prize", "2020"]], text: [
+    "Every star you have flown past in this Atlas is falling around this point. At the exact centre of the Milky Way sits a black hole of four million solar masses — found by watching stars whip around an invisible nothing at thousands of kilometres per second, work that won the 2020 Nobel Prize, and finally photographed as a glowing ring in 2022.",
+    "The Sun completes one circuit around it every 230 million years. The last time we were on this side of the orbit, the dinosaurs had not yet evolved.",
+  ] };
+
   /* ---------- orbit lines (sampled true orbits, faint) ---------- */
   const yearDays: Record<string, number> = { Mercury: 88, Venus: 225, Earth: 365.25, Mars: 687, Jupiter: 4333, Saturn: 10759, Uranus: 30687, Neptune: 60190 };
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
@@ -951,7 +1031,7 @@ export function mountAtlas(opts: Opts): () => void {
   scene.add(skyGroup);
   const mw = new THREE.Mesh(
     new THREE.SphereGeometry(8e11, 48, 24),
-    new THREE.MeshBasicMaterial({ map: T("stars_milky_way.jpg"), side: THREE.BackSide, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ map: T("stars_milky_way.jpg"), side: THREE.BackSide, depthWrite: false, transparent: true }),
   );
   (mw.material as THREE.MeshBasicMaterial).color.setScalar(0.95);
   mw.rotation.x = 60.2 * D2R;        // the galactic plane really is tilted ~60° to the ecliptic
@@ -1051,7 +1131,8 @@ export function mountAtlas(opts: Opts): () => void {
     ["Moons", b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name)],
     ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
     ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
-    ["The stars", b => b.kind === "star"],
+    ["The stars", b => b.kind === "star" && b.name !== "Sagittarius A*"],
+    ["The galaxy", b => b.name === "Sagittarius A*"],
   ];
   function conDistance(b: Body): string {
     const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
@@ -1164,6 +1245,18 @@ export function mountAtlas(opts: Opts): () => void {
     // sky, so they fade out below ~1M km and return as you pull away
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
+
+    // the galaxy emerges as you rise above the neighbourhood — and the
+    // camera-glued panorama hands over to the real 3D structure
+    galaxy.position.set(GAL_C.x - camKm.x, GAL_C.y - camKm.y, GAL_C.z - camKm.z);
+    {
+      const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
+      const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
+      const gFade = g01 * g01 * (3 - 2 * g01);
+      (galPts.material as THREE.PointsMaterial).opacity = gFade * 0.95;
+      (galCore.material as THREE.SpriteMaterial).opacity = gFade * 0.8;
+      (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
+    }
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
 
@@ -1209,8 +1302,12 @@ export function mountAtlas(opts: Opts): () => void {
   }
 
   /* ---------- controls: scroll/pinch = travel, drag = orbit ---------- */
-  function clampDist() { tgtDist = Math.min(Math.max(tgtDist, focus.minD), 6e16); }
-  canvas.addEventListener("wheel", e => {
+  function clampDist() { tgtDist = Math.min(Math.max(tgtDist, focus.minD), 2.6e18); }
+  // wheel listens on the whole STAGE — a label under the cursor must never
+  // swallow the zoom (panels stop propagation so their own scroll works)
+  const stage = canvas.parentElement ?? canvas;
+  stage.addEventListener("wheel", e => {
+    if ((e.target as HTMLElement).closest?.(".at-sheet, .at-console")) return;   // panels scroll themselves
     e.preventDefault();
     tgtDist *= Math.exp(Math.sign(e.deltaY) * 0.16 * Math.min(Math.abs(e.deltaY) / 100, 3));
     clampDist();
