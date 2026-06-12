@@ -64,6 +64,7 @@ interface Body {
   labelMax?: number;                 // hide label/dot beyond this camera distance (moons)
   update?: (date: Date, simDays: number) => void;   // live orbital motion
   kind?: "star";                     // catalogue stars live by different label rules
+  dotK?: number;                     // apparent-size class of its point of light
 }
 
 /* ---- the stellar neighbourhood: real stars, real places ----
@@ -137,6 +138,14 @@ const LINES: Record<string, string> = {
   Uranus: "An ice giant rolled onto its side, orbiting once in 84 years.",
   Neptune: "The outermost planet: supersonic winds in the dark, 30 times farther from the Sun than Earth.",
   Pluto: "The heart-bearing dwarf at the edge — a world, whatever we call it.",
+  "Halley's Comet": "Once every 76 years — the comet that keeps its appointments. Next: 2061.",
+  "Hale–Bopp": "The great comet of 1997, climbing away on a 2,500-year ellipse.",
+  "Oort Cloud": "The Sun's farthest country: a trillion sleeping comets.",
+  "Voyager 1": "The farthest human-made object — and still calling home.",
+  "Voyager 2": "The only machine ever to visit Uranus and Neptune.",
+  "New Horizons": "The mission that turned Pluto into a world.",
+  JWST: "A gold mirror at L2, reading the light of the first galaxies.",
+  Hubble: "Thirty-five years of the sharpest eyes humanity has owned.",
   Io: "Jupiter's tortured moon — the most volcanic body we know.",
   Europa: "An ocean world in an ice shell; the best place to look for neighbours.",
   Ganymede: "The largest moon in the Solar System — bigger than Mercury.",
@@ -340,6 +349,77 @@ void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * 
 const ATMO_FRAG = `varying vec3 vN; varying vec3 vV;
 void main(){ float rim = pow(1.0 - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(0.42, 0.62, 1.0, 1.0) * rim * 1.15; }`;
 
+/* ---- THE LIVING STAR ----
+   A star's photosphere is weather: convection granulation that churns,
+   bright active regions drifting, darkening toward the limb — and at the
+   limb itself, prominences licking into space. Two passes: the boiling
+   surface, and an additive flare shell that only lives at the edge. */
+const STAR_VERT = `varying vec3 vN; varying vec3 vV; varying vec3 vP;
+void main(){ vN = normalize(normalMatrix * normal); vP = normalize(position); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
+const STAR_NOISE = `
+float h31(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float vno(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z); }
+float fbm3(vec3 p){ float v=0.0,a=0.55; for(int i=0;i<4;i++){ v+=a*vno(p); p=p*2.04+vec3(3.7,1.3,7.1); a*=0.5; } return v; }`;
+const STAR_FRAG = `
+uniform vec3 uCol; uniform vec3 uHot; uniform float uTime; uniform float uScale;
+varying vec3 vN; varying vec3 vV; varying vec3 vP;
+${STAR_NOISE}
+void main(){
+  vec3 p = vP;
+  // convection: two scales of churn, drifting against each other
+  float g1 = fbm3(p*uScale        + vec3( uTime*0.020, -uTime*0.013,  uTime*0.016));
+  float g2 = fbm3(p*uScale*2.7    + vec3(-uTime*0.031,  uTime*0.024, -uTime*0.018));
+  float gran = g1*0.62 + g2*0.38;
+  vec3 col = mix(uCol*0.5, uHot, smoothstep(0.3, 0.78, gran));
+  // bright active regions, slowly wandering
+  float plage = smoothstep(0.6, 0.8, fbm3(p*uScale*0.55 + vec3(0.0, uTime*0.008, uTime*0.005)));
+  col += uHot * plage * 0.55;
+  // darker star-spots
+  float spot = smoothstep(0.7, 0.86, fbm3(p*uScale*0.4 - vec3(uTime*0.004)));
+  col *= 1.0 - spot*0.5;
+  // limb darkening — the real signature of a stellar disk
+  float mu = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+  col *= 0.5 + 0.5*pow(mu, 0.58);
+  gl_FragColor = vec4(col * 1.25, 1.0);
+}`;
+const FLARE_FRAG = `
+uniform vec3 uCol; uniform vec3 uHot; uniform float uTime; uniform float uScale;
+varying vec3 vN; varying vec3 vV; varying vec3 vP;
+${STAR_NOISE}
+void main(){
+  float mu = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+  float rim = pow(1.0 - mu, 2.2);
+  // prominences: tongues of plasma that rise, lean and collapse at the limb
+  float f1 = fbm3(vP*uScale*1.6 + vec3(uTime*0.05, uTime*0.03, -uTime*0.04));
+  float f2 = fbm3(vP*uScale*4.0 - vec3(uTime*0.08, 0.0, uTime*0.06));
+  float tongue = smoothstep(0.48, 0.85, f1*0.65 + f2*0.35);
+  float a = rim * tongue * 1.6;
+  gl_FragColor = vec4(mix(uCol, uHot, tongue) * 1.4, a);
+}`;
+const starMats: THREE.ShaderMaterial[] = [];
+function livingStar(radiusKm: number, color: number, granScale: number, seg = 64): THREE.Group {
+  const base = new THREE.Color(color);
+  const hot = base.clone().lerp(new THREE.Color(0xffffff), 0.6);
+  const uniforms = () => ({ uCol: { value: base.clone() }, uHot: { value: hot.clone() }, uTime: { value: 0 }, uScale: { value: granScale } });
+  const surf = new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: uniforms() });
+  const flare = new THREE.ShaderMaterial({
+    vertexShader: STAR_VERT, fragmentShader: FLARE_FRAG, uniforms: uniforms(),
+    blending: THREE.AdditiveBlending, transparent: true, depthWrite: false,
+  });
+  starMats.push(surf, flare);
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(radiusKm, seg, seg / 2), surf));
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(radiusKm * 1.045, seg, seg / 2), flare));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+  }));
+  halo.scale.setScalar(radiusKm * 7);
+  g.add(halo);
+  return g;
+}
+
 export function mountAtlas(opts: Opts): () => void {
   const { canvas, labels, name, dist, line, more, sheet, time, date } = opts;
   const small = matchMedia("(max-width: 760px)").matches;
@@ -397,11 +477,10 @@ export function mountAtlas(opts: Opts): () => void {
     return b;
   }
 
-  // the Sun — emissive, with a glow sprite that scales with distance
-  const sunMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(RADII["Sun"]!, segMain, segMain / 2),
-    new THREE.MeshBasicMaterial({ map: T("sun.jpg") }),
-  );
+  // the Sun — a LIVING photosphere: churning granulation, drifting active
+  // regions, prominences at the limb — plus the beacon glow that scales
+  // with distance so it never fades to a dim dot
+  const sunMesh = livingStar(RADII["Sun"]!, 0xffc06a, 26, 80);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
   glow.scale.setScalar(RADII["Sun"]! * 6.5);
   sunMesh.add(glow);
@@ -518,22 +597,24 @@ export function mountAtlas(opts: Opts): () => void {
     pb.update(now, 0);
   }
 
+  /* orbit lines + sun-centred structures live here (floating-origin offset) */
+  const orbitGroup = new THREE.Group();
+  scene.add(orbitGroup);
+  const orbitMat = new THREE.LineBasicMaterial({ color: 0xa9bcff, transparent: true, opacity: 0.16 });
+
   /* ---------- the stellar neighbourhood: real stars at their true places ---------- */
   for (const s of STARS) {
     const p = starPos(s);
     const rKm = s.r * 696340;
-    const g = new THREE.Group();
-    const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(rKm, 32, 16),
-      new THREE.MeshBasicMaterial({ color: s.c }),
-    );
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(), color: s.c, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
-    }));
-    halo.scale.setScalar(rKm * 7);
-    g.add(ball); g.add(halo);
+    // every star is ALIVE: granulation scaled to its class — supergiants
+    // churn in vast slow cells, dwarfs seethe in fine ones
+    const granScale = s.r > 50 ? 6 : s.r > 3 ? 10 : s.r > 0.5 ? 22 : 16;
+    const g = livingStar(rKm, s.c, granScale, 48);
     const sb = addBody(s.n, p, g, 0);
     sb.kind = "star";
+    // honest presence at range: a supergiant's point of light OUTSHINES a
+    // red dwarf's — dot size follows the star's true class
+    sb.dotK = s.r > 50 ? 0.016 : s.r > 3 ? 0.012 : s.r > 0.5 ? 0.009 : 0.006;
     sb.line = `${s.t.charAt(0).toUpperCase() + s.t.slice(1)} · ${s.ly < 100 ? s.ly : Math.round(s.ly)} light-years from home.`;
     sb.minD = rKm * 4;
     if (!INFO[s.n]) INFO[s.n] = {
@@ -543,10 +624,159 @@ export function mountAtlas(opts: Opts): () => void {
     if (sb.dot) (sb.dot.material as THREE.SpriteMaterial).color.set(s.c);
   }
 
+  /* ---------- comets: true elements, tails that wake near the Sun ---------- */
+  interface CometEl { a: number; e: number; i: number; N: number; w: number; periMs: number; periodD: number; }
+  function cometPos(el: CometEl, date: Date): { x: number; y: number; z: number } {
+    const frac = (((date.getTime() - el.periMs) / (el.periodD * 86400000)) % 1 + 1) % 1;
+    const M = frac * 2 * Math.PI;
+    let E = M;                                          // high-e orbits need patience
+    for (let i = 0; i < 30; i++) {
+      const dE = (E - el.e * Math.sin(E) - M) / (1 - el.e * Math.cos(E));
+      E -= dE; if (Math.abs(dE) < 1e-12) break;
+    }
+    const xv = el.a * (Math.cos(E) - el.e), yv = el.a * Math.sqrt(1 - el.e * el.e) * Math.sin(E);
+    const vt = Math.atan2(yv, xv), r = Math.hypot(xv, yv), u = vt + el.w * D2R;
+    const N = el.N * D2R, I = el.i * D2R;
+    const cN = Math.cos(N), sN = Math.sin(N), cI = Math.cos(I), sI = Math.sin(I), cU = Math.cos(u), sU = Math.sin(u);
+    return { x: r * (cN * cU - sN * sU * cI), y: r * (sN * cU + cN * sU * cI), z: r * (sU * sI) };
+  }
+  const COMETS: { n: string; el: CometEl }[] = [
+    { n: "Halley's Comet", el: { a: 17.834, e: 0.96714, i: 162.26, N: 58.42, w: 111.33, periMs: Date.UTC(1986, 1, 9), periodD: 27510 } },
+    { n: "Hale–Bopp", el: { a: 186.0, e: 0.99492, i: 89.43, N: 282.47, w: 130.59, periMs: Date.UTC(1997, 3, 1), periodD: 925000 } },
+  ];
+  for (const cm of COMETS) {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(60, 16, 8), new THREE.MeshBasicMaterial({ color: 0xdfe8f8 })));
+    // the tail: a chain of fading sprites, pointing away from the Sun,
+    // waking as the comet falls inside ~4 AU
+    const tail: THREE.Sprite[] = [];
+    for (let i = 0; i < 10; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTexture(), color: 0xbfe0ff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+      }));
+      g.add(sp); tail.push(sp);
+    }
+    const cb = addBody(cm.n, { x: 0, y: 0, z: 0 }, g, 0);
+    cb.minD = 2500;
+    cb.dotK = 0.007;
+    if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xbfe0ff);
+    cb.update = (date) => {
+      const q = cometPos(cm.el, date);
+      const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      cb.pos.x = kk.x; cb.pos.y = kk.y; cb.pos.z = kk.z;
+      const rAU = Math.hypot(q.x, q.y, q.z);
+      const wake = Math.max(0, Math.min(1, (4 - rAU) / 3.2));
+      const dir = new THREE.Vector3(kk.x, kk.y, kk.z).normalize();   // anti-sunward
+      const len = 1.2e7 * wake + 1;
+      tail.forEach((sp, i) => {
+        const f = (i + 1) / tail.length;
+        sp.position.copy(dir).multiplyScalar(len * f);
+        sp.scale.setScalar(2.2e6 * wake * (0.35 + f));
+        (sp.material as THREE.SpriteMaterial).opacity = wake * (1 - f) * 0.5;
+      });
+    };
+    cb.update(now, 0);
+    // its long ellipse, drawn once
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 256; i++) {
+      const d = new Date(cm.el.periMs + (i / 256) * cm.el.periodD * 86400000);
+      const q = cometPos(cm.el, d);
+      const k = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      pts.push(new THREE.Vector3(k.x, k.y, k.z));
+    }
+    orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat));
+  }
+
+  /* ---------- the Oort cloud: the Sun's farthest country ---------- */
+  {
+    const N = 4200;
+    const arr = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+      const R = (5000 + Math.pow(Math.random(), 1.6) * 45000) * AU;
+      arr[i * 3] = R * rr * Math.cos(th); arr[i * 3 + 1] = R * u * 0.92; arr[i * 3 + 2] = R * rr * Math.sin(th);
+    }
+    const gg = new THREE.BufferGeometry();
+    gg.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    const cloud = new THREE.Points(gg, new THREE.PointsMaterial({
+      color: 0xa8c0e8, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.28, depthWrite: false,
+    }));
+    // the cloud is SUN-centred (orbitGroup already carries the floating-origin
+    // offset); the tappable label anchors out on the shell itself
+    orbitGroup.add(cloud);
+    const ob = addBody("Oort Cloud", E2T({ x: 20000 * AU, y: 0, z: 6000 * AU }), new THREE.Object3D(), 0);
+    ob.kind = "star";                 // appears with the stellar scale
+    ob.radius = 3e11; ob.minD = 1.2e12;
+    if (ob.dot) ob.dot.visible = false;
+  }
+
+  /* ---------- the machines: humanity's farthest emissaries ---------- */
+  const craftGeo = new THREE.OctahedronGeometry(14, 0);
+  const craftMat = new THREE.MeshBasicMaterial({ color: 0xe8eef8 });
+  function addCraft(n: string, pos: { x: number; y: number; z: number }, labelMax?: number): Body {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(craftGeo, craftMat));
+    const cb = addBody(n, pos, g, 0);
+    cb.radius = 14; cb.minD = 120; cb.dotK = 0.006;
+    if (labelMax) cb.labelMax = labelMax;
+    if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xdfe8f8);
+    return cb;
+  }
+  const raDec = (raH: number, decD: number, distKmV: number) => {
+    const ra = raH * 15 * D2R, dec = decD * D2R, eps = 23.439 * D2R;
+    const xe = Math.cos(dec) * Math.cos(ra), ye = Math.cos(dec) * Math.sin(ra), ze = Math.sin(dec);
+    return E2T({ x: xe * distKmV, y: (ye * Math.cos(eps) + ze * Math.sin(eps)) * distKmV, z: (-ye * Math.sin(eps) + ze * Math.cos(eps)) * distKmV });
+  };
+  addCraft("Voyager 1", raDec(17.27, 12.45, 167 * AU));
+  addCraft("Voyager 2", raDec(20.12, -58.96, 139 * AU));
+  addCraft("New Horizons", raDec(19.6, -20.5, 61 * AU));
+  {
+    const jwst = addCraft("JWST", { x: 0, y: 0, z: 0 }, 4e8);
+    jwst.update = () => {
+      const d = Math.hypot(earth.pos.x, earth.pos.y, earth.pos.z) || 1;
+      const f = (d + 1.5e6) / d;      // Sun–Earth L2: 1.5M km anti-sunward of Earth
+      jwst.pos.x = earth.pos.x * f; jwst.pos.y = earth.pos.y * f; jwst.pos.z = earth.pos.z * f;
+    };
+    jwst.update(now, 0);
+    const hst = addCraft("Hubble", { x: 0, y: 0, z: 0 }, 6e5);
+    hst.update = (_d, simDays) => {
+      const ang = (simDays * 86400 / 5760) * 2 * Math.PI;   // a 96-minute orbit
+      hst.pos.x = earth.pos.x + Math.cos(ang) * 6911;
+      hst.pos.y = earth.pos.y + Math.sin(ang) * 2400;
+      hst.pos.z = earth.pos.z - Math.sin(ang) * 6911;
+    };
+    hst.update(now, 0);
+  }
+
+  INFO["Halley's Comet"] = { facts: [["Period", "75–76 years"], ["Last here", "1986"], ["Returns", "2061"], ["Nucleus", "15 km of ice and dust"]], text: [
+    "The first comet ever recognised as a visitor that returns. Every record of it — 240 BC in Chinese annals, 1066 on the Bayeux Tapestry, 1910, 1986 — is the same fifteen-kilometre lump of ice and soot, falling sunward again and again. Run time forward to 2061 and watch its tail wake as it falls back in.",
+    "Each pass costs it a metre or two of surface. It has perhaps a few thousand returns left.",
+  ] };
+  INFO["Hale–Bopp"] = { facts: [["Seen", "1996–97, for 18 months"], ["Nucleus", "~60 km — a giant"], ["Next return", "~year 4385"]], text: [
+    "The great comet of 1997 — visible to the naked eye for a record eighteen months, watched by more humans than any comet in history. Its nucleus is some sixty kilometres across, ten times Halley's width. It is now far beyond Neptune, climbing away on a 2,500-year ellipse.",
+  ] };
+  INFO["Oort Cloud"] = { facts: [["Distance", "~5,000–50,000 AU"], ["Contents", "trillions of icy bodies"], ["Status", "never observed directly"]], text: [
+    "Beyond the planets, beyond Pluto, beyond everything we have ever photographed, the Sun keeps a vast spherical cloud of frozen leftovers from the Solar System's construction — trillions of comets-in-waiting, so far away that the Sun is merely the brightest star in their sky. A passing star's gravity occasionally tips one inward, and decades later we see a new comet.",
+    "No spacecraft has reached it. Voyager 1, our farthest machine, will take three hundred years to arrive at its inner edge.",
+  ] };
+  INFO["Voyager 1"] = { facts: [["Launched", "1977"], ["Distance", "~167 AU — the farthest"], ["Status", "still calling home"]], text: [
+    "The farthest human-made object. Launched in 1977 with a golden record of Earth's sounds, it crossed into interstellar space in 2012 and still whispers data home daily — a signal that takes nearly a full day to arrive, transmitted with the power of a refrigerator light bulb.",
+    "It carries Chuck Berry, Bach, greetings in 55 languages, and the sound of a kiss. It will outlast the Earth.",
+  ] };
+  INFO["Voyager 2"] = { facts: [["Launched", "1977"], ["Grand Tour", "all four giant planets"], ["Distance", "~139 AU"]], text: [
+    "The only spacecraft ever to visit Uranus and Neptune — the Grand Tour, riding a planetary alignment that occurs once every 176 years. Nearly everything in our textbooks about the ice giants came from its few days of flyby in 1986 and 1989.",
+  ] };
+  INFO["New Horizons"] = { facts: [["Launched", "2006"], ["Pluto flyby", "14 July 2015"], ["Distance", "~61 AU"]], text: [
+    "The fastest launch in history — it passed the Moon in nine hours — and the mission that turned Pluto from a dot into a world with mountains and a heart. It is still flying outward through the Kuiper Belt, with power to keep observing into the 2040s.",
+  ] };
+  INFO["JWST"] = { facts: [["Orbit", "Sun–Earth L2, 1.5M km out"], ["Mirror", "6.5 m, gold-plated"], ["Sees", "the first galaxies"]], text: [
+    "The largest telescope ever sent to space rides a point of gravitational balance 1.5 million kilometres behind Earth, hiding from the Sun behind a tennis-court-sized shield, chilled to −233 °C so it can feel the infrared warmth of the universe's first galaxies. It can detect the heat of a bumblebee at the distance of the Moon.",
+  ] };
+  INFO["Hubble"] = { facts: [["Launched", "1990"], ["Orbit", "~540 km up, 96 minutes"], ["Legacy", "1.6M+ observations"]], text: [
+    "Thirty-five years of the sharpest eyes humanity has owned. Hubble measured the age of the universe, proved its expansion is accelerating, and took the Deep Fields — pictures of 'empty' sky that turned out to hold thousands of galaxies each. Much of what this Atlas shows, Hubble taught us.",
+  ] };
+
   /* ---------- orbit lines (sampled true orbits, faint) ---------- */
-  const orbitGroup = new THREE.Group();
-  scene.add(orbitGroup);
-  const orbitMat = new THREE.LineBasicMaterial({ color: 0xa9bcff, transparent: true, opacity: 0.16 });
   const yearDays: Record<string, number> = { Mercury: 88, Venus: 225, Earth: 365.25, Mars: 687, Jupiter: 4333, Saturn: 10759, Uranus: 30687, Neptune: 60190 };
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
     const pts: THREE.Vector3[] = [];
@@ -675,6 +905,9 @@ export function mountAtlas(opts: Opts): () => void {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
 
+    // the stars breathe — granulation, plage and prominences all animate
+    for (const m of starMats) (m.uniforms["uTime"] as { value: number }).value = nowMs * 0.001;
+
     // time flows — at whatever rate the visitor chose — and the worlds move
     simMs += dt * 1000 * speed;
     const simDate = new Date(simMs);
@@ -718,7 +951,7 @@ export function mountAtlas(opts: Opts): () => void {
           // a planet must OUTSHINE the background stars — never become a label
           // floating over nothing
           mat.opacity = Math.min(1, (0.004 - ang) / 0.0015);
-          b.dot.scale.setScalar(Math.max(b.radius * 2.5, d * 0.0095));
+          b.dot.scale.setScalar(Math.max(b.radius * 2.5, d * (b.dotK ?? 0.0095)));
         }
       }
     }
