@@ -519,17 +519,32 @@ export function mountAtlas(opts: Opts): () => void {
     Mercury: "mercury.jpg", Venus: "venus.jpg", Earth: "earth_day.jpg", Mars: "mars.jpg",
     Jupiter: "jupiter.jpg", Saturn: "saturn.jpg", Uranus: "uranus.jpg", Neptune: "neptune.jpg",
   };
+  // Photoreal normal maps (from Grok Imagine) for depth on key bodies
+  const PLANET_NORMALS: Record<string, string> = {}; // Earth and Mars reverted to original per request; other enhancements untouched
   const TILT: Record<string, number> = { Mercury: 0.03, Venus: 177.4, Earth: 23.4, Mars: 25.2, Jupiter: 3.1, Saturn: 26.7, Uranus: 97.8, Neptune: 28.3 };
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
     const p = planetPosition(pn, now);
     const km = E2T({ x: p.x * AU, y: p.y * AU, z: p.z * AU });
+    const mat = new THREE.MeshStandardMaterial({
+      map: T(PLANET_TEX[pn]!),
+      roughness: (pn === "Jupiter" || pn === "Saturn") ? 0.75 : 0.95,
+      metalness: 0,
+    });
+    const nrmFile = PLANET_NORMALS[pn];
+    if (nrmFile) {
+      const nm = T(nrmFile); // reuse loader (it sets SRGB but we'll override below)
+      nm.colorSpace = THREE.NoColorSpace;
+      nm.flipY = true;
+      mat.normalMap = nm;
+      mat.normalScale = new THREE.Vector2(1.12, 1.12);
+    }
     const m = new THREE.Mesh(
       new THREE.SphereGeometry(RADII[pn]!, segMain, segMain / 2),
-      new THREE.MeshPhongMaterial({ map: T(PLANET_TEX[pn]!), shininess: 4 }),
+      mat,
     );
     m.rotation.z = (TILT[pn] ?? 0) * D2R;
     if (pn === "Earth") {
-      // a living Earth: drifting cloud shell + the blue limb of an atmosphere
+      // a living Earth: drifting cloud shell + the blue limb of an atmosphere (reverted Earth core to original behavior)
       const clouds = new THREE.Mesh(
         new THREE.SphereGeometry(RADII["Earth"]! * 1.012, segMain, segMain / 2),
         new THREE.MeshPhongMaterial({ map: T("earth_clouds.jpg"), transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }),
@@ -570,9 +585,12 @@ export function mountAtlas(opts: Opts): () => void {
 
   // the Moon — mean circular orbit (good to a few degrees)
   const earth = bodies.find(b => b.name === "Earth")!;
+  const moonNormal = T("moon_normal.jpg");
+  moonNormal.colorSpace = THREE.NoColorSpace;
+  moonNormal.flipY = true;
   const moonMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(RADII["Moon"]!, 48, 24),
-    new THREE.MeshPhongMaterial({ map: T("moon.jpg"), shininess: 2 }),
+    new THREE.SphereGeometry(RADII["Moon"]!, 64, 40),
+    new THREE.MeshStandardMaterial({ map: T("moon.jpg"), normalMap: moonNormal, normalScale: new THREE.Vector2(1.25, 1.25), roughness: 0.96, metalness: 0 }),
   );
   const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0.00001);
   moon.labelMax = 2.5e7;
@@ -610,12 +628,26 @@ export function mountAtlas(opts: Opts): () => void {
     mb.update(now, 0);
   }
 
-  // Pluto — the heart-bearing dwarf, on its true inclined orbit
+  // Pluto — the heart-bearing dwarf, on its true inclined orbit (using new PBR model from downloads/pluto.html + textures)
   {
+    const diff = T("pluto_diffuse.png");
+    const nrm = T("pluto_normal.png");
+    nrm.colorSpace = THREE.NoColorSpace;
+    nrm.flipY = true;
+    const spec = T("pluto_specular.png");
+    spec.colorSpace = THREE.NoColorSpace;
     const pm = new THREE.Mesh(
-      new THREE.SphereGeometry(RADII["Pluto"]!, 48, 24),
-      new THREE.MeshPhongMaterial({ map: worldTexture("Pluto"), shininess: 3 }),
+      new THREE.SphereGeometry(RADII["Pluto"]!, 96, 64),
+      new THREE.MeshStandardMaterial({
+        map: diff,
+        normalMap: nrm,
+        normalScale: new THREE.Vector2(1.4, 1.4),
+        roughnessMap: spec,
+        roughness: 0.95,
+        metalness: 0,
+      }),
     );
+    pm.rotation.z = THREE.MathUtils.degToRad(119.5);
     const pb = addBody("Pluto", { x: 0, y: 0, z: 0 }, pm, 0.00002);
     pb.update = (date) => {
       const q = plutoPosition(date);
@@ -933,65 +965,205 @@ export function mountAtlas(opts: Opts): () => void {
   const galaxy = new THREE.Group();
   galaxy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(poleK.x, poleK.y, poleK.z).normalize());
   scene.add(galaxy);
-  const GAL_N = small ? 46000 : 92000;
-  {
-    const pos = new Float32Array(GAL_N * 3);
-    const col = new Float32Array(GAL_N * 3);
-    const cWarm = new THREE.Color(0xffd9a8), cBlue = new THREE.Color(0xaecbff),
-      cWhite = new THREE.Color(0xf2ecff), cPink = new THREE.Color(0xff9bb4), tmp = new THREE.Color();
-    for (let i = 0; i < GAL_N; i++) {
-      const kind = Math.random();
-      let x = 0, y = 0, z = 0;
-      if (kind < 0.24) {            // the bulge — warm, flattened
-        const r = Math.pow(Math.random(), 1.6) * 3600 * LY;
-        const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        x = r * rr * Math.cos(th); y = r * rr * Math.sin(th); z = r * u * 0.62;
-        tmp.copy(cWarm).lerp(cWhite, Math.random() * 0.4);
-      } else if (kind < 0.94) {     // the disk + four log-spiral arms
-        const r = Math.min(47000, 2600 + (-Math.log(1 - Math.random()) * 11500)) * LY;
-        const arm = (i % 4) * (Math.PI / 2);
-        const theta = arm + Math.log(r / (1800 * LY)) * 2.05 + (Math.random() - 0.5) * 0.55;
-        x = Math.cos(theta) * r; y = Math.sin(theta) * r;
-        z = (Math.random() + Math.random() + Math.random() - 1.5) * (260 + 800 * Math.exp(-r / (8000 * LY))) * LY * 0.8;
-        const blue = Math.min(1, r / (16000 * LY));
-        tmp.copy(cWarm).lerp(cBlue, 0.25 + blue * 0.6);
-        if (Math.random() < 0.05) tmp.copy(cPink);          // HII regions along the arms
-      } else {                      // a sparse halo
-        const r = Math.pow(Math.random(), 0.6) * 58000 * LY;
-        const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        x = r * rr * Math.cos(th); y = r * rr * Math.sin(th); z = r * u * 0.75;
-        tmp.copy(cWhite).multiplyScalar(0.7);
+
+  /** the Milky Way as a PAINTING: a procedural photo-real disk — blazing
+   *  barred core, two grand arms and two minor ones as soft density waves,
+   *  dark dust lanes along their inner edges, blue OB knots and pink HII
+   *  regions — over which 3D point-grain gives parallax and depth. */
+  function galaxyTexture(): THREE.Texture {
+    const S = 1024, C = S / 2;
+    const c = document.createElement("canvas"); c.width = c.height = S;
+    const x = c.getContext("2d")!;
+    const blob = (bx: number, by: number, r: number, col: string) => {
+      const g = x.createRadialGradient(bx, by, 0, bx, by, r);
+      g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
+      x.fillStyle = g; x.beginPath(); x.arc(bx, by, r, 0, 6.29); x.fill();
+    };
+    x.globalCompositeOperation = "lighter";
+    // the smooth outer disk haze — the body of the galaxy
+    blob(C, C, 470, "rgba(168,162,196,0.34)");
+    blob(C, C, 360, "rgba(196,188,212,0.30)");
+    // arms: log spirals out of the bar ends; majors bright, minors fainter
+    const ARMS = [
+      { th0: 0.35, a: 0.16 }, { th0: 0.35 + Math.PI, a: 0.16 },          // Scutum–Centaurus / Perseus
+      { th0: 0.35 + Math.PI / 2, a: 0.085 }, { th0: 0.35 - Math.PI / 2, a: 0.085 },   // minors
+    ];
+    for (const arm of ARMS) {
+      for (let i = 0; i < 150; i++) {
+        const t = i / 150;
+        const th = arm.th0 + t * 4.0;
+        const r = 92 * Math.exp(0.4 * t * 4.0 * 0.34);
+        if (r > 480) break;
+        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
+        const w = 30 * (1 - t * 0.35);
+        const warm = Math.max(0, 1 - t * 1.6);
+        x.fillStyle = "";
+        blob(px, py, w, `rgba(${210 + warm * 45},${208 + warm * 25},${235 - warm * 30},${arm.a})`);
       }
-      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+    }
+    // blue OB associations + pink HII regions riding the major arms
+    for (const arm of [ARMS[0]!, ARMS[1]!]) {
+      for (let i = 0; i < 130; i++) {
+        const t = Math.random();
+        const th = arm.th0 + t * 4.0 + (Math.random() - 0.5) * 0.12;
+        const r = 92 * Math.exp(0.4 * t * 4.0 * 0.34) * (0.95 + Math.random() * 0.1);
+        if (r > 470) continue;
+        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
+        if (Math.random() < 0.22) blob(px, py, 5 + Math.random() * 7, "rgba(255,150,170,0.5)");
+        else blob(px, py, 4 + Math.random() * 8, "rgba(150,185,255,0.45)");
+      }
+    }
+    // the bar + bulge + blazing core
+    x.save(); x.translate(C, C); x.rotate(0.35); x.scale(2.5, 1);
+    blob(0, 0, 105, "rgba(255,222,170,0.85)");
+    x.restore();
+    blob(C, C, 130, "rgba(255,228,185,0.75)");
+    blob(C, C, 56, "rgba(255,246,224,1)");
+    // dust lanes — carved along the inner edges of the major arms
+    x.globalCompositeOperation = "source-over";
+    for (const arm of [ARMS[0]!, ARMS[1]!]) {
+      for (let i = 0; i < 120; i++) {
+        const t = i / 120;
+        const th = arm.th0 + t * 4.0 - 0.05;
+        const r = (92 * Math.exp(0.4 * t * 4.0 * 0.34)) * 0.88;
+        if (r > 460 || r < 95) continue;
+        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
+        blob(px, py, 13 * (1 - t * 0.3), "rgba(8,5,3,0.38)");
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  const galFadeMats: { m: THREE.Material & { opacity: number }; max: number }[] = [];
+  {
+    // the painted disk itself
+    const disk = new THREE.Mesh(
+      new THREE.CircleGeometry(50000 * LY, 72),
+      new THREE.MeshBasicMaterial({ map: galaxyTexture(), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    galaxy.add(disk);
+    galFadeMats.push({ m: disk.material as THREE.MeshBasicMaterial, max: 1 });
+    // 3D grain: a soft wide stellar disk + thin arm sparkle + halo
+    const N = small ? 26000 : 48000;
+    const pos = new Float32Array(N * 3);
+    const col = new Float32Array(N * 3);
+    const cWarm = new THREE.Color(0xffe2bb), cBlue = new THREE.Color(0xb8ccff), cWhite = new THREE.Color(0xeae6f4), tmp = new THREE.Color();
+    for (let i = 0; i < N; i++) {
+      const kind = Math.random();
+      let gx = 0, gy = 0, gz = 0;
+      if (kind < 0.18) {           // bulge/bar grain
+        const r = Math.pow(Math.random(), 1.7) * 4200 * LY;
+        const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+        gx = r * rr * Math.cos(th2) * 1.7; gy = r * rr * Math.sin(th2); gz = r * u * 0.55;
+        const ca = Math.cos(0.35), sa = Math.sin(0.35);
+        const bx = gx * ca - gy * sa, by = gx * sa + gy * ca; gx = bx; gy = by;
+        tmp.copy(cWarm);
+      } else if (kind < 0.93) {    // the broad stellar disk (smooth, not stringy)
+        const r = Math.min(48000, (-Math.log(1 - Math.random()) * 13000)) * LY;
+        const th2 = Math.random() * 6.2832;
+        gx = Math.cos(th2) * r; gy = Math.sin(th2) * r;
+        gz = (Math.random() + Math.random() + Math.random() - 1.5) * (300 + 700 * Math.exp(-r / (9000 * LY))) * LY * 0.7;
+        tmp.copy(cWarm).lerp(cBlue, Math.min(1, r / (30000 * LY)) * 0.7).lerp(cWhite, 0.3);
+      } else {                     // halo
+        const r = Math.pow(Math.random(), 0.6) * 60000 * LY;
+        const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+        gx = r * rr * Math.cos(th2); gy = r * rr * Math.sin(th2); gz = r * u * 0.8;
+        tmp.copy(cWhite).multiplyScalar(0.6);
+      }
+      pos[i * 3] = gx; pos[i * 3 + 1] = gy; pos[i * 3 + 2] = gz;
       col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
     }
     const gg = new THREE.BufferGeometry();
     gg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     gg.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    galaxy.add(new THREE.Points(gg, new THREE.PointsMaterial({
-      size: 1.7, sizeAttenuation: false, vertexColors: true,
+    const grain = new THREE.Points(gg, new THREE.PointsMaterial({
+      size: 1.35, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
-    })));
+    }));
+    galaxy.add(grain);
+    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.5 });
+    // the core's vertical glow (a galaxy glows brightest where it is deepest)
     const core = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(), color: 0xffe2b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+      map: glowTexture(), color: 0xffe9c4, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
     }));
-    core.scale.setScalar(11000 * LY);
+    core.scale.setScalar(9000 * LY);
     galaxy.add(core);
+    galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.75 });
   }
-  const galPts = galaxy.children[0] as THREE.Points;
-  const galCore = galaxy.children[1] as THREE.Sprite;
 
-  // Sagittarius A* — the four-million-Sun heart, a destination of its own
+  // Sagittarius A* — a WORKING black hole: shadow, photon ring, and a
+  // swirling, doppler-boosted accretion disk that never stops turning
   {
+    const RS = 4e7;                  // shadow radius (icon scale, km)
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(4e7, 32, 16), new THREE.MeshBasicMaterial({ color: 0x000000 })));
-    const acc = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(), color: 0xffb060, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(RS, 48, 24), new THREE.MeshBasicMaterial({ color: 0x000000 })));
+    // the photon ring — a razor of light hugging the shadow, always facing you
+    const ringTex = (() => {
+      const c = document.createElement("canvas"); c.width = c.height = 256;
+      const x = c.getContext("2d")!;
+      const g2 = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+      g2.addColorStop(0.0, "rgba(0,0,0,0)");
+      g2.addColorStop(0.46, "rgba(0,0,0,0)");
+      g2.addColorStop(0.52, "rgba(255,214,150,0.9)");
+      g2.addColorStop(0.56, "rgba(255,240,215,1)");
+      g2.addColorStop(0.62, "rgba(255,170,90,0.45)");
+      g2.addColorStop(0.78, "rgba(255,140,60,0.1)");
+      g2.addColorStop(1, "rgba(0,0,0,0)");
+      x.fillStyle = g2; x.fillRect(0, 0, 256, 256);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    })();
+    const ring = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: ringTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
     }));
-    acc.scale.setScalar(6e8);
-    g.add(acc);
+    ring.scale.setScalar(RS * 4.6);
+    g.add(ring);
+    // the accretion disk — an animated shader: hot streaks shearing around
+    // the hole, white-hot inside fading to deep ember, one side doppler-bright
+    const ACC_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform float uTime;
+varying vec2 vUv;
+${STAR_NOISE}
+void main(){
+#include <logdepthbuf_fragment>
+  vec2 p = vUv * 2.0 - 1.0;
+  float r = length(p);
+  if (r > 1.0 || r < 0.30) discard;
+  float th = atan(p.y, p.x);
+  // differential rotation: inner orbits faster — streaks shear as they turn
+  float swirl = fbm3(vec3(th * 2.4 + uTime * (1.6 / (r + 0.25)), r * 7.0 - uTime * 0.22, 3.7));
+  float band = smoothstep(0.30, 0.40, r) * smoothstep(1.0, 0.62, r);
+  float hot = smoothstep(0.34, 0.82, swirl);
+  vec3 col = mix(vec3(0.62, 0.12, 0.02), vec3(1.0, 0.62, 0.22), hot);
+  col = mix(col, vec3(1.0, 0.93, 0.78), smoothstep(0.52, 0.31, r) * hot);
+  float doppler = 1.0 + 0.65 * sin(th + uTime * 0.12);
+  float a = band * (0.35 + 0.65 * hot) * doppler;
+  gl_FragColor = vec4(col * doppler * 1.5, a);
+}`;
+    const ACC_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec2 vUv;
+void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+#include <logdepthbuf_vertex>
+}`;
+    const accMat = new THREE.ShaderMaterial({
+      vertexShader: ACC_VERT, fragmentShader: ACC_FRAG,
+      uniforms: { uTime: { value: 0 }, uCol: { value: new THREE.Color(1, 1, 1) }, uHot: { value: new THREE.Color(1, 1, 1) }, uScale: { value: 1 } },
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    });
+    starMats.push(accMat);           // rides the same uTime tick as the living stars
+    const disk = new THREE.Mesh(new THREE.PlaneGeometry(RS * 11, RS * 11), accMat);
+    disk.rotation.x = Math.PI / 2 - 0.42;   // a cinematic tilt
+    disk.rotation.y = 0.2;
+    g.add(disk);
+    const haze = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTexture(), color: 0xff9a50, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.5,
+    }));
+    haze.scale.setScalar(RS * 14);
+    g.add(haze);
     const sgr = addBody("Sagittarius A*", GAL_C, g, 0);
-    sgr.kind = "star"; sgr.radius = 4e7; sgr.minD = 3e8; sgr.dotK = 0.015;
+    sgr.kind = "star"; sgr.radius = RS; sgr.minD = RS * 6; sgr.dotK = 0.015;
     sgr.line = "Four million Suns crushed into a single point — the still centre our galaxy turns around, 26,660 light-years in.";
     if (sgr.dot) (sgr.dot.material as THREE.SpriteMaterial).color.set(0xffc890);
   }
@@ -1253,8 +1425,7 @@ export function mountAtlas(opts: Opts): () => void {
       const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
       const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
       const gFade = g01 * g01 * (3 - 2 * g01);
-      (galPts.material as THREE.PointsMaterial).opacity = gFade * 0.95;
-      (galCore.material as THREE.SpriteMaterial).opacity = gFade * 0.8;
+      for (const f of galFadeMats) f.m.opacity = gFade * f.max;
       (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
     }
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera

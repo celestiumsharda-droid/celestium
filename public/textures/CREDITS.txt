@@ -1,11 +1,17 @@
-Planetary, lunar, solar and Milky Way texture maps in this directory are
-from Solar System Scope (https://www.solarsystemscope.com/textures),
-released under Creative Commons Attribution 4.0 International (CC BY 4.0).
+Planetary texture maps in this directory are a mix of sources.
 
-Attribution: Textures by Solar System Scope, CC BY 4.0.
-License: https://creativecommons.org/licenses/by/4.0/
+LEGACY BASE MAPS (from Solar System Scope, CC BY 4.0):
+  sun.jpg, mercury.jpg, venus.jpg, earth_day.jpg, mars.jpg, uranus.jpg, neptune.jpg, stars_milky_way.jpg, saturn_ring.png and others.
+  https://www.solarsystemscope.com/textures
 
-Files:
-  sun.jpg, mercury.jpg, venus.jpg, earth_day.jpg, earth_clouds.jpg,
-  moon.jpg, mars.jpg, jupiter.jpg, saturn.jpg, saturn_ring.png,
-  uranus.jpg, neptune.jpg, stars_milky_way.jpg
+PHOTOREALISTIC / ENHANCED TEXTURES:
+  earth_clouds.jpg, jupiter.jpg, saturn.jpg, moon.jpg  (and supporting maps in the folder)
+  Some generated via xAI Grok Imagine for better PBR detail in the 3D scenes.
+
+NEW PLUTO MODEL:
+  pluto_diffuse.png, pluto_normal.png, pluto_specular.png — high-quality PBR textures from user-provided model, used with MeshStandardMaterial (diffuse + normal + roughness) on high-res sphere in the Atlas, with correct axial tilt.
+
+Legacy originals for reverted assets (Earth day, Mars) and ring are the classic Solar System Scope versions.
+Extra generated maps (normals, night, etc.) and /legacy/ folder are present for reference but not all are loaded after reverts.
+
+See source code (src/engine/atlas.ts, stages.ts) for exact material usage per body.

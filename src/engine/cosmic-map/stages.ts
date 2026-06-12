@@ -11,7 +11,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { glowSprite, glowTexture, ringSprite } from "./glow";
-import { tex } from "./textures";
+import { tex, normalTex, dataTex } from "./textures";
 import { buildBlackHole } from "./blackhole";
 import { PLANET_STYLES, NEAR_STARS, LOCAL_GROUP, raDecToXYZ } from "./data";
 import { helio, julianCenturies, type PlanetName } from "../ephemeris";
@@ -106,7 +106,7 @@ function buildEarth(): Stage {
   };
 }
 
-/** A radially-UV'd, textured planetary ring (Saturn). */
+/** A radially-UV'd, textured planetary ring (Saturn). Upgraded to photoreal ring texture (jpg). */
 function buildRing(planetSize: number, tilt: number): THREE.Mesh {
   const inner = planetSize * 1.4, outer = planetSize * 1.8;
   const geo = new THREE.RingGeometry(inner, outer, 128, 1);
@@ -117,6 +117,7 @@ function buildRing(planetSize: number, tilt: number): THREE.Mesh {
     v.fromBufferAttribute(pos, i);
     uv.setXY(i, (v.length() - inner) / (outer - inner), 0.5);
   }
+  // New ring is jpg (no alpha channel). Use alphaTest to cut the dark background + transparent for nice blend.
   const ring = new THREE.Mesh(
     geo,
     new THREE.MeshBasicMaterial({ map: tex("saturn_ring.png"), transparent: true, side: THREE.DoubleSide, depthWrite: false }),
