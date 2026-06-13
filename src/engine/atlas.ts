@@ -294,45 +294,6 @@ function discTexture(): THREE.Texture {
   return t;
 }
 
-/** a real-looking equirectangular Moon — grey regolith, the dark maria of
- *  the near side, dense cratering and bright young ray craters. Far better
- *  than the shipped moon.jpg (which is a duplicated near-side disk). */
-function moonTexture(): THREE.Texture {
-  const W = 2048, H = 1024, C = document.createElement("canvas"); C.width = W; C.height = H;
-  const x = C.getContext("2d")!;
-  const R = () => Math.random();
-  // base regolith with subtle large-scale mottling
-  x.fillStyle = "#8d8a85"; x.fillRect(0, 0, W, H);
-  const soft = (cx: number, cy: number, r: number, col: string, a: number) => {
-    for (const ox of [-W, 0, W]) { const g = x.createRadialGradient(cx + ox, cy, 0, cx + ox, cy, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); x.globalAlpha = a; x.fillStyle = g; x.beginPath(); x.arc(cx + ox, cy, r, 0, 6.29); x.fill(); } x.globalAlpha = 1;
-  };
-  for (let i = 0; i < 80; i++) soft(R() * W, R() * H, 80 + R() * 220, R() < 0.5 ? "#9a968f" : "#7d7a75", 0.25);
-  // the maria — dark basaltic plains, clustered on the near side (left-centre)
-  const maria: [number, number, number][] = [
-    [0.30, 0.34, 150], [0.40, 0.30, 120], [0.46, 0.42, 130], [0.36, 0.46, 110],
-    [0.52, 0.36, 90], [0.30, 0.52, 80], [0.44, 0.56, 95], [0.58, 0.46, 70], [0.24, 0.42, 70],
-  ];
-  for (const [u, v, r] of maria) {
-    soft(u * W, v * H, r, "#56554f", 0.85); soft(u * W, v * H, r * 0.7, "#4b4a45", 0.7);
-    for (let i = 0; i < 30; i++) soft(u * W + (R() - 0.5) * r * 2, v * H + (R() - 0.5) * r * 1.4, 20 + R() * 50, "#52514b", 0.4);
-  }
-  // craters — dark floor, bright raised rim
-  for (let i = 0; i < 520; i++) {
-    const cx = R() * W, cy = H * (0.08 + R() * 0.84), r = 3 + Math.pow(R(), 2.4) * 46;
-    x.globalAlpha = 0.5; x.strokeStyle = "#b4b0a8"; x.lineWidth = Math.max(1, r * 0.16);
-    for (const ox of [-W, 0, W]) { x.beginPath(); x.arc(cx + ox, cy, r, 0, 6.29); x.stroke(); }
-    soft(cx, cy, r * 0.85, "#6e6b65", 0.5); x.globalAlpha = 1;
-  }
-  // bright young ray craters (Tycho, Copernicus, …) with radiating streaks
-  for (const [u, v, r] of [[0.40, 0.78, 16], [0.46, 0.40, 13], [0.66, 0.30, 10], [0.20, 0.66, 9]] as [number, number, number][]) {
-    const cx = u * W, cy = v * H;
-    x.globalAlpha = 0.5; x.strokeStyle = "#d8d4cc";
-    for (let i = 0; i < 40; i++) { const a = R() * 6.2832, len = r * (4 + R() * 9); x.lineWidth = 1 + R(); x.beginPath(); x.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); x.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len); x.stroke(); }
-    x.globalAlpha = 1; soft(cx, cy, r * 1.3, "#e6e2da", 0.7); soft(cx, cy, r * 0.5, "#6a6760", 0.6);
-  }
-  const t = new THREE.CanvasTexture(C); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = THREE.RepeatWrapping; return t;
-}
-
 /** procedural surface maps for worlds without photographic textures —
  *  blobs and features painted on a 512×256 equirect canvas (drawn thrice,
  *  ±width, so the seam wraps cleanly). Believable at the scale moons are seen. */
@@ -737,45 +698,61 @@ export function mountAtlas(opts: Opts): () => void {
       ring.frustumCulled = false;
       m.add(ring);
     }
-    // Venus and Uranus rotate retrograde (backwards) — a real, if subtle, fact
-    const spinDir = (pn === "Venus" || pn === "Uranus") ? -1 : 1;
-    const pb = addBody(pn, km, m, 0.00012 * spinDir);
+    // true sidereal rotation periods (hours); negative = retrograde
+    // (Venus and Uranus spin backwards). Rotation now tracks SIM TIME at the
+    // real rate — a planet turns once per its true day and freezes when paused.
+    const ROT_H: Record<string, number> = {
+      Mercury: 1407.6, Venus: -5832.5, Earth: 23.934, Mars: 24.623,
+      Jupiter: 9.925, Saturn: 10.656, Uranus: -17.24, Neptune: 16.11,
+    };
+    const rotH = ROT_H[pn]!;
+    const pb = addBody(pn, km, m, 0);   // rotation handled in update, not the generic spin
     if (pn === "Earth") earthBody = pb;
     if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
-    // the system RUNS: every planet recomputes its true position as sim time flows
-    pb.update = (date) => {
+    // the system RUNS: every planet recomputes its true position AND turns on
+    // its axis at the real rate as sim time flows
+    pb.update = (date, simDays) => {
       const q = planetPosition(pn, date);
       const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
       pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
+      m.rotation.y = (simDays * 24 / rotH) * 2 * Math.PI;
     };
     pb.update(now, 0);
   }
 
-  // the Moon — mean circular orbit (good to a few degrees)
+  // the Moon — real 4K lunar albedo (8K source from the Solar System Scope
+  // CC-BY set) with a luminance-derived bump for crater relief; mean circular
+  // orbit, inclined 5.1° to the ecliptic and tidally locked
   const earth = bodies.find(b => b.name === "Earth")!;
+  const moonBump = T("moon_bump.jpg"); moonBump.colorSpace = THREE.NoColorSpace;
   const moonMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(RADII["Moon"]!, 96, 60),
-    new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 0.98, metalness: 0 }),
+    new THREE.SphereGeometry(RADII["Moon"]!, 128, 80),
+    new THREE.MeshStandardMaterial({ map: T("moon_4k.jpg"), bumpMap: moonBump, bumpScale: 12, roughness: 1, metalness: 0 }),
   );
   const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0);   // tidally locked: no free spin
   moon.labelMax = 2.5e7;
+  const MOON_INC = 5.14 * D2R;                  // the Moon's real orbital tilt to the ecliptic
   moon.update = (_d, simDays) => {
     const ang = (218.316 + 13.176396 * simDays) * D2R;
-    moon.pos.x = earth.pos.x + Math.cos(ang) * 384400;
-    moon.pos.y = earth.pos.y;
-    moon.pos.z = earth.pos.z - Math.sin(ang) * 384400;
+    const ox = Math.cos(ang) * 384400, oz = -Math.sin(ang) * 384400;
+    moon.pos.x = earth.pos.x + ox;
+    moon.pos.y = earth.pos.y - oz * Math.sin(MOON_INC);   // bob above/below the ecliptic
+    moon.pos.z = earth.pos.z + oz * Math.cos(MOON_INC);
     moonMesh.rotation.y = ang - Math.PI / 2;   // tidal lock — one face forever toward Earth
   };
 
   // the great moons of Jupiter and Saturn — circular orbits, true radii/periods
   const jupiter = bodies.find(b => b.name === "Jupiter")!;
   const saturn = bodies.find(b => b.name === "Saturn")!;
-  const MOONS: { n: string; parent: Body; orbR: number; perD: number; col: number; lblMax: number }[] = [
-    { n: "Io",       parent: jupiter, orbR: 421700,  perD: 1.769,  col: 0xd8c060, lblMax: 8e7 },
-    { n: "Europa",   parent: jupiter, orbR: 671034,  perD: 3.551,  col: 0xd8cdb8, lblMax: 8e7 },
-    { n: "Ganymede", parent: jupiter, orbR: 1070412, perD: 7.155,  col: 0x9a8d7d, lblMax: 8e7 },
-    { n: "Callisto", parent: jupiter, orbR: 1882709, perD: 16.689, col: 0x6f665c, lblMax: 8e7 },
-    { n: "Titan",    parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 8e7 },
+  // each moon orbits in its PLANET's equatorial plane (inc = the planet's
+  // axial tilt to the ecliptic): the Galileans nearly flat (Jupiter 3.1°),
+  // Titan steeply tilted (Saturn 26.7°)
+  const MOONS: { n: string; parent: Body; orbR: number; perD: number; col: number; lblMax: number; inc: number }[] = [
+    { n: "Io",       parent: jupiter, orbR: 421700,  perD: 1.769,  col: 0xd8c060, lblMax: 8e7, inc: 3.1 },
+    { n: "Europa",   parent: jupiter, orbR: 671034,  perD: 3.551,  col: 0xd8cdb8, lblMax: 8e7, inc: 3.1 },
+    { n: "Ganymede", parent: jupiter, orbR: 1070412, perD: 7.155,  col: 0x9a8d7d, lblMax: 8e7, inc: 3.1 },
+    { n: "Callisto", parent: jupiter, orbR: 1882709, perD: 16.689, col: 0x6f665c, lblMax: 8e7, inc: 3.1 },
+    { n: "Titan",    parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 8e7, inc: 26.7 },
   ];
   for (const mn of MOONS) {
     const mm = new THREE.Mesh(
@@ -784,12 +761,13 @@ export function mountAtlas(opts: Opts): () => void {
     );
     const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0);   // tidally locked: no free spin
     mb.labelMax = mn.lblMax;
-    const phase = Math.random() * 6.2832;
+    const phase = Math.random() * 6.2832, inc = mn.inc * D2R;
     mb.update = (_d, simDays) => {
       const ang = phase + (simDays / mn.perD) * 6.2832;
-      mb.pos.x = mn.parent.pos.x + Math.cos(ang) * mn.orbR;
-      mb.pos.y = mn.parent.pos.y;
-      mb.pos.z = mn.parent.pos.z - Math.sin(ang) * mn.orbR;
+      const ox = Math.cos(ang) * mn.orbR, oz = -Math.sin(ang) * mn.orbR;
+      mb.pos.x = mn.parent.pos.x + ox;
+      mb.pos.y = mn.parent.pos.y - oz * Math.sin(inc);   // ride the planet's equatorial plane
+      mb.pos.z = mn.parent.pos.z + oz * Math.cos(inc);
       mm.rotation.y = ang - Math.PI / 2;   // tidal lock — every major moon keeps one face to its planet
     };
     mb.update(now, 0);

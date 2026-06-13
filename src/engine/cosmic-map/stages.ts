@@ -88,7 +88,7 @@ function buildEarth(): Stage {
   // Moon
   const moon = new THREE.Mesh(
     new THREE.SphereGeometry(6, 48, 32),
-    new THREE.MeshStandardMaterial({ map: tex("moon.jpg"), roughness: 1, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ map: tex("moon_4k.jpg"), roughness: 1, metalness: 0 }),
   );
   moon.position.set(58, 6, -16);
   g.add(moon);
