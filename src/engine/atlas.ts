@@ -67,6 +67,8 @@ interface Body {
   dot?: THREE.Sprite;                // the point of light it becomes at distance
   clouds?: THREE.Mesh;               // Earth's cloud shell
   labelMax?: number;                 // hide label/dot beyond this camera distance (moons)
+  arriveK?: number;                  // fly-to framing distance = radius × this (default 5)
+  arrivePitch?: number;              // override the arrival pitch (rings open above the plane)
   update?: (date: Date, simDays: number) => void;   // live orbital motion
   kind?: "star";                     // catalogue stars live by different label rules
   dotK?: number;                     // apparent-size class of its point of light
@@ -434,17 +436,22 @@ function livingStar(radiusKm: number, color: number, granScale: number, seg = 64
   });
   starMats.push(surf, flare);
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(radiusKm, seg, seg / 2), surf));
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(radiusKm * 1.045, seg, seg / 2), flare));
+  const surfMesh = new THREE.Mesh(new THREE.SphereGeometry(radiusKm, seg, seg / 2), surf);
+  const flareMesh = new THREE.Mesh(new THREE.SphereGeometry(radiusKm * 1.045, seg, seg / 2), flare);
+  g.add(surfMesh); g.add(flareMesh);
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
   }));
   halo.scale.setScalar(radiusKm * 7);
   g.add(halo);
   // the halo belongs to the DISTANT star — close up it would fog the living
-  // surface, so the frame loop fades it with proximity via userData
+  // surface, so the frame loop fades it with proximity via userData.
+  // LOD: the costly fbm surface shaders only render when the star is near
+  // enough to read as a disk — sub-pixel stars show only their halo + dot.
   g.userData["halo"] = halo;
   g.userData["starR"] = radiusKm;
+  g.userData["lod"] = [surfMesh, flareMesh];
+  g.userData["lodMats"] = [surf, flare];
   return g;
 }
 
@@ -567,13 +574,40 @@ export function mountAtlas(opts: Opts): () => void {
         const r = Math.hypot(ps.getX(i), ps.getY(i));
         uv.setXY(i, (r - inner) / (outer - inner), 0.5);
       }
+      // a procedural ring strip — radial profile painted in-canvas: gold/tan
+      // bands, the dark Cassini division, soft inner/outer fade, real alpha.
+      // (the shipped saturn_ring.png renders invisible — its alpha is broken.)
+      const ringTex = (() => {
+        const W = 1024, H = 8, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+        const cx = cv.getContext("2d")!;
+        for (let i = 0; i < W; i++) {
+          const u = i / W;                                  // 0 inner → 1 outer
+          // crisp alpha (for alphaTest) + a banded gold luminance profile
+          let lum = 0.55, alpha = 1.0;
+          if (u < 0.06) { alpha = 0; }                                               // inner gap before the rings
+          else if (u < 0.10) { alpha = 1; lum = 0.42 + 0.06 * Math.sin(u * 120); }   // faint C ring
+          else if (u < 0.63) { alpha = 1; lum = 0.62 + 0.13 * Math.sin(u * 95); }    // bright B ring, banded
+          else if (u < 0.69) { alpha = 0; }                                          // Cassini division — a true gap
+          else if (u < 0.97) { alpha = 1; lum = 0.58 + 0.11 * Math.sin(u * 130); }   // A ring, banded
+          else { alpha = 0; }                                                        // outer edge
+          const r = Math.min(255, 232 * lum + 34), g = Math.min(255, 206 * lum + 24), bl = Math.min(255, 158 * lum + 14);
+          cx.fillStyle = `rgba(${r | 0},${g | 0},${bl | 0},${alpha})`;
+          cx.fillRect(i, 0, 1, H);
+        }
+        const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+      })();
+      // OPAQUE pass + alphaTest (exactly the config the test ring rendered in).
+      // The crowded transparent pass was swallowing the ring behind the huge
+      // transparent galaxy/panorama meshes; alphaTest carves the gaps instead.
       const ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({
-        map: T("saturn_ring.png"), side: THREE.DoubleSide, transparent: true, depthWrite: false, opacity: 0.96,
+        map: ringTex, side: THREE.DoubleSide, transparent: false, alphaTest: 0.5,
       }));
       ring.rotation.x = Math.PI / 2;
+      ring.frustumCulled = false;
       m.add(ring);
     }
     const pb = addBody(pn, km, m, 0.00012);
+    if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
     // the system RUNS: every planet recomputes its true position as sim time flows
     pb.update = (date) => {
       const q = planetPosition(pn, date);
@@ -971,81 +1005,122 @@ export function mountAtlas(opts: Opts): () => void {
    *  dark dust lanes along their inner edges, blue OB knots and pink HII
    *  regions — over which 3D point-grain gives parallax and depth. */
   function galaxyTexture(): THREE.Texture {
-    const S = 1024, C = S / 2;
+    const S = 2048, C = S / 2;
     const c = document.createElement("canvas"); c.width = c.height = S;
     const x = c.getContext("2d")!;
+    const R = () => Math.random();
     const blob = (bx: number, by: number, r: number, col: string) => {
       const g = x.createRadialGradient(bx, by, 0, bx, by, r);
       g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
       x.fillStyle = g; x.beginPath(); x.arc(bx, by, r, 0, 6.29); x.fill();
     };
+    // a logarithmic spiral, ~2.4 turns, tight grand-design pitch
+    const RC = 64, RE = 940, K = Math.log(RE / RC) / (2.4 * 2 * Math.PI);
+    const spiral = (arm: number, t: number) => {       // t 0..1 → {px,py,r,th}
+      const th = arm + t * (2.4 * 2 * Math.PI);
+      const r = RC * Math.exp(K * t * (2.4 * 2 * Math.PI));
+      return { px: C + Math.cos(th) * r, py: C + Math.sin(th) * r, r, th };
+    };
+
+    // 1) the smooth stellar disk — exponential brightness falloff, pale gold→blue
     x.globalCompositeOperation = "lighter";
-    // the smooth outer disk haze — the body of the galaxy
-    blob(C, C, 470, "rgba(168,162,196,0.34)");
-    blob(C, C, 360, "rgba(196,188,212,0.30)");
-    // arms: log spirals out of the bar ends; majors bright, minors fainter
-    const ARMS = [
-      { th0: 0.35, a: 0.16 }, { th0: 0.35 + Math.PI, a: 0.16 },          // Scutum–Centaurus / Perseus
-      { th0: 0.35 + Math.PI / 2, a: 0.085 }, { th0: 0.35 - Math.PI / 2, a: 0.085 },   // minors
-    ];
-    for (const arm of ARMS) {
-      for (let i = 0; i < 150; i++) {
-        const t = i / 150;
-        const th = arm.th0 + t * 4.0;
-        const r = 92 * Math.exp(0.4 * t * 4.0 * 0.34);
-        if (r > 480) break;
-        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
-        const w = 30 * (1 - t * 0.35);
-        const warm = Math.max(0, 1 - t * 1.6);
-        x.fillStyle = "";
-        blob(px, py, w, `rgba(${210 + warm * 45},${208 + warm * 25},${235 - warm * 30},${arm.a})`);
-      }
+    for (let i = 0; i < 320; i++) {
+      const rr = Math.pow(R(), 0.5) * RE;
+      const th = R() * 6.2832;
+      const px = C + Math.cos(th) * rr, py = C + Math.sin(th) * rr;
+      const bluish = Math.min(1, rr / RE);
+      const cr = 200 - bluish * 40, cg = 196 - bluish * 20, cb = 200 + bluish * 40;
+      blob(px, py, 70 + R() * 130, `rgba(${cr|0},${cg|0},${cb|0},${0.05 + 0.05 * (1 - bluish)})`);
     }
-    // blue OB associations + pink HII regions riding the major arms
-    for (const arm of [ARMS[0]!, ARMS[1]!]) {
-      for (let i = 0; i < 130; i++) {
-        const t = Math.random();
-        const th = arm.th0 + t * 4.0 + (Math.random() - 0.5) * 0.12;
-        const r = 92 * Math.exp(0.4 * t * 4.0 * 0.34) * (0.95 + Math.random() * 0.1);
-        if (r > 470) continue;
-        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
-        if (Math.random() < 0.22) blob(px, py, 5 + Math.random() * 7, "rgba(255,150,170,0.5)");
-        else blob(px, py, 4 + Math.random() * 8, "rgba(150,185,255,0.45)");
+
+    // 2) the arms — dense feathered streams of stars, gold inside → blue outside
+    const ARMS = [0.2, 0.2 + Math.PI, 0.2 + Math.PI * 0.5, 0.2 - Math.PI * 0.5];
+    ARMS.forEach((arm, ai) => {
+      const major = ai < 2;
+      const N = major ? 820 : 460;
+      for (let i = 0; i < N; i++) {
+        const t = i / N;
+        const s = spiral(arm, t);
+        if (s.r > RE) break;
+        // feathering: scatter blobs around the arm spine, wider outward
+        const spread = s.r * (0.05 + t * 0.14);
+        const px = s.px + (R() - 0.5) * 2 * spread + (R() - 0.5) * spread;
+        const py = s.py + (R() - 0.5) * 2 * spread + (R() - 0.5) * spread;
+        const warm = Math.max(0, 1 - t * 1.7);
+        const cr = 200 + warm * 55, cg = 210 + warm * 25, cb = 255 - warm * 35;
+        const a = (major ? 0.13 : 0.07) * (1 - t * 0.4);
+        blob(px, py, (major ? 16 : 11) * (1 - t * 0.3), `rgba(${cr|0},${cg|0},${cb|0},${a})`);
       }
-    }
-    // the bar + bulge + blazing core
-    x.save(); x.translate(C, C); x.rotate(0.35); x.scale(2.5, 1);
-    blob(0, 0, 105, "rgba(255,222,170,0.85)");
+    });
+
+    // 3) HII regions (pink) + OB clusters (blue-white) studding the arms
+    ARMS.forEach((arm, ai) => {
+      const N = ai < 2 ? 230 : 120;
+      for (let i = 0; i < N; i++) {
+        const t = 0.06 + R() * 0.94;
+        const s = spiral(arm, t);
+        if (s.r > RE) continue;
+        const spread = s.r * (0.04 + t * 0.12);
+        const px = s.px + (R() - 0.5) * 2 * spread, py = s.py + (R() - 0.5) * 2 * spread;
+        const roll = R();
+        if (roll < 0.34) blob(px, py, 4 + R() * 9, `rgba(255,${120 + R() * 50 | 0},${150 + R() * 40 | 0},${0.35 + R() * 0.3})`);   // HII
+        else if (roll < 0.7) blob(px, py, 3 + R() * 6, `rgba(${170 + R() * 50 | 0},200,255,${0.3 + R() * 0.3})`);                    // OB
+        else blob(px, py, 2 + R() * 3, `rgba(255,255,255,${0.4 + R() * 0.4})`);                                                      // bright knots
+      }
+    });
+
+    // 4) the central bar + bulge + blazing nucleus
+    x.save(); x.translate(C, C); x.rotate(0.2); x.scale(2.1, 1);
+    blob(0, 0, 200, "rgba(255,224,168,0.5)");
+    blob(0, 0, 120, "rgba(255,232,182,0.6)");
     x.restore();
-    blob(C, C, 130, "rgba(255,228,185,0.75)");
-    blob(C, C, 56, "rgba(255,246,224,1)");
-    // dust lanes — carved along the inner edges of the major arms
+    blob(C, C, 240, "rgba(255,226,176,0.55)");
+    blob(C, C, 120, "rgba(255,240,206,0.85)");
+    blob(C, C, 54, "rgba(255,250,232,1)");
+
+    // 5) dust lanes — dark dust weaving on the inner edge of each major arm,
+    //    plus a flocculent dust ring around the bulge
     x.globalCompositeOperation = "source-over";
-    for (const arm of [ARMS[0]!, ARMS[1]!]) {
-      for (let i = 0; i < 120; i++) {
-        const t = i / 120;
-        const th = arm.th0 + t * 4.0 - 0.05;
-        const r = (92 * Math.exp(0.4 * t * 4.0 * 0.34)) * 0.88;
-        if (r > 460 || r < 95) continue;
-        const px = C + Math.cos(th) * r, py = C + Math.sin(th) * r;
-        blob(px, py, 13 * (1 - t * 0.3), "rgba(8,5,3,0.38)");
+    ARMS.slice(0, 2).forEach(arm => {
+      for (let i = 0; i < 360; i++) {
+        const t = i / 360;
+        const s = spiral(arm - 0.14, t);            // a touch inside the bright arm
+        if (s.r > RE * 0.97 || s.r < 70) continue;
+        const spread = s.r * 0.05;
+        const px = s.px + (R() - 0.5) * 2 * spread, py = s.py + (R() - 0.5) * 2 * spread;
+        blob(px, py, 9 * (1 - t * 0.25) + R() * 4, `rgba(40,20,12,${0.16 * (1 - t * 0.4)})`);
       }
+    });
+    for (let i = 0; i < 120; i++) {                 // bulge dust flecks
+      const th = R() * 6.2832, rr = 130 + R() * 150;
+      blob(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 8 + R() * 10, `rgba(50,28,16,${0.1 + R() * 0.08})`);
     }
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
+
+    const tx = new THREE.CanvasTexture(c);
+    tx.colorSpace = THREE.SRGBColorSpace;
+    tx.anisotropy = 8;
+    return tx;
   }
   const galFadeMats: { m: THREE.Material & { opacity: number }; max: number; core?: boolean }[] = [];
   {
-    // the painted disk itself
-    const disk = new THREE.Mesh(
-      new THREE.CircleGeometry(50000 * LY, 72),
-      new THREE.MeshBasicMaterial({ map: galaxyTexture(), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }),
-    );
+    // the painted disk is the HERO — the photoreal galaxy itself. An additive
+    // copy underneath makes it glow like the real thing; the texture on top
+    // carries the structure.
+    const galTex = galaxyTexture();
+    const diskGeo = new THREE.CircleGeometry(52000 * LY, 96);
+    const glowDisk = new THREE.Mesh(diskGeo, new THREE.MeshBasicMaterial({
+      map: galTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    }));
+    galaxy.add(glowDisk);
+    galFadeMats.push({ m: glowDisk.material as THREE.MeshBasicMaterial, max: 0.85, core: true });
+    const disk = new THREE.Mesh(diskGeo, new THREE.MeshBasicMaterial({
+      map: galTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
+    }));
     galaxy.add(disk);
     galFadeMats.push({ m: disk.material as THREE.MeshBasicMaterial, max: 1, core: true });
-    // 3D grain: a soft wide stellar disk + thin arm sparkle + halo
-    const N = small ? 26000 : 48000;
+    // 3D grain: a faint stellar haze that gives the disk THICKNESS at angles —
+    // deliberately dim and tiny so it never speckles over the painted structure
+    const N = small ? 18000 : 30000;
     const pos = new Float32Array(N * 3);
     const col = new Float32Array(N * 3);
     const cWarm = new THREE.Color(0xffe2bb), cBlue = new THREE.Color(0xb8ccff), cWhite = new THREE.Color(0xeae6f4), tmp = new THREE.Color();
@@ -1065,12 +1140,13 @@ export function mountAtlas(opts: Opts): () => void {
         gx = Math.cos(th2) * r; gy = Math.sin(th2) * r;
         gz = (Math.random() + Math.random() + Math.random() - 1.5) * (300 + 700 * Math.exp(-r / (9000 * LY))) * LY * 0.7;
         tmp.copy(cWarm).lerp(cBlue, Math.min(1, r / (30000 * LY)) * 0.7).lerp(cWhite, 0.3);
-      } else {                     // halo
-        const r = Math.pow(Math.random(), 0.6) * 60000 * LY;
+      } else {                     // sparse halo, kept within the disk radius
+        const r = Math.pow(Math.random(), 0.6) * 50000 * LY;
         const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        gx = r * rr * Math.cos(th2); gy = r * rr * Math.sin(th2); gz = r * u * 0.8;
-        tmp.copy(cWhite).multiplyScalar(0.6);
+        gx = r * rr * Math.cos(th2); gy = r * rr * Math.sin(th2); gz = r * u * 0.7;
+        tmp.copy(cWhite).multiplyScalar(0.4);
       }
+      tmp.multiplyScalar(0.55);      // dim — the grain is haze, not the subject
       pos[i * 3] = gx; pos[i * 3 + 1] = gy; pos[i * 3 + 2] = gz;
       col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
     }
@@ -1078,11 +1154,11 @@ export function mountAtlas(opts: Opts): () => void {
     gg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     gg.setAttribute("color", new THREE.BufferAttribute(col, 3));
     const grain = new THREE.Points(gg, new THREE.PointsMaterial({
-      size: 1.35, sizeAttenuation: false, vertexColors: true,
+      size: 0.85, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     galaxy.add(grain);
-    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.5 });
+    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.2 });
     // the core's vertical glow (a galaxy glows brightest where it is deepest)
     const core = new THREE.Sprite(new THREE.SpriteMaterial({
       map: glowTexture(), color: 0xffe9c4, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
@@ -1092,82 +1168,80 @@ export function mountAtlas(opts: Opts): () => void {
     galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.75, core: true });
   }
 
-  // Sagittarius A* — a WORKING black hole: shadow, photon ring, and a
-  // swirling, doppler-boosted accretion disk that never stops turning
+  // Sagittarius A* — a REAL raymarched, gravitationally-lensed black hole.
+  // Photons are integrated along the Schwarzschild geodesic on a single
+  // camera-facing quad, so the accretion disk's far side genuinely bends up
+  // and over the event horizon (the Interstellar/Gargantua look), with a
+  // photon ring and Doppler beaming. Ported from the cosmic-map renderer.
+  let bhUpdate: ((camKmX: number, camKmY: number, camKmZ: number) => void) | null = null;
   {
-    const RS = 4e7;                  // shadow radius (icon scale, km)
-    const g = new THREE.Group();
-    g.add(new THREE.Mesh(new THREE.SphereGeometry(RS, 48, 24), new THREE.MeshBasicMaterial({ color: 0x000000 })));
-    // the photon ring — a razor of light hugging the shadow, always facing you
-    const ringTex = (() => {
-      const c = document.createElement("canvas"); c.width = c.height = 256;
-      const x = c.getContext("2d")!;
-      const g2 = x.createRadialGradient(128, 128, 0, 128, 128, 128);
-      g2.addColorStop(0.0, "rgba(0,0,0,0)");
-      g2.addColorStop(0.46, "rgba(0,0,0,0)");
-      g2.addColorStop(0.52, "rgba(255,214,150,0.9)");
-      g2.addColorStop(0.56, "rgba(255,240,215,1)");
-      g2.addColorStop(0.62, "rgba(255,170,90,0.45)");
-      g2.addColorStop(0.78, "rgba(255,140,60,0.1)");
-      g2.addColorStop(1, "rgba(0,0,0,0)");
-      x.fillStyle = g2; x.fillRect(0, 0, 256, 256);
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-    })();
-    const ring = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: ringTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
-    }));
-    ring.scale.setScalar(RS * 4.6);
-    g.add(ring);
-    // the accretion disk — an animated shader: hot streaks shearing around
-    // the hole, white-hot inside fading to deep ember, one side doppler-bright
-    const ACC_FRAG = `#include <common>
-#include <logdepthbuf_pars_fragment>
-uniform float uTime;
-varying vec2 vUv;
-${STAR_NOISE}
-void main(){
-#include <logdepthbuf_fragment>
-  vec2 p = vUv * 2.0 - 1.0;
-  float r = length(p);
-  if (r > 1.0 || r < 0.30) discard;
-  float th = atan(p.y, p.x);
-  // differential rotation: inner orbits faster — streaks shear as they turn
-  float swirl = fbm3(vec3(th * 2.4 + uTime * (1.6 / (r + 0.25)), r * 7.0 - uTime * 0.22, 3.7));
-  float band = smoothstep(0.30, 0.40, r) * smoothstep(1.0, 0.62, r);
-  float hot = smoothstep(0.34, 0.82, swirl);
-  vec3 col = mix(vec3(0.62, 0.12, 0.02), vec3(1.0, 0.62, 0.22), hot);
-  col = mix(col, vec3(1.0, 0.93, 0.78), smoothstep(0.52, 0.31, r) * hot);
-  float doppler = 1.0 + 0.65 * sin(th + uTime * 0.12);
-  float a = band * (0.35 + 0.65 * hot) * doppler;
-  gl_FragColor = vec4(col * doppler * 1.5, a);
-}`;
-    const ACC_VERT = `#include <common>
-#include <logdepthbuf_pars_vertex>
-varying vec2 vUv;
-void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-#include <logdepthbuf_vertex>
-}`;
-    const accMat = new THREE.ShaderMaterial({
-      vertexShader: ACC_VERT, fragmentShader: ACC_FRAG,
-      uniforms: { uTime: { value: 0 }, uCol: { value: new THREE.Color(1, 1, 1) }, uHot: { value: new THREE.Color(1, 1, 1) }, uScale: { value: 1 } },
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    const RS = 4e7;                          // event-horizon scale (km)
+    const QUAD = RS * 42;                     // the quad that frames hole + lensed disk
+    const BH_VERT = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+    const BH_FRAG = `
+      precision highp float;
+      varying vec2 vUv; uniform float uTime; uniform float uFade; uniform vec3 uViewDir;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+      float noise(vec2 p){ vec2 i=floor(p),f=fract(p); float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.)); vec2 u=f*f*(3.-2.*f); return mix(mix(a,b,u.x),mix(c,d,u.x),u.y); }
+      float fbm(vec2 p){ float v=0.,a=.5; for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.03; a*=.5; } return v; }
+      vec4 disk(vec3 hit, vec3 vel){
+        float r=length(hit.xz); float inR=2.2,outR=8.4; if(r<inR||r>outR) return vec4(0.);
+        float t=(r-inR)/(outR-inR);
+        vec3 hot=vec3(1.,.96,.92), mid=vec3(1.,.58,.20), cool=vec3(.78,.20,.06);
+        vec3 col = t<.5 ? mix(hot,mid,t/.5) : mix(mid,cool,(t-.5)/.5);
+        float omega=uTime*(1.1/(.5+r*.22)); float ca=cos(omega),sa=sin(omega);
+        vec2 q=vec2(hit.x*ca-hit.z*sa, hit.x*sa+hit.z*ca);
+        float n1=fbm(q*.85), n2=fbm(q*2.3+11.), n3=fbm(q*5.5+27.);
+        float gas=n1*.6+n2*.32+n3*.2; float bright=(1.-t)*1.7+.3; bright*=.4+1.15*gas;
+        float fil=pow(n2,2.2)+.6*pow(n3,3.); bright+=.7*fil*(1.-t*.7);
+        vec3 orbit=normalize(vec3(-hit.z,0.,hit.x)); float dop=dot(orbit,normalize(-vel));
+        bright*=clamp(.74+.6*dop,.22,1.9); col+=vec3(0.,.05,.18)*max(0.,dop);
+        float edge=smoothstep(0.,.10,t)*smoothstep(0.,.16,1.-t);
+        return vec4(col*bright, clamp(bright*edge,0.,1.));
+      }
+      void main(){
+        vec2 uv=(vUv-.5)*2.;
+        vec3 ro=uViewDir*13.; vec3 fwd=normalize(-ro);
+        vec3 wup= abs(fwd.y)>.985 ? vec3(0.,0.,1.) : vec3(0.,1.,0.);
+        vec3 rgt=normalize(cross(fwd,wup)); vec3 upv=cross(rgt,fwd);
+        vec3 rd=normalize(uv.x*rgt+uv.y*upv+.95*fwd);
+        vec3 p=ro, vv=rd; float dt=.16; vec4 acc=vec4(0.); bool horizon=false;
+        for(int i=0;i<200;i++){
+          float r=length(p); if(r<1.){horizon=true;break;} if(r>36.) break;
+          vec3 h=cross(p,vv); vec3 a3=-1.5*dot(h,h)*p/pow(r,5.);
+          vec3 nv=vv+a3*dt; vec3 np=p+nv*dt;
+          if(p.y*np.y<0.){ float k=-p.y/(np.y-p.y); vec4 dc=disk(mix(p,np,k),nv);
+            acc.rgb+=(1.-acc.a)*dc.rgb; acc.a+=(1.-acc.a)*dc.a; if(acc.a>.99) break; }
+          vv=nv; p=np;
+        }
+        float a=acc.a; if(horizon) a=1.;
+        a*=smoothstep(1.,.85,max(abs(uv.x),abs(uv.y)));
+        gl_FragColor=vec4(acc.rgb, a*uFade);
+      }`;
+    const bhMat = new THREE.ShaderMaterial({
+      vertexShader: BH_VERT, fragmentShader: BH_FRAG,
+      uniforms: { uTime: { value: 0 }, uFade: { value: 1 }, uViewDir: { value: new THREE.Vector3(0, 0.32, 1).normalize() } },
+      transparent: true, depthWrite: false, depthTest: false,
     });
-    starMats.push(accMat);           // rides the same uTime tick as the living stars
-    const disk = new THREE.Mesh(new THREE.PlaneGeometry(RS * 11, RS * 11), accMat);
-    disk.rotation.x = Math.PI / 2 - 0.42;   // a cinematic tilt
-    disk.rotation.y = 0.2;
-    g.add(disk);
-    const haze = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(), color: 0xff9a50, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.5,
-    }));
-    haze.scale.setScalar(RS * 14);
-    g.add(haze);
+    starMats.push(bhMat);                     // shares the cheap uTime tick
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(QUAD, QUAD), bhMat);
+    quad.renderOrder = 999;                   // drawn last, over the galaxy core
+    const g = new THREE.Group();
+    g.add(quad);
     const sgr = addBody("Sagittarius A*", GAL_C, g, 0);
-    // arrive far enough back that the whole accretion disk (RS*11 across)
-    // frames cleanly — minD sits just outside the disk, the fly-to lands at 2x
-    sgr.kind = "star"; sgr.radius = RS; sgr.minD = RS * 12; sgr.dotK = 0.015;
+    sgr.kind = "star"; sgr.radius = RS; sgr.minD = QUAD * 0.6; sgr.dotK = 0.015;
     sgr.line = "Four million Suns crushed into a single point — the still centre our galaxy turns around, 26,660 light-years in.";
     if (sgr.dot) (sgr.dot.material as THREE.SpriteMaterial).color.set(0xffc890);
+    bhUpdate = (cx, cy, cz) => {
+      quad.quaternion.copy(camera.quaternion);                 // billboard
+      const dx = cx - GAL_C.x, dy = cy - GAL_C.y, dz = cz - GAL_C.z;
+      const len = Math.hypot(dx, dy, dz) || 1;
+      (bhMat.uniforms["uViewDir"]!.value as THREE.Vector3).set(dx / len, dy / len, dz / len);
+      // only render when reasonably close — invisible (and uncomputed) far away
+      const show = len < QUAD * 60;
+      quad.visible = show;
+      if (show) bhMat.uniforms["uFade"]!.value = Math.min(1, (QUAD * 60 - len) / (QUAD * 30));
+    };
   }
   INFO["Sagittarius A*"] = { facts: [["Mass", "4.3 million Suns"], ["Distance", "26,660 light-years"], ["Imaged", "2022, by the EHT"], ["Nobel Prize", "2020"]], text: [
     "Every star you have flown past in this Atlas is falling around this point. At the exact centre of the Milky Way sits a black hole of four million solar masses — found by watching stars whip around an invisible nothing at thousands of kilometres per second, work that won the 2020 Nobel Prize, and finally photographed as a glowing ring in 2022.",
@@ -1242,13 +1316,16 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
     const b = bodies.find(x => x.name === n);
     if (!b || b === focus) return;
     prevFocus = focus; focus = b; focusBlend = 0;
-    tgtDist = Math.max(b.radius * 5, b.minD * 2);
+    tgtDist = Math.max(b.radius * (b.arriveK ?? 5), b.minD * 2);
     // arrive on the DAY side: come in from the Sun's direction (offset a
     // little for three-quarter light), never into a black hemisphere
     const sl = Math.hypot(b.pos.x, b.pos.y, b.pos.z);
     if (sl > 1) {
       tgtYaw = Math.atan2(-b.pos.x, -b.pos.z) + 0.5;
       tgtPitch = Math.min(0.5, Math.max(-0.5, Math.asin(-b.pos.y / sl))) + 0.14;
+      // ringed worlds: come in well ABOVE the ring plane so the rings open
+      // (the day-side approach otherwise lands nearly edge-on)
+      if (b.arrivePitch !== undefined) tgtPitch = b.arrivePitch;
       // unwind yaw so the eased camera takes the short way around
       while (tgtYaw - yaw > Math.PI) tgtYaw -= 2 * Math.PI;
       while (tgtYaw - yaw < -Math.PI) tgtYaw += 2 * Math.PI;
@@ -1397,6 +1474,11 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
         const sr = b.mesh.userData["starR"] as number;
         const ds = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
         (sh.material as THREE.SpriteMaterial).opacity = Math.min(1, Math.max(0.06, (ds - sr * 6) / (sr * 40)));
+        // LOD: the costly fbm surface + flare shaders render only when the
+        // star is big enough on screen to read as a disk — a vast saving when
+        // dozens of stars are tiny points across the neighbourhood view
+        const lod = b.mesh.userData["lod"] as THREE.Mesh[] | undefined;
+        if (lod) { const show = sr / ds > 0.0012; if (lod[0]!.visible !== show) { lod[0]!.visible = show; lod[1]!.visible = show; } }
       }
       if (b.dot) {
         // hold every world at a minimum apparent size; hand over to the real
@@ -1419,6 +1501,7 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
     // sky, so they fade out below ~1M km and return as you pull away
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
+    orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;   // skip drawing when invisible
 
     // the galaxy emerges as you rise above the neighbourhood — and the
     // camera-glued panorama hands over to the real 3D structure
@@ -1427,15 +1510,20 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
       const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
       const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
       const gFade = g01 * g01 * (3 - 2 * g01);
-      // near the galactic CORE the flat painted disk and core glow would wash
-      // the view — they retreat as you close in on the black hole, leaving the
-      // 3D grain (which reads fine up close) and a clean shadow against stars
-      const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
-      const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
-      const coreFade = c01 * c01 * (3 - 2 * c01);
-      for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
+      galaxy.visible = gFade > 0.003;            // 48k points never drawn in system view
+      if (galaxy.visible) {
+        // near the galactic CORE the flat painted disk and core glow would wash
+        // the view — they retreat as you close in on the black hole, leaving the
+        // 3D grain (which reads fine up close) and a clean shadow against stars
+        const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
+        const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
+        const coreFade = c01 * c01 * (3 - 2 * c01);
+        for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
+      }
       (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
+      mw.visible = gFade < 0.985;                // panorama not drawn once fully galaxy
     }
+    bhUpdate?.(camKm.x, camKm.y, camKm.z);     // billboard + lens-direction for the black hole
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
 
