@@ -553,10 +553,27 @@ export function mountAtlas(opts: Opts): () => void {
   const tex = new THREE.TextureLoader();
   const T = (f: string) => { const t = tex.load(`/textures/${f}`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
 
-  /* ---------- bodies (true positions for now, in km doubles) ---------- */
+  /* ---------- the engine core ----------
+     Two registries make the Atlas extensible: `bodies` (everything the
+     camera can fly to) and `frameHooks` (each subsystem's per-frame update).
+     A new world, system, galaxy or effect registers its own hook at its
+     creation site and never touches the render loop — so the engine scales
+     by ADDING declarations, not by editing shared code. */
   const now = new Date();
   const bodies: Body[] = [];
   const segMain = small ? 48 : 96;
+
+  interface FrameCtx {
+    dt: number; nowMs: number; simDays: number; simDate: Date;
+    camKm: { x: number; y: number; z: number };   // true camera position (km, doubles)
+    distKm: number;                                 // distance to the focus
+    focus: Body;
+  }
+  const frameHooks: ((c: FrameCtx) => void)[] = [];
+  /** Register a per-frame update. Called once per rendered frame, after every
+   *  body has been positioned in the floating-origin frame and before labels
+   *  are projected. The one extension point the whole Atlas is built on. */
+  const onFrame = (fn: (c: FrameCtx) => void): void => { frameHooks.push(fn); };
 
   const discTex = discTexture();
   const DOT_COLOR: Record<string, number> = {
@@ -1591,6 +1608,76 @@ export function mountAtlas(opts: Opts): () => void {
   conSearch.addEventListener("input", () => buildConsole(conSearch.value));
   canvas.addEventListener("pointerdown", closeConsole);
 
+  // the shared context object passed to every frame hook (mutated in place
+  // each frame to avoid per-frame allocation)
+  const frameCtx: FrameCtx = { dt: 0, nowMs: 0, simDays: 0, simDate: now, camKm, distKm: 0, focus };
+
+  /* ---------- per-frame subsystems ----------
+     Each block below is one self-contained update, registered as a hook.
+     They run every frame after the bodies are placed; none of them touch
+     the render loop or each other. Adding a galaxy, system or effect means
+     adding another onFrame(...) here — nothing else changes. */
+
+  // the Sun is the system's beacon: its glow grows with range so it never
+  // fades to a dim dot, however far out you fly
+  onFrame(({ camKm }) => {
+    const ds = Math.hypot(camKm.x, camKm.y, camKm.z);
+    glow.scale.setScalar(Math.max(RADII["Sun"]! * 6.5, ds * 0.05));
+    sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
+  });
+
+  // orbit lines (inner system) + the belts/Oort (outer) — placed in the
+  // floating-origin frame, faded out near a world and gone far past the system
+  onFrame(({ camKm, distKm }) => {
+    orbitGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
+    outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
+    const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
+    orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
+    orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;
+    outerGroup.visible = distKm > 4e7 && distKm < 6e13;
+  });
+
+  // the galaxy emerges as you rise above the neighbourhood; the camera-glued
+  // panorama hands over to the real 3D structure; the core retreats up close
+  onFrame(({ camKm }) => {
+    galaxy.position.set(GAL_C.x - camKm.x, GAL_C.y - camKm.y, GAL_C.z - camKm.z);
+    const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
+    const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
+    const gFade = g01 * g01 * (3 - 2 * g01);
+    galaxy.visible = gFade > 0.003;
+    if (galaxy.visible) {
+      const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
+      const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
+      const coreFade = c01 * c01 * (3 - 2 * c01);
+      for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
+    }
+    (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
+    mw.visible = gFade < 0.985;
+  });
+
+  // the lensed black hole: billboard the quad + feed it the view direction
+  onFrame(({ camKm }) => bhUpdate?.(camKm.x, camKm.y, camKm.z));
+
+  // the living Earth's day/night terminator tracks the true Sun direction
+  onFrame(() => {
+    if (!earthMat || !earthBody) return;
+    const ep = earthBody.pos, el = Math.hypot(ep.x, ep.y, ep.z) || 1;
+    (earthMat.uniforms["sunDir"]!.value as THREE.Vector3).set(-ep.x / el, -ep.y / el, -ep.z / el);
+  });
+
+  // TRAPPIST-1: its dwarf lights its own worlds, and only ONE star lights the
+  // scene at a time (our point lights have no inverse-square falloff)
+  onFrame(({ camKm }) => {
+    if (!trLight) return;
+    trLight.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
+    const trD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
+    const nearTrappist = trD < 6e8;
+    trLight.intensity = nearTrappist ? 3.4 : 0;
+    sunLight.intensity = nearTrappist ? 0 : 2.6;
+    trOrbitGroup.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
+    trOrbitGroup.visible = trD > 1e6 && trD < 4e7;
+  });
+
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
@@ -1660,62 +1747,14 @@ export function mountAtlas(opts: Opts): () => void {
         }
       }
     }
-    orbitGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
-    outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
-    // orbit lines belong to the SYSTEM view — near a world they'd streak the
-    // sky, so they fade out below ~1M km and return as you pull away
-    const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
-    orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
-    orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;   // skip drawing when invisible
-    // the belts + Oort cloud stay visible far out (the Oort lives at ~10,000 AU)
-    outerGroup.visible = distKm > 4e7 && distKm < 6e13;
+    skyGroup.position.set(0, 0, 0);            // the sky always rides with the camera
 
-    // the galaxy emerges as you rise above the neighbourhood — and the
-    // camera-glued panorama hands over to the real 3D structure
-    galaxy.position.set(GAL_C.x - camKm.x, GAL_C.y - camKm.y, GAL_C.z - camKm.z);
-    {
-      const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
-      const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
-      const gFade = g01 * g01 * (3 - 2 * g01);
-      galaxy.visible = gFade > 0.003;            // 48k points never drawn in system view
-      if (galaxy.visible) {
-        // near the galactic CORE the flat painted disk and core glow would wash
-        // the view — they retreat as you close in on the black hole, leaving the
-        // 3D grain (which reads fine up close) and a clean shadow against stars
-        const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
-        const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
-        const coreFade = c01 * c01 * (3 - 2 * c01);
-        for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
-      }
-      (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
-      mw.visible = gFade < 0.985;                // panorama not drawn once fully galaxy
-    }
-    bhUpdate?.(camKm.x, camKm.y, camKm.z);     // billboard + lens-direction for the black hole
-    // the living Earth's day/night terminator tracks the true Sun direction
-    if (earthMat && earthBody) {
-      const ep = earthBody.pos, el = Math.hypot(ep.x, ep.y, ep.z) || 1;
-      (earthMat.uniforms["sunDir"]!.value as THREE.Vector3).set(-ep.x / el, -ep.y / el, -ep.z / el);
-    }
-    if (trLight) {
-      trLight.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
-      // our lights have no inverse-square falloff (real distances are too vast),
-      // so only ONE star lights the scene at a time — whichever system you're in
-      const trD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
-      const nearTrappist = trD < 6e8;
-      trLight.intensity = nearTrappist ? 3.4 : 0;
-      sunLight.intensity = nearTrappist ? 0 : 2.6;
-      trOrbitGroup.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
-      trOrbitGroup.visible = trD > 1e6 && trD < 4e7;   // its orbit rings, only in-system
-    }
-    skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
-    sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
-
-    // the Sun must read as the system's beacon from any distance — its glow
-    // grows with range so it never fades to a dim dot
-    {
-      const ds = Math.hypot(camKm.x, camKm.y, camKm.z);
-      glow.scale.setScalar(Math.max(RADII["Sun"]! * 6.5, ds * 0.05));
-    }
+    // every registered subsystem updates here — galaxy, black hole, the Sun's
+    // beacon, the belts, Earth's terminator, the TRAPPIST system, and anything
+    // added later — all from one generic pass over the hook registry
+    frameCtx.dt = dt; frameCtx.nowMs = nowMs; frameCtx.simDays = simDays; frameCtx.simDate = simDate;
+    frameCtx.distKm = distKm; frameCtx.focus = focus;
+    for (const hk of frameHooks) hk(frameCtx);
 
     // labels: project each body, place its name beside it. The Atlas has
     // scales — inside the system, planet names; pull past ~Neptune and the
