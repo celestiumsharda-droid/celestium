@@ -737,7 +737,9 @@ export function mountAtlas(opts: Opts): () => void {
       ring.frustumCulled = false;
       m.add(ring);
     }
-    const pb = addBody(pn, km, m, 0.00012);
+    // Venus and Uranus rotate retrograde (backwards) — a real, if subtle, fact
+    const spinDir = (pn === "Venus" || pn === "Uranus") ? -1 : 1;
+    const pb = addBody(pn, km, m, 0.00012 * spinDir);
     if (pn === "Earth") earthBody = pb;
     if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
     // the system RUNS: every planet recomputes its true position as sim time flows
@@ -755,13 +757,14 @@ export function mountAtlas(opts: Opts): () => void {
     new THREE.SphereGeometry(RADII["Moon"]!, 96, 60),
     new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 0.98, metalness: 0 }),
   );
-  const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0.00001);
+  const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0);   // tidally locked: no free spin
   moon.labelMax = 2.5e7;
   moon.update = (_d, simDays) => {
     const ang = (218.316 + 13.176396 * simDays) * D2R;
     moon.pos.x = earth.pos.x + Math.cos(ang) * 384400;
     moon.pos.y = earth.pos.y;
     moon.pos.z = earth.pos.z - Math.sin(ang) * 384400;
+    moonMesh.rotation.y = ang - Math.PI / 2;   // tidal lock — one face forever toward Earth
   };
 
   // the great moons of Jupiter and Saturn — circular orbits, true radii/periods
@@ -779,7 +782,7 @@ export function mountAtlas(opts: Opts): () => void {
       new THREE.SphereGeometry(RADII[mn.n]!, 48, 24),
       new THREE.MeshPhongMaterial({ map: worldTexture(mn.n), shininess: 3 }),
     );
-    const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0.00002);
+    const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0);   // tidally locked: no free spin
     mb.labelMax = mn.lblMax;
     const phase = Math.random() * 6.2832;
     mb.update = (_d, simDays) => {
@@ -787,6 +790,7 @@ export function mountAtlas(opts: Opts): () => void {
       mb.pos.x = mn.parent.pos.x + Math.cos(ang) * mn.orbR;
       mb.pos.y = mn.parent.pos.y;
       mb.pos.z = mn.parent.pos.z - Math.sin(ang) * mn.orbR;
+      mm.rotation.y = ang - Math.PI / 2;   // tidal lock — every major moon keeps one face to its planet
     };
     mb.update(now, 0);
   }
