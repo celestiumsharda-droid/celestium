@@ -74,6 +74,7 @@ interface Body {
   update?: (date: Date, simDays: number) => void;   // live orbital motion
   kind?: "star";                     // catalogue stars live by different label rules
   foreign?: boolean;                 // belongs to another star system (TRAPPIST, exoplanets) — gated by labelMax, not the "our planets retire" rule
+  system?: string;                   // which system this body belongs to (for the drill-down navigator)
   dotK?: number;                     // apparent-size class of its point of light
 }
 
@@ -600,7 +601,7 @@ export function mountAtlas(opts: Opts): () => void {
     orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; incDeg?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
     fixedPos?: Vec3;
     labelMax?: number; arriveK?: number; arrivePitch?: number; minDk?: number;
-    dotK?: number; dotColor?: number; line?: string; foreign?: boolean;
+    dotK?: number; dotColor?: number; line?: string; foreign?: boolean; system?: string;
     info?: { facts: [string, string][]; text: string[] };
   }
   function defineWorld(def: WorldDef): Body {
@@ -619,6 +620,7 @@ export function mountAtlas(opts: Opts): () => void {
     if (def.line) b.line = def.line;
     if (def.dotColor !== undefined && b.dot) (b.dot.material as THREE.SpriteMaterial).color.set(def.dotColor);
     if (def.foreign) b.foreign = true;
+    if (def.system) b.system = def.system;
     if (def.info) INFO[def.name] = def.info;
     if (def.orbit) {
       const o = def.orbit, phase = o.phase ?? Math.random() * 6.2832;
@@ -928,7 +930,7 @@ export function mountAtlas(opts: Opts): () => void {
   // every foreign sun (TRAPPIST + the exoplanet hosts) registers here; one
   // shared light follows whichever system the camera is currently inside,
   // so the scene is always lit by exactly the right star, at any scale.
-  const foreignSuns: { pos: Vec3; col: number; span: number }[] = [];
+  const foreignSuns: { pos: Vec3; col: number; span: number; orbits?: THREE.Group }[] = [];
   let trLight: THREE.PointLight | null = null;
   const trOrbitGroup = new THREE.Group(); scene.add(trOrbitGroup);
   const trOrbitMat = new THREE.LineBasicMaterial({ color: 0xff9a6a, transparent: true, opacity: 0.22 });
@@ -944,7 +946,7 @@ export function mountAtlas(opts: Opts): () => void {
     shalo.scale.setScalar(starR * 7); sg.add(shalo);
     sg.userData["halo"] = shalo; sg.userData["starR"] = starR;
     const trStar = addBody("TRAPPIST-1", TR_C, sg, 0.00001);
-    trStar.kind = "star"; trStar.foreign = true; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
+    trStar.kind = "star"; trStar.foreign = true; trStar.system = "TRAPPIST-1"; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
     trStar.line = "An ultra-cool red dwarf 40 light-years away — and seven Earth-sized worlds, three in the temperate zone.";
     if (trStar.dot) (trStar.dot.material as THREE.SpriteMaterial).color.set(0xff5038);
     INFO["TRAPPIST-1"] = { facts: [["Distance", "40.7 light-years"], ["Type", "ultra-cool M-dwarf"], ["Size", "Jupiter-sized"], ["Planets", "seven, Earth-sized"], ["Temperate", "three of them"]], text: [
@@ -955,7 +957,7 @@ export function mountAtlas(opts: Opts): () => void {
     // a light at the dwarf so its planets are lit by their own star
     trLight = new THREE.PointLight(0xff8a52, 3.4, 0, 0);
     scene.add(trLight);
-    foreignSuns.push({ pos: TR_C, col: 0xff8a52, span: 1e8 });
+    foreignSuns.push({ pos: TR_C, col: 0xff8a52, span: 1e8, orbits: trOrbitGroup });
 
     // the seven worlds — real radii (Earth radii), orbits (AU), periods (days)
     const TP: [string, number, number, number, string, string][] = [
@@ -974,7 +976,7 @@ export function mountAtlas(opts: Opts): () => void {
       defineWorld({
         name: `TRAPPIST-1${k}`, radiusKm: rE * ER,
         map: `trappist/${k}.jpg`, normal: `trappist/${k}_n.jpg`,
-        segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7, foreign: true,
+        segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7, foreign: true, system: "TRAPPIST-1",
         line: `${kind} around TRAPPIST-1 · ${sub}.`,
         orbit: { center: () => TR_C, radiusKm: au * AU, periodDays: per, ringGroup: trOrbitGroup, ringMat: trOrbitMat },
         info: { facts: [["Radius", `${rE} Earth radii`], ["Orbit", `${au} AU`], ["Year", `${per.toFixed(1)} days`], ["Class", kind]], text: [
@@ -1005,7 +1007,7 @@ export function mountAtlas(opts: Opts): () => void {
     shalo.scale.setScalar(r * 7); sg.add(shalo);
     sg.userData["halo"] = shalo; sg.userData["starR"] = r;
     const sb = addBody(sys.star, C, sg, 0.00001);
-    sb.kind = "star"; sb.foreign = true; sb.radius = r; sb.minD = r * 4; sb.dotK = 0.007;
+    sb.kind = "star"; sb.foreign = true; sb.system = sys.star; sb.radius = r; sb.minD = r * 4; sb.dotK = 0.007;
     const lyTxt = sys.ly < 100 ? sys.ly : Math.round(sys.ly);
     sb.line = `${sys.kindStar} · ${lyTxt} light-years away — ${sys.planets.length} known planet${sys.planets.length > 1 ? "s" : ""}.`;
     if (sb.dot) (sb.dot.material as THREE.SpriteMaterial).color.set(glowCol);
@@ -1013,15 +1015,18 @@ export function mountAtlas(opts: Opts): () => void {
       facts: [["Distance", `${lyTxt} light-years`], ["Star", sys.kindStar + (sys.spec ? ` (${sys.spec})` : "")], ["Planets", `${sys.planets.length} known`], ...(sys.tempK ? [["Temperature", `${Math.round(sys.tempK)} K`] as [string, string]] : [])],
       text: [sb.line],
     };
-    foreignSuns.push({ pos: C, col: glowCol, span: Math.max(2e9, (sys.planets.reduce((m, p) => Math.max(m, p.au), 0)) * AU * 2.5) });
+    const outerAU = sys.planets.reduce((m, p) => Math.max(m, p.au), 0);
+    const sysOrbits = new THREE.Group(); sysOrbits.visible = false; scene.add(sysOrbits);
+    const sysOrbitMat = new THREE.LineBasicMaterial({ color: glowCol, transparent: true, opacity: 0.2 });
+    foreignSuns.push({ pos: C, col: glowCol, span: Math.max(2e9, outerAU * AU * 2.5), orbits: sysOrbits });
 
     sys.planets.forEach((p, i) => {
       const span = p.au * AU;
       defineWorld({
         name: p.name, radiusKm: Math.max(p.rE * ER, 600), map: `exo/${sys.pack}/${p.key}.jpg`,
-        segments: 40, foreign: true, minDk: 3, dotK: 0.006,
+        segments: 40, foreign: true, system: sys.star, minDk: 3, dotK: 0.006,
         labelMax: Math.max(3e9, span * 6), tiltDeg: ((i % 2) ? 1 : -1) * (1.5 + i * 1.5),
-        orbit: { center: () => C, radiusKm: span, periodDays: p.per, incDeg: (i - (sys.planets.length - 1) / 2) * 1.6 },
+        orbit: { center: () => C, radiusKm: span, periodDays: p.per, incDeg: (i - (sys.planets.length - 1) / 2) * 1.6, ringGroup: sysOrbits, ringMat: sysOrbitMat },
         line: `${cap(p.kind)} · ${describeExo(p, sys)}`,
         info: exoPlanetInfo(p, sys, lyTxt),
       });
@@ -1688,52 +1693,99 @@ export function mountAtlas(opts: Opts): () => void {
   shClose.addEventListener("click", () => { sheet.classList.remove("open"); });
   addEventListener("keydown", e => { if (e.key === "Escape") { sheet.classList.remove("open"); closeConsole(); } });
 
-  /* ---------- the navigation console: every destination, one tap away ---------- */
+  /* ---------- the navigation console: a drill-down chart ----------
+     Root → category → (for the exoplanets) system → planets. Only one level
+     shows at a time, so the Atlas scales to hundreds of bodies without ever
+     becoming an endless scroll. Search flattens across everything. */
   const DWARFS = ["Ceres", "Pluto", "Haumea", "Makemake", "Eris"];
-  const REALMS: [string, (b: Body) => boolean][] = [
-    ["The Sun & its planets", b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name)],
-    ["Moons", b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name)],
-    ["Dwarf planets", b => DWARFS.includes(b.name)],
-    ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
-    ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
-    ["TRAPPIST-1 · a second sun", b => b.name.startsWith("TRAPPIST")],
-    ["Exoplanet systems", b => b.kind === "star" && !!b.foreign && !b.name.startsWith("TRAPPIST")],
-    ["The stars", b => b.kind === "star" && !b.foreign && b.name !== "Sagittarius A*"],
-    ["The galaxy", b => b.name === "Sagittarius A*"],
+  interface Cat { label: string; sub: string; match: (b: Body) => boolean; systems?: boolean; sort?: "dist" | "orbit"; }
+  const CATS: Cat[] = [
+    { label: "The Sun & its planets", sub: "Sol — eight worlds", match: b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name) },
+    { label: "Moons", sub: "of Earth, Jupiter & Saturn", match: b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name) },
+    { label: "Dwarf planets", sub: "Ceres to Eris", match: b => DWARFS.includes(b.name) },
+    { label: "The machines", sub: "humanity's emissaries", match: b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name) },
+    { label: "The wanderers", sub: "comets, drifting in", match: b => b.name.includes("Comet") || b.name.includes("Bopp") },
+    { label: "TRAPPIST-1", sub: "a second sun, seven worlds", match: b => b.system === "TRAPPIST-1", systems: true },
+    { label: "Exoplanet systems", sub: "worlds around other suns", match: b => b.kind === "star" && !!b.foreign && b.system !== "TRAPPIST-1", systems: true, sort: "dist" },
+    { label: "The stars", sub: "the solar neighbourhood", match: b => b.kind === "star" && !b.foreign && b.name !== "Sagittarius A*", sort: "dist" },
+    { label: "The galaxy", sub: "the heart of the Milky Way", match: b => b.name === "Sagittarius A*" },
   ];
-  function conDistance(b: Body): string {
-    const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
-    return fmtDist(d);
-  }
-  function dotColorOf(b: Body): string {
-    if (b.dot) return `#${(b.dot.material as THREE.SpriteMaterial).color.getHexString()}`;
-    return "#f2e6c4";   // the Sun
-  }
-  function buildConsole(filter = "") {
-    const q = filter.trim().toLowerCase();
-    let html = "";
-    for (const [label, match] of REALMS) {
-      const members = bodies.filter(b => match(b) && (!q || b.name.toLowerCase().includes(q)));
-      if (label === "The stars") members.sort((a, b2) =>
-        Math.hypot(a.pos.x, a.pos.y, a.pos.z) - Math.hypot(b2.pos.x, b2.pos.y, b2.pos.z));
-      if (!members.length) continue;
-      html += `<div class="at-con-group">${label}</div>`;
-      for (const b of members) {
-        html += `<button type="button" class="at-con-item${b === focus ? " on" : ""}" data-n="${b.name}">` +
-          `<i style="--c:${dotColorOf(b)}"></i><span>${b.name}</span><b>${conDistance(b)}</b></button>`;
-      }
-    }
-    conList.innerHTML = html || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
-    conList.querySelectorAll<HTMLButtonElement>(".at-con-item").forEach(btn => {
+  type NavView = { kind: "root" } | { kind: "cat"; i: number } | { kind: "sys"; star: string; from: number };
+  let cnav: NavView = { kind: "root" };
+  const conBack = consoleEl.querySelector<HTMLElement>(".at-con-back")!;
+  const conTitle = consoleEl.querySelector<HTMLElement>(".at-con-title")!;
+
+  const conDistance = (b: Body): string => fmtDist(Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
+  const dotColorOf = (b: Body): string => b.dot ? `#${(b.dot.material as THREE.SpriteMaterial).color.getHexString()}` : "#f2e6c4";
+  const sysDist = (b: Body): number => Math.hypot(b.pos.x, b.pos.y, b.pos.z);
+  const itemRow = (b: Body, sub?: string): string =>
+    `<button type="button" class="at-con-item${b === focus ? " on" : ""}" data-n="${b.name}">` +
+    `<i style="--c:${dotColorOf(b)}"></i><span>${b.name}</span><b>${sub ?? conDistance(b)}</b></button>`;
+  const catRow = (label: string, sub: string, attr: string): string =>
+    `<button type="button" class="at-con-cat" ${attr}><span class="at-cat-txt"><span class="at-cat-l">${label}</span><span class="at-cat-s">${sub}</span></span><span class="at-cat-chev">&#8250;</span></button>`;
+
+  function wireRows() {
+    conList.querySelectorAll<HTMLButtonElement>(".at-con-item").forEach(btn =>
+      btn.addEventListener("click", () => { focusBody(btn.dataset["n"]!, true); closeConsole(); }));
+    conList.querySelectorAll<HTMLButtonElement>(".at-con-cat").forEach(btn =>
       btn.addEventListener("click", () => {
-        focusBody(btn.dataset["n"]!, true);
-        closeConsole();
-      });
-    });
+        try { playClick(); } catch (_e) { /* off */ }
+        if (btn.dataset["cat"]) cnav = { kind: "cat", i: +btn.dataset["cat"]! };
+        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : 6 };
+        renderConsole();
+      }));
   }
+  function setHead(title: string, back: null | (() => void)) {
+    conTitle.textContent = title;
+    if (back) { conBack.removeAttribute("hidden"); conBack.onclick = () => { try { playClick(); } catch (_e) { /* off */ } back(); }; }
+    else { conBack.setAttribute("hidden", ""); conBack.onclick = null; }
+  }
+  function renderConsole() {
+    const q = conSearch.value.trim().toLowerCase();
+    if (q) {                                   // search flattens across everything
+      const hits = bodies.filter(b => b.name.toLowerCase().includes(q)).sort((a, b) =>
+        Math.hypot(a.pos.x - camKm.x, a.pos.y - camKm.y, a.pos.z - camKm.z) - Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
+      conList.innerHTML = hits.slice(0, 80).map(b => itemRow(b, b.system && b.system !== b.name ? b.system : undefined)).join("") || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
+      setHead("Search", null); wireRows(); return;
+    }
+    if (cnav.kind === "root") {
+      conList.innerHTML = CATS.map((c, i) => bodies.some(c.match) ? catRow(c.label, c.sub, `data-cat="${i}"`) : "").join("");
+      setHead("Destinations", null); wireRows(); return;
+    }
+    if (cnav.kind === "cat") {
+      const c = CATS[cnav.i]!;
+      const back = () => { cnav = { kind: "root" }; renderConsole(); };
+      if (c.systems) {
+        const stars = bodies.filter(c.match).sort((a, b) => sysDist(a) - sysDist(b));
+        if (c.label === "TRAPPIST-1") {        // single system → straight to its planets
+          cnav = { kind: "sys", star: "TRAPPIST-1", from: cnav.i }; renderConsole(); return;
+        }
+        conList.innerHTML = stars.map(s => {
+          const np = bodies.filter(b => b.system === s.name && b !== s).length;
+          return catRow(s.name, `${np} planet${np !== 1 ? "s" : ""} · ${conDistance(s)}`, `data-sys="${s.name}"`);
+        }).join("");
+        setHead(c.label, back); wireRows(); return;
+      }
+      const members = bodies.filter(c.match);
+      if (c.sort === "dist") members.sort((a, b) => sysDist(a) - sysDist(b));
+      conList.innerHTML = members.map(b => itemRow(b)).join("");
+      setHead(c.label, back); wireRows(); return;
+    }
+    // system view: the star, then its planets by orbit
+    const v = cnav;
+    if (v.kind !== "sys") return;
+    const star = bodies.find(b => b.name === v.star);
+    const planets = bodies.filter(b => b.system === v.star && b !== star);
+    const list = star ? [star, ...planets] : planets;
+    conList.innerHTML = list.map(b => itemRow(b, b === star ? "the star" : conDistance(b))).join("");
+    setHead(v.star, () => { cnav = { kind: "cat", i: v.from }; renderConsole(); });
+    wireRows();
+  }
+  const buildConsole = (_f?: string) => renderConsole();
   function openConsole() {
     sheet.classList.remove("open");      // one panel at a time
-    buildConsole(conSearch.value);
+    cnav = { kind: "root" };             // always open at the top level
+    renderConsole();
     consoleEl.removeAttribute("hidden");
     requestAnimationFrame(() => consoleEl.classList.add("open"));
     if (matchMedia("(hover: hover)").matches) conSearch.focus();
@@ -1803,14 +1855,16 @@ export function mountAtlas(opts: Opts): () => void {
     (earthMat.uniforms["sunDir"]!.value as THREE.Vector3).set(-ep.x / el, -ep.y / el, -ep.z / el);
   });
 
-  // TRAPPIST-1: its dwarf lights its own worlds, and only ONE star lights the
+  // every foreign system (TRAPPIST + the 22 exoplanet hosts): its star lights
+  // its own worlds and shows its own orbit rings, and only ONE star lights the
   // scene at a time (our point lights have no inverse-square falloff)
+  let shownOrbits: THREE.Group | null = null;
   onFrame(({ camKm }) => {
     if (!trLight) return;
     // find the nearest foreign sun (TRAPPIST or any exoplanet host); if the
     // camera is inside that system, the shared light becomes that star —
     // right colour, right place — and our Sun stands down
-    let best: { pos: Vec3; col: number; span: number } | null = null, bestD = Infinity;
+    let best: { pos: Vec3; col: number; span: number; orbits?: THREE.Group } | null = null, bestD = Infinity;
     for (const fs of foreignSuns) {
       const d = Math.hypot(camKm.x - fs.pos.x, camKm.y - fs.pos.y, camKm.z - fs.pos.z);
       if (d < bestD) { bestD = d; best = fs; }
@@ -1824,10 +1878,11 @@ export function mountAtlas(opts: Opts): () => void {
       trLight.intensity = 0;
     }
     sunLight.intensity = inForeign ? 0 : 2.6;
-    // TRAPPIST keeps its orbit rings, shown only when you're inside it
-    const trD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
-    trOrbitGroup.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
-    trOrbitGroup.visible = trD > 1e6 && trD < 4e7;
+    // each system's orbit rings show only while you're inside it — the nearest
+    // system's rings are placed + revealed, any previously-shown ones hidden
+    const want = inForeign && best ? best.orbits ?? null : null;
+    if (want !== shownOrbits) { if (shownOrbits) shownOrbits.visible = false; shownOrbits = want; }
+    if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
   });
 
   function frame(nowMs: number) {

@@ -759,8 +759,30 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   mask-composite: exclude;
   opacity: .95;
 }
-.at-con-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 10px; }
-.at-con-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); }
+.at-con-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 10px; }
+.at-con-title { flex: 1; font-family: var(--mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-con-back {
+  width: 30px; height: 30px; flex: none; border-radius: 50%;
+  background: rgba(255,255,255,.06); border: 1px solid var(--glass-edge);
+  color: var(--ink); font-size: 17px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .3s, background .3s;
+}
+.at-con-back[hidden] { display: none; }
+.at-con-back:hover { border-color: var(--accent); background: rgba(255,255,255,.1); }
+/* a category / system row that drills one level deeper */
+.at-con-cat {
+  width: 100%; display: flex; align-items: center; gap: 11px;
+  padding: 13px 12px; border: none; border-radius: 12px;
+  background: none; cursor: pointer; text-align: left;
+  transition: background .25s;
+}
+.at-con-cat:hover { background: rgba(255,255,255,.07); }
+.at-cat-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.at-cat-l { font-family: var(--display); font-size: 1.06rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-cat-s { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.at-cat-chev { font-size: 20px; color: var(--dim); transition: transform .25s, color .25s; }
+.at-con-cat:hover .at-cat-chev { color: var(--accent); transform: translateX(3px); }
 .at-con-close {
   width: 32px; height: 32px; border-radius: 50%;
   background: rgba(255,255,255,.06); border: 1px solid var(--glass-edge);
