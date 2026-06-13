@@ -367,6 +367,39 @@ void main(){
 #include <logdepthbuf_fragment>
 float rim = pow(1.0 - abs(dot(vN, vV)), 2.6); gl_FragColor = vec4(0.42, 0.62, 1.0, 1.0) * rim * 1.15; }`;
 
+/* ---- THE LIVING EARTH ---- a Google-Earth-grade day/night globe:
+   sunlit day texture, city lights glowing on the dark side, a sun-glint
+   that skips across the oceans, and a soft dawn-tinted terminator. */
+const EARTH_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+varying vec2 vUv; varying vec3 vWN; varying vec3 vWP;
+void main(){ vUv = uv; vWN = normalize(mat3(modelMatrix) * normal);
+  vec4 wp = modelMatrix * vec4(position,1.0); vWP = wp.xyz;
+  vec4 mv = viewMatrix * wp; gl_Position = projectionMatrix * mv;
+#include <logdepthbuf_vertex>
+}`;
+const EARTH_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform sampler2D dayMap; uniform sampler2D nightMap; uniform vec3 sunDir;
+varying vec2 vUv; varying vec3 vWN; varying vec3 vWP;
+void main(){
+#include <logdepthbuf_fragment>
+  vec3 N = normalize(vWN);
+  float lam = dot(N, sunDir);                       // -1 night .. 1 noon
+  float day = smoothstep(-0.12, 0.22, lam);         // soft terminator
+  vec3 dayCol = texture2D(dayMap, vUv).rgb;
+  vec3 night = texture2D(nightMap, vUv).rgb;
+  float ocean = smoothstep(0.015, 0.10, dayCol.b - dayCol.r * 0.9);   // blue → water
+  vec3 V = normalize(cameraPosition - vWP);
+  vec3 H = normalize(sunDir + V);
+  float spec = pow(max(dot(N, H), 0.0), 80.0) * ocean * smoothstep(0.0, 0.2, lam);
+  vec3 lit = dayCol * (0.05 + 1.05 * max(lam, 0.0));
+  vec3 col = mix(night * 1.6, lit, day);            // city lights on the night side
+  col += vec3(1.0, 0.95, 0.82) * spec * 1.7;        // the ocean sun-glint
+  col += vec3(0.9, 0.5, 0.3) * smoothstep(0.06, -0.06, lam) * smoothstep(-0.3, 0.0, lam) * 0.18;  // dawn band
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
 /* ---- THE LIVING STAR ----
    A star's photosphere is weather: convection granulation that churns,
    bright active regions drifting, darkening toward the limb — and at the
@@ -529,24 +562,36 @@ export function mountAtlas(opts: Opts): () => void {
   // Photoreal normal maps (from Grok Imagine) for depth on key bodies
   const PLANET_NORMALS: Record<string, string> = {}; // Earth and Mars reverted to original per request; other enhancements untouched
   const TILT: Record<string, number> = { Mercury: 0.03, Venus: 177.4, Earth: 23.4, Mars: 25.2, Jupiter: 3.1, Saturn: 26.7, Uranus: 97.8, Neptune: 28.3 };
+  let earthMat: THREE.ShaderMaterial | null = null;
+  let earthBody: Body | null = null;
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
     const p = planetPosition(pn, now);
     const km = E2T({ x: p.x * AU, y: p.y * AU, z: p.z * AU });
-    const mat = new THREE.MeshStandardMaterial({
-      map: T(PLANET_TEX[pn]!),
-      roughness: (pn === "Jupiter" || pn === "Saturn") ? 0.75 : 0.95,
-      metalness: 0,
-    });
+    const mat: THREE.Material = pn === "Earth"
+      ? (earthMat = new THREE.ShaderMaterial({
+          vertexShader: EARTH_VERT, fragmentShader: EARTH_FRAG,
+          uniforms: {
+            dayMap: { value: T("earth_day.jpg") },
+            nightMap: { value: T("earth_night.jpg") },
+            sunDir: { value: new THREE.Vector3(1, 0, 0) },
+          },
+        }))
+      : new THREE.MeshStandardMaterial({
+          map: T(PLANET_TEX[pn]!),
+          roughness: (pn === "Jupiter" || pn === "Saturn") ? 0.75 : 0.95,
+          metalness: 0,
+        });
     const nrmFile = PLANET_NORMALS[pn];
-    if (nrmFile) {
+    if (nrmFile && mat instanceof THREE.MeshStandardMaterial) {
       const nm = T(nrmFile); // reuse loader (it sets SRGB but we'll override below)
       nm.colorSpace = THREE.NoColorSpace;
       nm.flipY = true;
       mat.normalMap = nm;
       mat.normalScale = new THREE.Vector2(1.12, 1.12);
     }
+    const pseg = pn === "Earth" ? 128 : segMain;       // Earth gets the finest sphere
     const m = new THREE.Mesh(
-      new THREE.SphereGeometry(RADII[pn]!, segMain, segMain / 2),
+      new THREE.SphereGeometry(RADII[pn]!, pseg, pseg / 2),
       mat,
     );
     m.rotation.z = (TILT[pn] ?? 0) * D2R;
@@ -574,39 +619,21 @@ export function mountAtlas(opts: Opts): () => void {
         const r = Math.hypot(ps.getX(i), ps.getY(i));
         uv.setXY(i, (r - inner) / (outer - inner), 0.5);
       }
-      // a procedural ring strip — radial profile painted in-canvas: gold/tan
-      // bands, the dark Cassini division, soft inner/outer fade, real alpha.
-      // (the shipped saturn_ring.png renders invisible — its alpha is broken.)
-      const ringTex = (() => {
-        const W = 1024, H = 8, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-        const cx = cv.getContext("2d")!;
-        for (let i = 0; i < W; i++) {
-          const u = i / W;                                  // 0 inner → 1 outer
-          // crisp alpha (for alphaTest) + a banded gold luminance profile
-          let lum = 0.55, alpha = 1.0;
-          if (u < 0.06) { alpha = 0; }                                               // inner gap before the rings
-          else if (u < 0.10) { alpha = 1; lum = 0.42 + 0.06 * Math.sin(u * 120); }   // faint C ring
-          else if (u < 0.63) { alpha = 1; lum = 0.62 + 0.13 * Math.sin(u * 95); }    // bright B ring, banded
-          else if (u < 0.69) { alpha = 0; }                                          // Cassini division — a true gap
-          else if (u < 0.97) { alpha = 1; lum = 0.58 + 0.11 * Math.sin(u * 130); }   // A ring, banded
-          else { alpha = 0; }                                                        // outer edge
-          const r = Math.min(255, 232 * lum + 34), g = Math.min(255, 206 * lum + 24), bl = Math.min(255, 158 * lum + 14);
-          cx.fillStyle = `rgba(${r | 0},${g | 0},${bl | 0},${alpha})`;
-          cx.fillRect(i, 0, 1, H);
-        }
-        const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
-      })();
-      // OPAQUE pass + alphaTest (exactly the config the test ring rendered in).
-      // The crowded transparent pass was swallowing the ring behind the huge
-      // transparent galaxy/panorama meshes; alphaTest carves the gaps instead.
+      // the ORIGINAL gorgeous Cassini ring photo (saturn_ring.png) — but
+      // rendered in the OPAQUE pass with alphaTest, not the crowded transparent
+      // pass where the huge galaxy/panorama meshes were swallowing it. alphaTest
+      // carves the gaps (Cassini division) from the texture's real alpha.
+      const ringTex = T("saturn_ring.png");
+      ringTex.anisotropy = 8;
       const ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({
-        map: ringTex, side: THREE.DoubleSide, transparent: false, alphaTest: 0.5,
+        map: ringTex, side: THREE.DoubleSide, transparent: false, alphaTest: 0.28,
       }));
       ring.rotation.x = Math.PI / 2;
       ring.frustumCulled = false;
       m.add(ring);
     }
     const pb = addBody(pn, km, m, 0.00012);
+    if (pn === "Earth") earthBody = pb;
     if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
     // the system RUNS: every planet recomputes its true position as sim time flows
     pb.update = (date) => {
@@ -698,6 +725,7 @@ export function mountAtlas(opts: Opts): () => void {
 
   /* ---------- the stellar neighbourhood: real stars at their true places ---------- */
   for (const s of STARS) {
+    if (s.n === "TRAPPIST-1") continue;     // built as a full textured system below
     const p = starPos(s);
     const rKm = s.r * 696340;
     // every star is ALIVE: granulation scaled to its class — supergiants
@@ -716,6 +744,71 @@ export function mountAtlas(opts: Opts): () => void {
       text: [sb.line],
     };
     if (sb.dot) (sb.dot.material as THREE.SpriteMaterial).color.set(s.c);
+  }
+
+  /* ---------- TRAPPIST-1: a second sun and its seven worlds ----------
+     A real exoplanet system, built from the NASA-derived 4K model pack —
+     an ultra-cool red dwarf and seven rocky Earth-sized planets at their
+     true radii, orbital distances and periods, lit by their own star. */
+  const ER = 6371;                          // km per Earth radius
+  let trLight: THREE.PointLight | null = null;
+  const TR_C = starPos(STARS.find(s => s.n === "TRAPPIST-1")!);
+  {
+    const starR = 13.0 * ER;                // 82,823 km — Jupiter-sized M-dwarf
+    const sg = new THREE.Group();
+    sg.add(new THREE.Mesh(new THREE.SphereGeometry(starR, 64, 32),
+      new THREE.MeshBasicMaterial({ map: T("trappist/star.jpg") })));
+    const sglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff5a30, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    sglow.scale.setScalar(starR * 7); sg.add(sglow);
+    const shalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff5a30, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    shalo.scale.setScalar(starR * 7); sg.add(shalo);
+    sg.userData["halo"] = shalo; sg.userData["starR"] = starR;
+    const trStar = addBody("TRAPPIST-1", TR_C, sg, 0.00001);
+    trStar.kind = "star"; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
+    trStar.line = "An ultra-cool red dwarf 40 light-years away — and seven Earth-sized worlds, three in the temperate zone.";
+    if (trStar.dot) (trStar.dot.material as THREE.SpriteMaterial).color.set(0xff5038);
+    INFO["TRAPPIST-1"] = { facts: [["Distance", "40.7 light-years"], ["Type", "ultra-cool M-dwarf"], ["Size", "Jupiter-sized"], ["Planets", "seven, Earth-sized"], ["Temperate", "three of them"]], text: [
+      "Around a star scarcely larger than Jupiter and a thousand times fainter than the Sun circle seven rocky worlds the size of our own — the richest system of Earth-sized planets we know. The whole architecture would fit comfortably inside Mercury's orbit; from the surface of any one, the others would hang in the sky as discs, larger than our Moon.",
+      "Three sit in the temperate zone where liquid water could pool. This red dwarf will burn steady and cool for trillions of years — long after our Sun is a cold cinder — making TRAPPIST-1 one of the most patient bets for life beyond Earth.",
+    ] };
+
+    // a light at the dwarf so its planets are lit by their own star
+    trLight = new THREE.PointLight(0xff8a52, 3.4, 0, 0);
+    scene.add(trLight);
+
+    // the seven worlds — real radii (Earth radii), orbits (AU), periods (days)
+    const TP: [string, number, number, number, string, string][] = [
+      ["b", 1.116, 0.01154, 1.510826, "Hot rocky world", "398 K · scorched, tidally baked"],
+      ["c", 1.097, 0.0158, 2.421937, "Warm rocky world", "340 K · a Venus-like furnace"],
+      ["d", 0.788, 0.02227, 4.049219, "Temperate rocky world", "286 K · on the inner edge of the zone"],
+      ["e", 0.920, 0.02925, 6.101013, "Habitable-zone world", "250 K · the best bet — likely rocky and watery"],
+      ["f", 1.045, 0.03849, 9.20754, "Cool habitable-zone world", "218 K · possibly an ocean under ice"],
+      ["g", 1.129, 0.04683, 12.352446, "Cold outer-zone world", "197 K · the largest of the seven"],
+      ["h", 0.755, 0.06189, 18.772866, "Very cold rocky world", "172 K · the frozen outermost"],
+    ];
+    for (const [k, rE, au, per, kind, sub] of TP) {
+      const prKm = rE * ER, orbR = au * AU;
+      const nm = T(`trappist/${k}_n.jpg`); nm.colorSpace = THREE.NoColorSpace;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(prKm, 48, 32),
+        new THREE.MeshStandardMaterial({ map: T(`trappist/${k}.jpg`), normalMap: nm, normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.92, metalness: 0 }));
+      m.rotation.z = 0.05;
+      const name = `TRAPPIST-1${k}`;
+      const pb = addBody(name, { x: 0, y: 0, z: 0 }, m, 0.00018);
+      pb.labelMax = 6e7;                     // only appears once you're in the system
+      pb.minD = prKm * 3; pb.dotK = 0.006;
+      pb.line = `${kind} around TRAPPIST-1 · ${sub}.`;
+      const phase = Math.random() * 6.2832;
+      pb.update = (_d, simDays) => {
+        const ang = phase + (simDays / per) * 6.2832;
+        pb.pos.x = TR_C.x + Math.cos(ang) * orbR;
+        pb.pos.y = TR_C.y;
+        pb.pos.z = TR_C.z - Math.sin(ang) * orbR;
+      };
+      pb.update(now, 0);
+      INFO[name] = { facts: [["Radius", `${rE} Earth radii`], ["Orbit", `${au} AU`], ["Year", `${per.toFixed(1)} days`], ["Class", kind]], text: [
+        `${kind} — ${sub}. It circles its red dwarf once every ${per.toFixed(1)} days at just ${au} AU, far closer than Mercury hugs our Sun, yet bathed in light so faint it would feel like deep dusk at noon.`,
+      ] };
+    }
   }
 
   /* ---------- comets: true elements, tails that wake near the Sun ---------- */
@@ -1382,7 +1475,8 @@ export function mountAtlas(opts: Opts): () => void {
     ["Moons", b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name)],
     ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
     ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
-    ["The stars", b => b.kind === "star" && b.name !== "Sagittarius A*"],
+    ["TRAPPIST-1 · a second sun", b => b.name.startsWith("TRAPPIST")],
+    ["The stars", b => b.kind === "star" && b.name !== "Sagittarius A*" && !b.name.startsWith("TRAPPIST")],
     ["The galaxy", b => b.name === "Sagittarius A*"],
   ];
   function conDistance(b: Body): string {
@@ -1486,7 +1580,7 @@ export function mountAtlas(opts: Opts): () => void {
         const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
-        const planetRetired = b.kind !== "star" && b.name !== "Sun" && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
+        const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
         if (ang > 0.004 || planetRetired || (b.labelMax !== undefined && d > b.labelMax)) { mat.opacity = 0; }
         else {
           // a planet must OUTSHINE the background stars — never become a label
@@ -1524,6 +1618,19 @@ export function mountAtlas(opts: Opts): () => void {
       mw.visible = gFade < 0.985;                // panorama not drawn once fully galaxy
     }
     bhUpdate?.(camKm.x, camKm.y, camKm.z);     // billboard + lens-direction for the black hole
+    // the living Earth's day/night terminator tracks the true Sun direction
+    if (earthMat && earthBody) {
+      const ep = earthBody.pos, el = Math.hypot(ep.x, ep.y, ep.z) || 1;
+      (earthMat.uniforms["sunDir"]!.value as THREE.Vector3).set(-ep.x / el, -ep.y / el, -ep.z / el);
+    }
+    if (trLight) {
+      trLight.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
+      // our lights have no inverse-square falloff (real distances are too vast),
+      // so only ONE star lights the scene at a time — whichever system you're in
+      const nearTrappist = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z) < 6e8;
+      trLight.intensity = nearTrappist ? 3.4 : 0;
+      sunLight.intensity = nearTrappist ? 0 : 2.6;
+    }
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
 
@@ -1549,7 +1656,7 @@ export function mountAtlas(opts: Opts): () => void {
       const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
       const wrongScale = b !== focus && (
         (b.kind === "star" && sunD < 2e10) ||                      // stars sleep inside the system
-        (b.kind !== "star" && b.name !== "Sun" && sunD > 2.5e11)   // planets retire among the stars
+        (b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && sunD > 2.5e11)   // our planets retire among the stars (TRAPPIST's are gated by labelMax)
       );
       if (behind || tooClose || tooFar || wrongScale || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
         b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
