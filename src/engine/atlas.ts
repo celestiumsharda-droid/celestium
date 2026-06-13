@@ -66,7 +66,8 @@ interface Body {
   minD: number;                      // closest approach (km from centre)
   dot?: THREE.Sprite;                // the point of light it becomes at distance
   clouds?: THREE.Mesh;               // Earth's cloud shell
-  labelMax?: number;                 // hide label/dot beyond this camera distance (moons)
+  labelMax?: number;                 // hide the LABEL beyond this camera distance
+  drift?: boolean;                   // a drifting object — its dot stays visible past labelMax; only the name hides
   arriveK?: number;                  // fly-to framing distance = radius × this (default 5)
   arrivePitch?: number;              // override the arrival pitch (rings open above the plane)
   update?: (date: Date, simDays: number) => void;   // live orbital motion
@@ -291,6 +292,45 @@ function discTexture(): THREE.Texture {
   x.fillStyle = g; x.fillRect(0, 0, 64, 64);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+
+/** a real-looking equirectangular Moon — grey regolith, the dark maria of
+ *  the near side, dense cratering and bright young ray craters. Far better
+ *  than the shipped moon.jpg (which is a duplicated near-side disk). */
+function moonTexture(): THREE.Texture {
+  const W = 2048, H = 1024, C = document.createElement("canvas"); C.width = W; C.height = H;
+  const x = C.getContext("2d")!;
+  const R = () => Math.random();
+  // base regolith with subtle large-scale mottling
+  x.fillStyle = "#8d8a85"; x.fillRect(0, 0, W, H);
+  const soft = (cx: number, cy: number, r: number, col: string, a: number) => {
+    for (const ox of [-W, 0, W]) { const g = x.createRadialGradient(cx + ox, cy, 0, cx + ox, cy, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); x.globalAlpha = a; x.fillStyle = g; x.beginPath(); x.arc(cx + ox, cy, r, 0, 6.29); x.fill(); } x.globalAlpha = 1;
+  };
+  for (let i = 0; i < 80; i++) soft(R() * W, R() * H, 80 + R() * 220, R() < 0.5 ? "#9a968f" : "#7d7a75", 0.25);
+  // the maria — dark basaltic plains, clustered on the near side (left-centre)
+  const maria: [number, number, number][] = [
+    [0.30, 0.34, 150], [0.40, 0.30, 120], [0.46, 0.42, 130], [0.36, 0.46, 110],
+    [0.52, 0.36, 90], [0.30, 0.52, 80], [0.44, 0.56, 95], [0.58, 0.46, 70], [0.24, 0.42, 70],
+  ];
+  for (const [u, v, r] of maria) {
+    soft(u * W, v * H, r, "#56554f", 0.85); soft(u * W, v * H, r * 0.7, "#4b4a45", 0.7);
+    for (let i = 0; i < 30; i++) soft(u * W + (R() - 0.5) * r * 2, v * H + (R() - 0.5) * r * 1.4, 20 + R() * 50, "#52514b", 0.4);
+  }
+  // craters — dark floor, bright raised rim
+  for (let i = 0; i < 520; i++) {
+    const cx = R() * W, cy = H * (0.08 + R() * 0.84), r = 3 + Math.pow(R(), 2.4) * 46;
+    x.globalAlpha = 0.5; x.strokeStyle = "#b4b0a8"; x.lineWidth = Math.max(1, r * 0.16);
+    for (const ox of [-W, 0, W]) { x.beginPath(); x.arc(cx + ox, cy, r, 0, 6.29); x.stroke(); }
+    soft(cx, cy, r * 0.85, "#6e6b65", 0.5); x.globalAlpha = 1;
+  }
+  // bright young ray craters (Tycho, Copernicus, …) with radiating streaks
+  for (const [u, v, r] of [[0.40, 0.78, 16], [0.46, 0.40, 13], [0.66, 0.30, 10], [0.20, 0.66, 9]] as [number, number, number][]) {
+    const cx = u * W, cy = v * H;
+    x.globalAlpha = 0.5; x.strokeStyle = "#d8d4cc";
+    for (let i = 0; i < 40; i++) { const a = R() * 6.2832, len = r * (4 + R() * 9); x.lineWidth = 1 + R(); x.beginPath(); x.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); x.lineTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len); x.stroke(); }
+    x.globalAlpha = 1; soft(cx, cy, r * 1.3, "#e6e2da", 0.7); soft(cx, cy, r * 0.5, "#6a6760", 0.6);
+  }
+  const t = new THREE.CanvasTexture(C); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = THREE.RepeatWrapping; return t;
 }
 
 /** procedural surface maps for worlds without photographic textures —
@@ -646,12 +686,9 @@ export function mountAtlas(opts: Opts): () => void {
 
   // the Moon — mean circular orbit (good to a few degrees)
   const earth = bodies.find(b => b.name === "Earth")!;
-  const moonNormal = T("moon_normal.jpg");
-  moonNormal.colorSpace = THREE.NoColorSpace;
-  moonNormal.flipY = true;
   const moonMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(RADII["Moon"]!, 64, 40),
-    new THREE.MeshStandardMaterial({ map: T("moon.jpg"), normalMap: moonNormal, normalScale: new THREE.Vector2(1.25, 1.25), roughness: 0.96, metalness: 0 }),
+    new THREE.SphereGeometry(RADII["Moon"]!, 96, 60),
+    new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 0.98, metalness: 0 }),
   );
   const moon = addBody("Moon", { x: 0, y: 0, z: 0 }, moonMesh, 0.00001);
   moon.labelMax = 2.5e7;
@@ -718,10 +755,31 @@ export function mountAtlas(opts: Opts): () => void {
     pb.update(now, 0);
   }
 
-  /* orbit lines + sun-centred structures live here (floating-origin offset) */
+  /* orbit lines + inner sun-centred structures (floating-origin offset);
+     gated to the inner-system scale. The OUTER group (belts, Oort) is
+     sun-centred too but visible out to interstellar range. */
   const orbitGroup = new THREE.Group();
   scene.add(orbitGroup);
+  const outerGroup = new THREE.Group();
+  scene.add(outerGroup);
   const orbitMat = new THREE.LineBasicMaterial({ color: 0xa9bcff, transparent: true, opacity: 0.16 });
+
+  // ---- the asteroid belt (2.1–3.3 AU) and the Kuiper belt (30–50 AU) ----
+  const beltPoints = (count: number, rIn: number, rOut: number, thick: number, color: number, size: number, opacity: number) => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const r = (rIn + Math.random() * (rOut - rIn)) * AU;
+      const th = Math.random() * 6.2832;
+      arr[i * 3] = Math.cos(th) * r;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 2 * thick * AU;
+      arr[i * 3 + 2] = -Math.sin(th) * r;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    return new THREE.Points(g, new THREE.PointsMaterial({ color, size, sizeAttenuation: false, transparent: true, opacity, depthWrite: false }));
+  };
+  outerGroup.add(beltPoints(2600, 2.1, 3.3, 0.18, 0xb9ad96, 1.5, 0.5));    // main asteroid belt
+  outerGroup.add(beltPoints(2000, 30, 50, 1.4, 0xa8b8d0, 1.4, 0.42));      // Kuiper belt
 
   /* ---------- the stellar neighbourhood: real stars at their true places ---------- */
   for (const s of STARS) {
@@ -752,6 +810,8 @@ export function mountAtlas(opts: Opts): () => void {
      true radii, orbital distances and periods, lit by their own star. */
   const ER = 6371;                          // km per Earth radius
   let trLight: THREE.PointLight | null = null;
+  const trOrbitGroup = new THREE.Group(); scene.add(trOrbitGroup);
+  const trOrbitMat = new THREE.LineBasicMaterial({ color: 0xff9a6a, transparent: true, opacity: 0.22 });
   const TR_C = starPos(STARS.find(s => s.n === "TRAPPIST-1")!);
   {
     const starR = 13.0 * ER;                // 82,823 km — Jupiter-sized M-dwarf
@@ -788,6 +848,11 @@ export function mountAtlas(opts: Opts): () => void {
     ];
     for (const [k, rE, au, per, kind, sub] of TP) {
       const prKm = rE * ER, orbR = au * AU;
+      // its orbit ring, centred on the dwarf (local coords; the group rides
+      // the floating origin and only shows when you're in the system)
+      const pts: THREE.Vector3[] = [];
+      for (let i = 0; i <= 128; i++) { const a = (i / 128) * 6.2832; pts.push(new THREE.Vector3(Math.cos(a) * orbR, 0, -Math.sin(a) * orbR)); }
+      trOrbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), trOrbitMat));
       const nm = T(`trappist/${k}_n.jpg`); nm.colorSpace = THREE.NoColorSpace;
       const m = new THREE.Mesh(new THREE.SphereGeometry(prKm, 48, 32),
         new THREE.MeshStandardMaterial({ map: T(`trappist/${k}.jpg`), normalMap: nm, normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.92, metalness: 0 }));
@@ -877,6 +942,7 @@ export function mountAtlas(opts: Opts): () => void {
     const cb = addBody(cm.n, { x: 0, y: 0, z: 0 }, g, 0.00004);
     cb.minD = 2500;
     cb.dotK = 0.007;
+    cb.drift = true; cb.labelMax = 6e8;   // drifts as a point; named only within ~4 AU
     if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xbfe0ff);
     const Z = new THREE.Vector3(0, 0, 1), dirV = new THREE.Vector3();
     cb.update = (date) => {
@@ -919,9 +985,9 @@ export function mountAtlas(opts: Opts): () => void {
     const cloud = new THREE.Points(gg, new THREE.PointsMaterial({
       color: 0xa8c0e8, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.28, depthWrite: false,
     }));
-    // the cloud is SUN-centred (orbitGroup already carries the floating-origin
-    // offset) — pure atmosphere, no label
-    orbitGroup.add(cloud);
+    // the cloud is SUN-centred (outerGroup carries the floating-origin offset
+    // and is visible out to interstellar range) — pure atmosphere, no label
+    outerGroup.add(cloud);
   }
 
   /* ---------- the machines: humanity's farthest emissaries ----------
@@ -1026,7 +1092,8 @@ export function mountAtlas(opts: Opts): () => void {
   function addCraft(n: string, pos: { x: number; y: number; z: number }, model: THREE.Group, labelMax?: number): Body {
     const cb = addBody(n, pos, model, 0.00005);   // a slow, living tumble
     cb.radius = 14; cb.minD = 90; cb.dotK = 0.006;
-    if (labelMax) cb.labelMax = labelMax;
+    cb.drift = true;                              // a point that drifts; named only up close
+    cb.labelMax = labelMax ?? 8e8;
     if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(0xdfe8f8);
     return cb;
   }
@@ -1581,7 +1648,10 @@ export function mountAtlas(opts: Opts): () => void {
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
         const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
-        if (ang > 0.004 || planetRetired || (b.labelMax !== undefined && d > b.labelMax)) { mat.opacity = 0; }
+        // drifting objects (comets, craft) keep their point past labelMax — only
+        // their NAME hides — so they drift visibly without cluttering with tags
+        const dotCulled = b.labelMax !== undefined && !b.drift && d > b.labelMax;
+        if (ang > 0.004 || planetRetired || dotCulled) { mat.opacity = 0; }
         else {
           // a planet must OUTSHINE the background stars — never become a label
           // floating over nothing
@@ -1591,11 +1661,14 @@ export function mountAtlas(opts: Opts): () => void {
       }
     }
     orbitGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
+    outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
     // orbit lines belong to the SYSTEM view — near a world they'd streak the
     // sky, so they fade out below ~1M km and return as you pull away
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
     orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;   // skip drawing when invisible
+    // the belts + Oort cloud stay visible far out (the Oort lives at ~10,000 AU)
+    outerGroup.visible = distKm > 4e7 && distKm < 6e13;
 
     // the galaxy emerges as you rise above the neighbourhood — and the
     // camera-glued panorama hands over to the real 3D structure
@@ -1627,9 +1700,12 @@ export function mountAtlas(opts: Opts): () => void {
       trLight.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
       // our lights have no inverse-square falloff (real distances are too vast),
       // so only ONE star lights the scene at a time — whichever system you're in
-      const nearTrappist = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z) < 6e8;
+      const trD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
+      const nearTrappist = trD < 6e8;
       trLight.intensity = nearTrappist ? 3.4 : 0;
       sunLight.intensity = nearTrappist ? 0 : 2.6;
+      trOrbitGroup.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
+      trOrbitGroup.visible = trD > 1e6 && trD < 4e7;   // its orbit rings, only in-system
     }
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
@@ -1646,6 +1722,10 @@ export function mountAtlas(opts: Opts): () => void {
     // star names wake while the planets retire.
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const sunD = Math.hypot(camKm.x, camKm.y, camKm.z);
+    const trapD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
+    // "in a system" = deep inside the Sun's OR TRAPPIST's neighbourhood: the
+    // distant catalogue stars hush so the system you're visiting reads cleanly
+    const inSystem = sunD < 2e10 || trapD < 8e9;
     for (const b of bodies) {
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
@@ -1655,7 +1735,7 @@ export function mountAtlas(opts: Opts): () => void {
       const tooClose = b === focus && d < b.radius * 24;
       const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
       const wrongScale = b !== focus && (
-        (b.kind === "star" && sunD < 2e10) ||                      // stars sleep inside the system
+        (b.kind === "star" && inSystem && d > 8e9) ||             // distant stars hush while you're inside a system
         (b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && sunD > 2.5e11)   // our planets retire among the stars (TRAPPIST's are gated by labelMax)
       );
       if (behind || tooClose || tooFar || wrongScale || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
