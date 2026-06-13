@@ -13,6 +13,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { planetPosition, PLANETS, kepler, rad, norm360, julianCenturies, type PlanetName } from "./ephemeris";
+import EXO_SYSTEMS from "../data/exo";
 import { playClick } from "./sound";
 
 const AU = 1.495978707e8;            // km
@@ -72,6 +73,7 @@ interface Body {
   arrivePitch?: number;              // override the arrival pitch (rings open above the plane)
   update?: (date: Date, simDays: number) => void;   // live orbital motion
   kind?: "star";                     // catalogue stars live by different label rules
+  foreign?: boolean;                 // belongs to another star system (TRAPPIST, exoplanets) — gated by labelMax, not the "our planets retire" rule
   dotK?: number;                     // apparent-size class of its point of light
 }
 
@@ -81,7 +83,6 @@ interface Body {
 const LY = 9.4607e12;                // km
 interface StarRow { n: string; ra: number; dec: number; ly: number; c: number; r: number; t: string; }
 const STARS: StarRow[] = [
-  { n: "Proxima Centauri", ra: 14.495, dec: -62.68, ly: 4.25, c: 0xff6b4a, r: 0.15, t: "red dwarf — the nearest star" },
   { n: "Alpha Centauri", ra: 14.66, dec: -60.83, ly: 4.37, c: 0xfff3d8, r: 1.22, t: "sun-like double star" },
   { n: "Barnard's Star", ra: 17.963, dec: 4.69, ly: 5.96, c: 0xff7a50, r: 0.2, t: "red dwarf" },
   { n: "Wolf 359", ra: 10.94, dec: 7.01, ly: 7.86, c: 0xff5c3c, r: 0.16, t: "red dwarf" },
@@ -104,7 +105,6 @@ const STARS: StarRow[] = [
   { n: "TRAPPIST-1", ra: 23.108, dec: -5.04, ly: 40.66, c: 0xff5038, r: 0.121, t: "seven Earth-sized worlds" },
   { n: "Altair", ra: 19.846, dec: 8.87, ly: 16.7, c: 0xe8ecf8, r: 1.8, t: "fast-spinning white star" },
   { n: "Vega", ra: 18.615, dec: 38.78, ly: 25.0, c: 0xcfe0ff, r: 2.36, t: "the once and future pole star" },
-  { n: "Fomalhaut", ra: 22.96, dec: -29.62, ly: 25.1, c: 0xd8e4fa, r: 1.84, t: "white star ringed by debris" },
   { n: "Pollux", ra: 7.755, dec: 28.03, ly: 33.8, c: 0xffcf96, r: 8.8, t: "orange giant with a planet" },
   { n: "Arcturus", ra: 14.26, dec: 19.18, ly: 36.7, c: 0xffc080, r: 25.4, t: "orange giant — the northern sky's brightest" },
   { n: "Capella", ra: 5.28, dec: 46.0, ly: 42.9, c: 0xffe2ac, r: 12, t: "a pair of yellow giants" },
@@ -122,13 +122,37 @@ const STARS: StarRow[] = [
   { n: "Rigel", ra: 5.242, dec: -8.20, ly: 863, c: 0xc8dcff, r: 79, t: "blue supergiant — Orion's foot" },
   { n: "Deneb", ra: 20.69, dec: 45.28, ly: 2615, c: 0xd4e2ff, r: 203, t: "one of the most luminous stars known" },
 ];
-/** RA/Dec (equatorial) → our ecliptic km frame */
-function starPos(s: StarRow): { x: number; y: number; z: number } {
-  const ra = s.ra * 15 * D2R, dec = s.dec * D2R, eps = 23.439 * D2R;
+/** RA (hours), Dec (deg), distance (ly) → our ecliptic km frame */
+function skyPos(raH: number, decD: number, ly: number): { x: number; y: number; z: number } {
+  const ra = raH * 15 * D2R, dec = decD * D2R, eps = 23.439 * D2R;
   const xe = Math.cos(dec) * Math.cos(ra), ye = Math.cos(dec) * Math.sin(ra), ze = Math.sin(dec);
   const x = xe, y = ye * Math.cos(eps) + ze * Math.sin(eps), z = -ye * Math.sin(eps) + ze * Math.cos(eps);
-  const d = s.ly * LY;
+  const d = ly * LY;
   return E2T({ x: x * d, y: y * d, z: z * d });
+}
+function starPos(s: StarRow): { x: number; y: number; z: number } { return skyPos(s.ra, s.dec, s.ly); }
+
+/* ---- exoplanet prose helpers (data → readable catalogue text) ---- */
+const cap = (s: string): string => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+interface ExoP { key: string; name: string; rE: number; au: number; per: number; kind: string; massE: number | null; tempK: number | null; }
+interface ExoSys { star: string; ly: number; kindStar: string; }
+function describeExo(p: ExoP, _sys: ExoSys): string {
+  const yr = p.per > 700 ? `${(p.per / 365.25).toFixed(p.per > 3650 ? 0 : 1)} years` : `${p.per.toFixed(p.per < 10 ? 1 : 0)} days`;
+  return `${p.au.toPrecision(2)} AU out · a year of ${yr}`;
+}
+function exoPlanetInfo(p: ExoP, sys: ExoSys, lyTxt: number): { facts: [string, string][]; text: string[] } {
+  const facts: [string, string][] = [];
+  if (p.rE) facts.push(["Radius", `${p.rE} Earth radii`]);
+  if (p.massE) facts.push(["Mass", p.massE > 100 ? `${(p.massE / 317.8).toPrecision(2)} Jupiters` : `${p.massE.toPrecision(2)} Earths`]);
+  facts.push(["Orbit", `${p.au.toPrecision(2)} AU`]);
+  facts.push(["Year", p.per > 700 ? `${(p.per / 365.25).toFixed(1)} years` : `${p.per.toFixed(1)} days`]);
+  if (p.tempK) facts.push(["Temperature", `${Math.round(p.tempK)} K`]);
+  facts.push(["Class", cap(p.kind)]);
+  const giant = /gas giant|hot jupiter/i.test(p.kind);
+  const text = giant
+    ? `${cap(p.kind)} orbiting ${sys.star}, ${lyTxt} light-years from Earth. It rounds its star every ${p.per > 700 ? `${(p.per / 365.25).toFixed(1)} years` : `${p.per.toFixed(1)} days`} at ${p.au.toPrecision(2)} AU — a world of gas and storm, never seen as more than a point of light or a dip in its star's brightness.`
+    : `${cap(p.kind)} orbiting ${sys.star}, ${lyTxt} light-years away. At ${p.au.toPrecision(2)} AU its year lasts ${p.per > 700 ? `${(p.per / 365.25).toFixed(1)} years` : `${p.per.toFixed(1)} days`}. No telescope has resolved its surface — what you see is a scientific portrait, painted from its size, temperature and the light of its sun.`;
+  return { facts, text: [text] };
 }
 
 /* ecliptic (x toward equinox, z north) → three.js (y up) */
@@ -576,7 +600,7 @@ export function mountAtlas(opts: Opts): () => void {
     orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; incDeg?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
     fixedPos?: Vec3;
     labelMax?: number; arriveK?: number; arrivePitch?: number; minDk?: number;
-    dotK?: number; dotColor?: number; line?: string;
+    dotK?: number; dotColor?: number; line?: string; foreign?: boolean;
     info?: { facts: [string, string][]; text: string[] };
   }
   function defineWorld(def: WorldDef): Body {
@@ -594,6 +618,7 @@ export function mountAtlas(opts: Opts): () => void {
     if (def.dotK !== undefined) b.dotK = def.dotK;
     if (def.line) b.line = def.line;
     if (def.dotColor !== undefined && b.dot) (b.dot.material as THREE.SpriteMaterial).color.set(def.dotColor);
+    if (def.foreign) b.foreign = true;
     if (def.info) INFO[def.name] = def.info;
     if (def.orbit) {
       const o = def.orbit, phase = o.phase ?? Math.random() * 6.2832;
@@ -900,6 +925,10 @@ export function mountAtlas(opts: Opts): () => void {
      an ultra-cool red dwarf and seven rocky Earth-sized planets at their
      true radii, orbital distances and periods, lit by their own star. */
   const ER = 6371;                          // km per Earth radius
+  // every foreign sun (TRAPPIST + the exoplanet hosts) registers here; one
+  // shared light follows whichever system the camera is currently inside,
+  // so the scene is always lit by exactly the right star, at any scale.
+  const foreignSuns: { pos: Vec3; col: number; span: number }[] = [];
   let trLight: THREE.PointLight | null = null;
   const trOrbitGroup = new THREE.Group(); scene.add(trOrbitGroup);
   const trOrbitMat = new THREE.LineBasicMaterial({ color: 0xff9a6a, transparent: true, opacity: 0.22 });
@@ -915,7 +944,7 @@ export function mountAtlas(opts: Opts): () => void {
     shalo.scale.setScalar(starR * 7); sg.add(shalo);
     sg.userData["halo"] = shalo; sg.userData["starR"] = starR;
     const trStar = addBody("TRAPPIST-1", TR_C, sg, 0.00001);
-    trStar.kind = "star"; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
+    trStar.kind = "star"; trStar.foreign = true; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
     trStar.line = "An ultra-cool red dwarf 40 light-years away — and seven Earth-sized worlds, three in the temperate zone.";
     if (trStar.dot) (trStar.dot.material as THREE.SpriteMaterial).color.set(0xff5038);
     INFO["TRAPPIST-1"] = { facts: [["Distance", "40.7 light-years"], ["Type", "ultra-cool M-dwarf"], ["Size", "Jupiter-sized"], ["Planets", "seven, Earth-sized"], ["Temperate", "three of them"]], text: [
@@ -926,6 +955,7 @@ export function mountAtlas(opts: Opts): () => void {
     // a light at the dwarf so its planets are lit by their own star
     trLight = new THREE.PointLight(0xff8a52, 3.4, 0, 0);
     scene.add(trLight);
+    foreignSuns.push({ pos: TR_C, col: 0xff8a52, span: 1e8 });
 
     // the seven worlds — real radii (Earth radii), orbits (AU), periods (days)
     const TP: [string, number, number, number, string, string][] = [
@@ -944,7 +974,7 @@ export function mountAtlas(opts: Opts): () => void {
       defineWorld({
         name: `TRAPPIST-1${k}`, radiusKm: rE * ER,
         map: `trappist/${k}.jpg`, normal: `trappist/${k}_n.jpg`,
-        segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7,
+        segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7, foreign: true,
         line: `${kind} around TRAPPIST-1 · ${sub}.`,
         orbit: { center: () => TR_C, radiusKm: au * AU, periodDays: per, ringGroup: trOrbitGroup, ringMat: trOrbitMat },
         info: { facts: [["Radius", `${rE} Earth radii`], ["Orbit", `${au} AU`], ["Year", `${per.toFixed(1)} days`], ["Class", kind]], text: [
@@ -952,6 +982,50 @@ export function mountAtlas(opts: Opts): () => void {
         ] },
       });
     }
+  }
+
+  /* ---------- the exoplanet systems — 22 real systems at their true places ----------
+     Each is built straight from the data file: a textured host star at its
+     real RA/Dec/distance, and its real planets (radii, orbits, periods) via
+     defineWorld. The shared foreign-sun light handles illumination; planets
+     appear only once you're in the system (labelMax). Adding a system later
+     is just another row in src/data/exo.ts — nothing here changes. */
+  const exoCentres: Record<string, Vec3> = {};
+  for (const sys of EXO_SYSTEMS) {
+    const C = skyPos(sys.ra, sys.dec, sys.ly);
+    exoCentres[sys.pack] = C;
+    const starR = Math.max(sys.rSun * 696340, sys.pulsar ? 1.4e4 : 0);   // pulsars are tiny — give a visible minimum
+    const r = sys.pulsar ? 2.2e4 : starR;
+    const sg = new THREE.Group();
+    sg.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24), new THREE.MeshBasicMaterial({ map: T(`exo/${sys.pack}/star.jpg`) })));
+    const glowCol = sys.pulsar ? 0xbcd2ff : sys.col;
+    const sglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: glowCol, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    sglow.scale.setScalar(r * 7); sg.add(sglow);
+    const shalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: glowCol, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    shalo.scale.setScalar(r * 7); sg.add(shalo);
+    sg.userData["halo"] = shalo; sg.userData["starR"] = r;
+    const sb = addBody(sys.star, C, sg, 0.00001);
+    sb.kind = "star"; sb.foreign = true; sb.radius = r; sb.minD = r * 4; sb.dotK = 0.007;
+    const lyTxt = sys.ly < 100 ? sys.ly : Math.round(sys.ly);
+    sb.line = `${sys.kindStar} · ${lyTxt} light-years away — ${sys.planets.length} known planet${sys.planets.length > 1 ? "s" : ""}.`;
+    if (sb.dot) (sb.dot.material as THREE.SpriteMaterial).color.set(glowCol);
+    if (!INFO[sys.star]) INFO[sys.star] = {
+      facts: [["Distance", `${lyTxt} light-years`], ["Star", sys.kindStar + (sys.spec ? ` (${sys.spec})` : "")], ["Planets", `${sys.planets.length} known`], ...(sys.tempK ? [["Temperature", `${Math.round(sys.tempK)} K`] as [string, string]] : [])],
+      text: [sb.line],
+    };
+    foreignSuns.push({ pos: C, col: glowCol, span: Math.max(2e9, (sys.planets.reduce((m, p) => Math.max(m, p.au), 0)) * AU * 2.5) });
+
+    sys.planets.forEach((p, i) => {
+      const span = p.au * AU;
+      defineWorld({
+        name: p.name, radiusKm: Math.max(p.rE * ER, 600), map: `exo/${sys.pack}/${p.key}.jpg`,
+        segments: 40, foreign: true, minDk: 3, dotK: 0.006,
+        labelMax: Math.max(3e9, span * 6), tiltDeg: ((i % 2) ? 1 : -1) * (1.5 + i * 1.5),
+        orbit: { center: () => C, radiusKm: span, periodDays: p.per, incDeg: (i - (sys.planets.length - 1) / 2) * 1.6 },
+        line: `${cap(p.kind)} · ${describeExo(p, sys)}`,
+        info: exoPlanetInfo(p, sys, lyTxt),
+      });
+    });
   }
 
   /* ---------- comets: true elements, tails that wake near the Sun ---------- */
@@ -1623,7 +1697,8 @@ export function mountAtlas(opts: Opts): () => void {
     ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
     ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
     ["TRAPPIST-1 · a second sun", b => b.name.startsWith("TRAPPIST")],
-    ["The stars", b => b.kind === "star" && b.name !== "Sagittarius A*" && !b.name.startsWith("TRAPPIST")],
+    ["Exoplanet systems", b => b.kind === "star" && !!b.foreign && !b.name.startsWith("TRAPPIST")],
+    ["The stars", b => b.kind === "star" && !b.foreign && b.name !== "Sagittarius A*"],
     ["The galaxy", b => b.name === "Sagittarius A*"],
   ];
   function conDistance(b: Body): string {
@@ -1732,11 +1807,25 @@ export function mountAtlas(opts: Opts): () => void {
   // scene at a time (our point lights have no inverse-square falloff)
   onFrame(({ camKm }) => {
     if (!trLight) return;
-    trLight.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
+    // find the nearest foreign sun (TRAPPIST or any exoplanet host); if the
+    // camera is inside that system, the shared light becomes that star —
+    // right colour, right place — and our Sun stands down
+    let best: { pos: Vec3; col: number; span: number } | null = null, bestD = Infinity;
+    for (const fs of foreignSuns) {
+      const d = Math.hypot(camKm.x - fs.pos.x, camKm.y - fs.pos.y, camKm.z - fs.pos.z);
+      if (d < bestD) { bestD = d; best = fs; }
+    }
+    const inForeign = best !== null && bestD < best.span;
+    if (inForeign && best) {
+      trLight.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z);
+      trLight.color.set(best.col);
+      trLight.intensity = 3.4;
+    } else {
+      trLight.intensity = 0;
+    }
+    sunLight.intensity = inForeign ? 0 : 2.6;
+    // TRAPPIST keeps its orbit rings, shown only when you're inside it
     const trD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
-    const nearTrappist = trD < 6e8;
-    trLight.intensity = nearTrappist ? 3.4 : 0;
-    sunLight.intensity = nearTrappist ? 0 : 2.6;
     trOrbitGroup.position.set(TR_C.x - camKm.x, TR_C.y - camKm.y, TR_C.z - camKm.z);
     trOrbitGroup.visible = trD > 1e6 && trD < 4e7;
   });
@@ -1797,7 +1886,7 @@ export function mountAtlas(opts: Opts): () => void {
         const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
-        const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
+        const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.foreign && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
         // drifting objects (comets, craft) keep their point past labelMax — only
         // their NAME hides — so they drift visibly without cluttering with tags
         const dotCulled = b.labelMax !== undefined && !b.drift && d > b.labelMax;
@@ -1838,7 +1927,7 @@ export function mountAtlas(opts: Opts): () => void {
       const tooFar = b.labelMax !== undefined && d > b.labelMax && b !== focus;   // moons merge into their parent at range
       const wrongScale = b !== focus && (
         (b.kind === "star" && inSystem && d > 8e9) ||             // distant stars hush while you're inside a system
-        (b.kind !== "star" && b.name !== "Sun" && !b.name.startsWith("TRAPPIST") && sunD > 2.5e11)   // our planets retire among the stars (TRAPPIST's are gated by labelMax)
+        (b.kind !== "star" && b.name !== "Sun" && !b.foreign && sunD > 2.5e11)   // our planets retire among the stars (TRAPPIST's are gated by labelMax)
       );
       if (behind || tooClose || tooFar || wrongScale || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
         b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
