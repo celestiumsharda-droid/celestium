@@ -573,7 +573,7 @@ export function mountAtlas(opts: Opts): () => void {
   interface WorldDef {
     name: string; radiusKm: number; map: string; normal?: string;
     segments?: number; tiltDeg?: number; spin?: number; roughness?: number;
-    orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
+    orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; incDeg?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
     fixedPos?: Vec3;
     labelMax?: number; arriveK?: number; arrivePitch?: number; minDk?: number;
     dotK?: number; dotColor?: number; line?: string;
@@ -602,9 +602,11 @@ export function mountAtlas(opts: Opts): () => void {
         for (let i = 0; i <= 128; i++) { const a = (i / 128) * 6.2832; pts.push(new THREE.Vector3(Math.cos(a) * o.radiusKm, 0, -Math.sin(a) * o.radiusKm)); }
         o.ringGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), o.ringMat));
       }
+      const inc = (o.incDeg ?? 0) * D2R;
       b.update = (_d, simDays) => {
         const c = o.center(), ang = phase + (simDays / o.periodDays) * 6.2832;
-        b.pos.x = c.x + Math.cos(ang) * o.radiusKm; b.pos.y = c.y; b.pos.z = c.z - Math.sin(ang) * o.radiusKm;
+        const ox = Math.cos(ang) * o.radiusKm, oz = -Math.sin(ang) * o.radiusKm;
+        b.pos.x = c.x + ox; b.pos.y = c.y - oz * Math.sin(inc); b.pos.z = c.z + oz * Math.cos(inc);
       };
       b.update(now, 0);
     }
@@ -755,9 +757,13 @@ export function mountAtlas(opts: Opts): () => void {
     { n: "Titan",    parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 8e7, inc: 26.7 },
   ];
   for (const mn of MOONS) {
+    // real mission-derived surface maps (Galileo/Voyager via Björn Jónsson &
+    // the Solar System Scope set), with the albedo doubling as a subtle bump
+    const mTex = T(`moons/${mn.n.toLowerCase()}.jpg`);
+    const mBump = T(`moons/${mn.n.toLowerCase()}.jpg`); mBump.colorSpace = THREE.NoColorSpace;
     const mm = new THREE.Mesh(
-      new THREE.SphereGeometry(RADII[mn.n]!, 48, 24),
-      new THREE.MeshPhongMaterial({ map: worldTexture(mn.n), shininess: 3 }),
+      new THREE.SphereGeometry(RADII[mn.n]!, 72, 48),
+      new THREE.MeshStandardMaterial({ map: mTex, bumpMap: mBump, bumpScale: 4, roughness: 1, metalness: 0 }),
     );
     const mb = addBody(mn.n, { x: 0, y: 0, z: 0 }, mm, 0);   // tidally locked: no free spin
     mb.labelMax = mn.lblMax;
@@ -801,6 +807,44 @@ export function mountAtlas(opts: Opts): () => void {
     };
     pb.update(now, 0);
   }
+
+  /* ---------- the dwarf planets — Ceres in the belt, the rest far beyond Neptune ----------
+     real radii, orbital distances, periods and inclinations; Ceres from Dawn,
+     the trans-Neptunians from the Solar System Scope artist's set (no surface
+     maps exist for those — humanity has never seen them as more than a dot). */
+  const sunCentre = () => ({ x: 0, y: 0, z: 0 });
+  defineWorld({
+    name: "Ceres", radiusKm: 473, map: "ceres.jpg", segments: 64, dotColor: 0xb9ad96, dotK: 0.006,
+    orbit: { center: sunCentre, radiusKm: 2.77 * AU, periodDays: 1680, incDeg: 10.6 },
+    line: "The largest body in the asteroid belt — a dwarf planet of rock and water ice.",
+    info: { facts: [["Radius", "473 km"], ["Orbit", "2.77 AU · in the belt"], ["Year", "4.6 years"], ["Class", "dwarf planet"], ["Visited", "Dawn, 2015"]], text: [
+      "Ceres is the asteroid belt's one true world — round under its own gravity, a third of all the belt's mass in a single body. Beneath its dark, salt-stained crust lies a layer of brine and water ice; bright spots in Occator crater are deposits of salt left where that water reached the surface and boiled away.",
+    ] },
+  });
+  defineWorld({
+    name: "Makemake", radiusKm: 715, map: "makemake.jpg", segments: 48, dotColor: 0xc9a878, dotK: 0.006,
+    orbit: { center: sunCentre, radiusKm: 45.4 * AU, periodDays: 111800, incDeg: 29.0 },
+    line: "A frozen dwarf world of the Kuiper Belt, wrapped in methane ice.",
+    info: { facts: [["Radius", "715 km"], ["Orbit", "45.4 AU"], ["Year", "306 years"], ["Surface", "−240 °C, methane ice"], ["Moon", "1 (MK2)"]], text: [
+      "Makemake is one of the larger dwarf planets of the Kuiper Belt, bright with frozen methane and ethane. It helped end Pluto's reign: its 2005 discovery, alongside Eris, forced astronomers to either admit a tenth planet or redraw the definition — and in 2006 they redrew it.",
+    ] },
+  });
+  defineWorld({
+    name: "Haumea", radiusKm: 780, map: "haumea.jpg", segments: 48, tiltDeg: 28, dotColor: 0xd8d0c0, dotK: 0.006,
+    orbit: { center: sunCentre, radiusKm: 43.1 * AU, periodDays: 103700, incDeg: 28.2 },
+    line: "A dwarf planet spun into an egg shape, with rings and two moons.",
+    info: { facts: [["Shape", "ellipsoid — a stretched egg"], ["Orbit", "43.1 AU"], ["Year", "284 years"], ["Day", "under 4 hours"], ["Rings", "yes — first KBO found with them"]], text: [
+      "Haumea spins so fast — once every four hours — that it has been flung into the shape of an egg, twice as long as it is wide. It trails two small moons and a thin ring, and a family of icy shards knocked off in the ancient collision that set it spinning.",
+    ] },
+  });
+  defineWorld({
+    name: "Eris", radiusKm: 1163, map: "eris.jpg", segments: 48, dotColor: 0xd0d0cc, dotK: 0.006,
+    orbit: { center: sunCentre, radiusKm: 67.8 * AU, periodDays: 204000, incDeg: 44.0 },
+    line: "The most massive dwarf planet — the discovery that demoted Pluto.",
+    info: { facts: [["Radius", "1,163 km"], ["Mass", "27% more than Pluto"], ["Orbit", "67.8 AU"], ["Year", "559 years"], ["Moon", "1 (Dysnomia)"]], text: [
+      "Eris is very nearly Pluto's twin in size and actually heavier — and finding it in 2005, far out in the scattered disc, is what forced the reckoning. If Pluto was a planet, so was Eris, and so were the dozens more surely waiting in the dark. The word 'planet' was redrawn instead. Fittingly, it is named for the goddess of strife.",
+    ] },
+  });
 
   /* orbit lines + inner sun-centred structures (floating-origin offset);
      gated to the inner-system scale. The OUTER group (belts, Oort) is
@@ -1571,9 +1615,11 @@ export function mountAtlas(opts: Opts): () => void {
   addEventListener("keydown", e => { if (e.key === "Escape") { sheet.classList.remove("open"); closeConsole(); } });
 
   /* ---------- the navigation console: every destination, one tap away ---------- */
+  const DWARFS = ["Ceres", "Pluto", "Haumea", "Makemake", "Eris"];
   const REALMS: [string, (b: Body) => boolean][] = [
-    ["The Sun & its worlds", b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"].includes(b.name)],
+    ["The Sun & its planets", b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name)],
     ["Moons", b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name)],
+    ["Dwarf planets", b => DWARFS.includes(b.name)],
     ["The machines", b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name)],
     ["The wanderers", b => b.name.includes("Comet") || b.name.includes("Bopp")],
     ["TRAPPIST-1 · a second sun", b => b.name.startsWith("TRAPPIST")],
