@@ -602,6 +602,54 @@ export function mountAtlas(opts: Opts): () => void {
     return b;
   }
 
+  /* ---------- defineWorld: the one-call factory for textured worlds ----------
+     A planet, moon or exoplanet is now a single declaration — a PBR sphere
+     (albedo + optional normal map), an optional circular orbit (around a
+     centre that may itself move), an optional orbit ring, plus all the
+     catalogue metadata. This is how new worlds get added: data in, body out,
+     no other code touched. */
+  type Vec3 = { x: number; y: number; z: number };
+  interface WorldDef {
+    name: string; radiusKm: number; map: string; normal?: string;
+    segments?: number; tiltDeg?: number; spin?: number; roughness?: number;
+    orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
+    fixedPos?: Vec3;
+    labelMax?: number; arriveK?: number; arrivePitch?: number; minDk?: number;
+    dotK?: number; dotColor?: number; line?: string;
+    info?: { facts: [string, string][]; text: string[] };
+  }
+  function defineWorld(def: WorldDef): Body {
+    const seg = def.segments ?? segMain;
+    const mat = new THREE.MeshStandardMaterial({ map: T(def.map), roughness: def.roughness ?? 0.92, metalness: 0 });
+    if (def.normal) { const nm = T(def.normal); nm.colorSpace = THREE.NoColorSpace; mat.normalMap = nm; mat.normalScale = new THREE.Vector2(1.1, 1.1); }
+    const m = new THREE.Mesh(new THREE.SphereGeometry(def.radiusKm, seg, Math.max(8, seg / 2)), mat);
+    if (def.tiltDeg) m.rotation.z = def.tiltDeg * D2R;
+    const b = addBody(def.name, def.fixedPos ?? { x: 0, y: 0, z: 0 }, m, def.spin ?? 0.00018);
+    b.radius = def.radiusKm;
+    b.minD = def.radiusKm * (def.minDk ?? 1.4);
+    if (def.labelMax !== undefined) b.labelMax = def.labelMax;
+    if (def.arriveK !== undefined) b.arriveK = def.arriveK;
+    if (def.arrivePitch !== undefined) b.arrivePitch = def.arrivePitch;
+    if (def.dotK !== undefined) b.dotK = def.dotK;
+    if (def.line) b.line = def.line;
+    if (def.dotColor !== undefined && b.dot) (b.dot.material as THREE.SpriteMaterial).color.set(def.dotColor);
+    if (def.info) INFO[def.name] = def.info;
+    if (def.orbit) {
+      const o = def.orbit, phase = o.phase ?? Math.random() * 6.2832;
+      if (o.ringGroup && o.ringMat) {
+        const pts: THREE.Vector3[] = [];
+        for (let i = 0; i <= 128; i++) { const a = (i / 128) * 6.2832; pts.push(new THREE.Vector3(Math.cos(a) * o.radiusKm, 0, -Math.sin(a) * o.radiusKm)); }
+        o.ringGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), o.ringMat));
+      }
+      b.update = (_d, simDays) => {
+        const c = o.center(), ang = phase + (simDays / o.periodDays) * 6.2832;
+        b.pos.x = c.x + Math.cos(ang) * o.radiusKm; b.pos.y = c.y; b.pos.z = c.z - Math.sin(ang) * o.radiusKm;
+      };
+      b.update(now, 0);
+    }
+    return b;
+  }
+
   // the Sun — a LIVING photosphere: churning granulation, drifting active
   // regions, prominences at the limb — plus the beacon glow that scales
   // with distance so it never fades to a dim dot
@@ -863,33 +911,20 @@ export function mountAtlas(opts: Opts): () => void {
       ["g", 1.129, 0.04683, 12.352446, "Cold outer-zone world", "197 K · the largest of the seven"],
       ["h", 0.755, 0.06189, 18.772866, "Very cold rocky world", "172 K · the frozen outermost"],
     ];
+    // each world is now one declarative defineWorld(...) call — the factory
+    // builds the textured sphere, the orbit ring, the live orbit and the
+    // catalogue entry. This is the template for adding any new world.
     for (const [k, rE, au, per, kind, sub] of TP) {
-      const prKm = rE * ER, orbR = au * AU;
-      // its orbit ring, centred on the dwarf (local coords; the group rides
-      // the floating origin and only shows when you're in the system)
-      const pts: THREE.Vector3[] = [];
-      for (let i = 0; i <= 128; i++) { const a = (i / 128) * 6.2832; pts.push(new THREE.Vector3(Math.cos(a) * orbR, 0, -Math.sin(a) * orbR)); }
-      trOrbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), trOrbitMat));
-      const nm = T(`trappist/${k}_n.jpg`); nm.colorSpace = THREE.NoColorSpace;
-      const m = new THREE.Mesh(new THREE.SphereGeometry(prKm, 48, 32),
-        new THREE.MeshStandardMaterial({ map: T(`trappist/${k}.jpg`), normalMap: nm, normalScale: new THREE.Vector2(1.1, 1.1), roughness: 0.92, metalness: 0 }));
-      m.rotation.z = 0.05;
-      const name = `TRAPPIST-1${k}`;
-      const pb = addBody(name, { x: 0, y: 0, z: 0 }, m, 0.00018);
-      pb.labelMax = 6e7;                     // only appears once you're in the system
-      pb.minD = prKm * 3; pb.dotK = 0.006;
-      pb.line = `${kind} around TRAPPIST-1 · ${sub}.`;
-      const phase = Math.random() * 6.2832;
-      pb.update = (_d, simDays) => {
-        const ang = phase + (simDays / per) * 6.2832;
-        pb.pos.x = TR_C.x + Math.cos(ang) * orbR;
-        pb.pos.y = TR_C.y;
-        pb.pos.z = TR_C.z - Math.sin(ang) * orbR;
-      };
-      pb.update(now, 0);
-      INFO[name] = { facts: [["Radius", `${rE} Earth radii`], ["Orbit", `${au} AU`], ["Year", `${per.toFixed(1)} days`], ["Class", kind]], text: [
-        `${kind} — ${sub}. It circles its red dwarf once every ${per.toFixed(1)} days at just ${au} AU, far closer than Mercury hugs our Sun, yet bathed in light so faint it would feel like deep dusk at noon.`,
-      ] };
+      defineWorld({
+        name: `TRAPPIST-1${k}`, radiusKm: rE * ER,
+        map: `trappist/${k}.jpg`, normal: `trappist/${k}_n.jpg`,
+        segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7,
+        line: `${kind} around TRAPPIST-1 · ${sub}.`,
+        orbit: { center: () => TR_C, radiusKm: au * AU, periodDays: per, ringGroup: trOrbitGroup, ringMat: trOrbitMat },
+        info: { facts: [["Radius", `${rE} Earth radii`], ["Orbit", `${au} AU`], ["Year", `${per.toFixed(1)} days`], ["Class", kind]], text: [
+          `${kind} — ${sub}. It circles its red dwarf once every ${per.toFixed(1)} days at just ${au} AU, far closer than Mercury hugs our Sun, yet bathed in light so faint it would feel like deep dusk at noon.`,
+        ] },
+      });
     }
   }
 
