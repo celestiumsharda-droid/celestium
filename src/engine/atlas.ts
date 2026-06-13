@@ -1097,6 +1097,11 @@ export function mountAtlas(opts: Opts): () => void {
    *  barred core, two grand arms and two minor ones as soft density waves,
    *  dark dust lanes along their inner edges, blue OB knots and pink HII
    *  regions — over which 3D point-grain gives parallax and depth. */
+  // a tight grand-design spiral, shared by the texture AND the 3D grain so
+  // the painted structure and the point sparkle reinforce each other
+  const G_RC = 44, G_RE = 970, G_TURNS = 2.65, G_SWEEP = G_TURNS * 2 * Math.PI;
+  const G_K = Math.log(G_RE / G_RC) / G_SWEEP;
+  const G_ARMS = [0.0, Math.PI, 0.5 * Math.PI + 0.4, 1.5 * Math.PI + 0.4];  // 2 dominant + 2 spurs
   function galaxyTexture(): THREE.Texture {
     const S = 2048, C = S / 2;
     const c = document.createElement("canvas"); c.width = c.height = S;
@@ -1107,86 +1112,78 @@ export function mountAtlas(opts: Opts): () => void {
       g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
       x.fillStyle = g; x.beginPath(); x.arc(bx, by, r, 0, 6.29); x.fill();
     };
-    // a logarithmic spiral, ~2.4 turns, tight grand-design pitch
-    const RC = 64, RE = 940, K = Math.log(RE / RC) / (2.4 * 2 * Math.PI);
-    const spiral = (arm: number, t: number) => {       // t 0..1 → {px,py,r,th}
-      const th = arm + t * (2.4 * 2 * Math.PI);
-      const r = RC * Math.exp(K * t * (2.4 * 2 * Math.PI));
-      return { px: C + Math.cos(th) * r, py: C + Math.sin(th) * r, r, th };
+    const spiral = (arm: number, t: number) => {
+      const th = arm + t * G_SWEEP, r = G_RC * Math.exp(G_K * t * G_SWEEP);
+      return { px: C + Math.cos(th) * r, py: C + Math.sin(th) * r, r };
     };
 
-    // 1) the smooth stellar disk — exponential brightness falloff, pale gold→blue
+    // 1) a faint exponential disk haze — just enough body, kept dim for contrast
     x.globalCompositeOperation = "lighter";
-    for (let i = 0; i < 320; i++) {
-      const rr = Math.pow(R(), 0.5) * RE;
-      const th = R() * 6.2832;
-      const px = C + Math.cos(th) * rr, py = C + Math.sin(th) * rr;
-      const bluish = Math.min(1, rr / RE);
-      const cr = 200 - bluish * 40, cg = 196 - bluish * 20, cb = 200 + bluish * 40;
-      blob(px, py, 70 + R() * 130, `rgba(${cr|0},${cg|0},${cb|0},${0.05 + 0.05 * (1 - bluish)})`);
+    for (let i = 0; i < 240; i++) {
+      const rr = Math.pow(R(), 0.6) * G_RE, th = R() * 6.2832;
+      const bluish = Math.min(1, rr / G_RE);
+      blob(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 60 + R() * 120,
+        `rgba(${188 - bluish * 40 | 0},${190 - bluish * 18 | 0},${205 + bluish * 40 | 0},${0.035 + 0.04 * (1 - bluish)})`);
     }
 
-    // 2) the arms — dense feathered streams of stars, gold inside → blue outside
-    const ARMS = [0.2, 0.2 + Math.PI, 0.2 + Math.PI * 0.5, 0.2 - Math.PI * 0.5];
-    ARMS.forEach((arm, ai) => {
+    // 2) the arms — dense, TIGHT, feathered ribbons of stars (gold core → blue rim).
+    //    high blob counts so the ribbons read smooth and bright, not dotty.
+    G_ARMS.forEach((arm, ai) => {
       const major = ai < 2;
-      const N = major ? 820 : 460;
+      const N = major ? 1500 : 760;
       for (let i = 0; i < N; i++) {
         const t = i / N;
         const s = spiral(arm, t);
-        if (s.r > RE) break;
-        // feathering: scatter blobs around the arm spine, wider outward
-        const spread = s.r * (0.05 + t * 0.14);
+        if (s.r > G_RE) break;
+        const spread = s.r * (0.03 + t * 0.085);          // tighter than before
         const px = s.px + (R() - 0.5) * 2 * spread + (R() - 0.5) * spread;
         const py = s.py + (R() - 0.5) * 2 * spread + (R() - 0.5) * spread;
-        const warm = Math.max(0, 1 - t * 1.7);
-        const cr = 200 + warm * 55, cg = 210 + warm * 25, cb = 255 - warm * 35;
-        const a = (major ? 0.13 : 0.07) * (1 - t * 0.4);
-        blob(px, py, (major ? 16 : 11) * (1 - t * 0.3), `rgba(${cr|0},${cg|0},${cb|0},${a})`);
+        const warm = Math.max(0, 1 - t * 1.5);
+        const cr = 190 + warm * 65, cg = 206 + warm * 38, cb = 255 - warm * 55;
+        const a = (major ? 0.16 : 0.08) * (1 - t * 0.32);
+        blob(px, py, (major ? 13 : 9) * (1 - t * 0.22), `rgba(${cr|0},${cg|0},${cb|0},${a})`);
       }
     });
 
-    // 3) HII regions (pink) + OB clusters (blue-white) studding the arms
-    ARMS.forEach((arm, ai) => {
-      const N = ai < 2 ? 230 : 120;
+    // 3) HII regions (pink) + OB clusters (blue) + bright knots, dense on the arms
+    G_ARMS.forEach((arm, ai) => {
+      const N = ai < 2 ? 320 : 150;
       for (let i = 0; i < N; i++) {
-        const t = 0.06 + R() * 0.94;
-        const s = spiral(arm, t);
-        if (s.r > RE) continue;
-        const spread = s.r * (0.04 + t * 0.12);
+        const t = 0.05 + R() * 0.95, s = spiral(arm, t);
+        if (s.r > G_RE) continue;
+        const spread = s.r * (0.025 + t * 0.08);
         const px = s.px + (R() - 0.5) * 2 * spread, py = s.py + (R() - 0.5) * 2 * spread;
         const roll = R();
-        if (roll < 0.34) blob(px, py, 4 + R() * 9, `rgba(255,${120 + R() * 50 | 0},${150 + R() * 40 | 0},${0.35 + R() * 0.3})`);   // HII
-        else if (roll < 0.7) blob(px, py, 3 + R() * 6, `rgba(${170 + R() * 50 | 0},200,255,${0.3 + R() * 0.3})`);                    // OB
-        else blob(px, py, 2 + R() * 3, `rgba(255,255,255,${0.4 + R() * 0.4})`);                                                      // bright knots
+        if (roll < 0.36) blob(px, py, 4 + R() * 10, `rgba(255,${110 + R() * 50 | 0},${145 + R() * 45 | 0},${0.4 + R() * 0.35})`);   // HII
+        else if (roll < 0.72) blob(px, py, 3 + R() * 6, `rgba(${160 + R() * 60 | 0},200,255,${0.35 + R() * 0.3})`);                  // OB
+        else blob(px, py, 1.5 + R() * 3, `rgba(255,255,255,${0.5 + R() * 0.4})`);                                                    // knots
       }
     });
 
-    // 4) the central bar + bulge + blazing nucleus
-    x.save(); x.translate(C, C); x.rotate(0.2); x.scale(2.1, 1);
-    blob(0, 0, 200, "rgba(255,224,168,0.5)");
-    blob(0, 0, 120, "rgba(255,232,182,0.6)");
+    // 4) the bar + bulge + blazing compact nucleus (brighter, tighter than before)
+    x.save(); x.translate(C, C); x.rotate(0.0); x.scale(2.0, 0.95);
+    blob(0, 0, 175, "rgba(255,222,164,0.55)");
+    blob(0, 0, 95, "rgba(255,230,180,0.7)");
     x.restore();
-    blob(C, C, 240, "rgba(255,226,176,0.55)");
-    blob(C, C, 120, "rgba(255,240,206,0.85)");
-    blob(C, C, 54, "rgba(255,250,232,1)");
+    blob(C, C, 200, "rgba(255,224,172,0.6)");
+    blob(C, C, 96, "rgba(255,238,202,0.9)");
+    blob(C, C, 42, "rgba(255,252,238,1)");
 
-    // 5) dust lanes — dark dust weaving on the inner edge of each major arm,
-    //    plus a flocculent dust ring around the bulge
+    // 5) dust lanes — strong, dark, on the inner edge of each dominant arm,
+    //    plus the flocculent dust ring around the bulge
     x.globalCompositeOperation = "source-over";
-    ARMS.slice(0, 2).forEach(arm => {
-      for (let i = 0; i < 360; i++) {
-        const t = i / 360;
-        const s = spiral(arm - 0.14, t);            // a touch inside the bright arm
-        if (s.r > RE * 0.97 || s.r < 70) continue;
-        const spread = s.r * 0.05;
+    G_ARMS.slice(0, 2).forEach(arm => {
+      for (let i = 0; i < 500; i++) {
+        const t = i / 500, s = spiral(arm - 0.12, t);     // inner edge of the bright arm
+        if (s.r > G_RE * 0.96 || s.r < 60) continue;
+        const spread = s.r * 0.045;
         const px = s.px + (R() - 0.5) * 2 * spread, py = s.py + (R() - 0.5) * 2 * spread;
-        blob(px, py, 9 * (1 - t * 0.25) + R() * 4, `rgba(40,20,12,${0.16 * (1 - t * 0.4)})`);
+        blob(px, py, 8 * (1 - t * 0.2) + R() * 4, `rgba(24,12,7,${0.24 * (1 - t * 0.35)})`);
       }
     });
-    for (let i = 0; i < 120; i++) {                 // bulge dust flecks
-      const th = R() * 6.2832, rr = 130 + R() * 150;
-      blob(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 8 + R() * 10, `rgba(50,28,16,${0.1 + R() * 0.08})`);
+    for (let i = 0; i < 150; i++) {
+      const th = R() * 6.2832, rr = 110 + R() * 140;
+      blob(C + Math.cos(th) * rr, C + Math.sin(th) * rr, 7 + R() * 9, `rgba(34,18,10,${0.12 + R() * 0.1})`);
     }
 
     const tx = new THREE.CanvasTexture(c);
@@ -1217,29 +1214,32 @@ export function mountAtlas(opts: Opts): () => void {
     const pos = new Float32Array(N * 3);
     const col = new Float32Array(N * 3);
     const cWarm = new THREE.Color(0xffe2bb), cBlue = new THREE.Color(0xb8ccff), cWhite = new THREE.Color(0xeae6f4), tmp = new THREE.Color();
+    // grain placed ALONG the same spiral arms as the painted texture (in true
+    // light-year scale), so the 3D sparkle reinforces the structure instead of
+    // forming a fuzzy halo — plus a tight bulge. Disk radius ~50,000 ly.
+    const DISK = 50000 * LY, GC = G_RC, GE = 940;
     for (let i = 0; i < N; i++) {
       const kind = Math.random();
       let gx = 0, gy = 0, gz = 0;
-      if (kind < 0.18) {           // bulge/bar grain
-        const r = Math.pow(Math.random(), 1.7) * 4200 * LY;
+      if (kind < 0.16) {           // tight bulge/bar
+        const r = Math.pow(Math.random(), 1.8) * 5000 * LY;
         const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        gx = r * rr * Math.cos(th2) * 1.7; gy = r * rr * Math.sin(th2); gz = r * u * 0.55;
-        const ca = Math.cos(0.35), sa = Math.sin(0.35);
-        const bx = gx * ca - gy * sa, by = gx * sa + gy * ca; gx = bx; gy = by;
+        gx = r * rr * Math.cos(th2) * 1.9; gy = r * rr * Math.sin(th2); gz = r * u * 0.5;
         tmp.copy(cWarm);
-      } else if (kind < 0.93) {    // the broad stellar disk (smooth, not stringy)
-        const r = Math.min(48000, (-Math.log(1 - Math.random()) * 13000)) * LY;
-        const th2 = Math.random() * 6.2832;
-        gx = Math.cos(th2) * r; gy = Math.sin(th2) * r;
-        gz = (Math.random() + Math.random() + Math.random() - 1.5) * (300 + 700 * Math.exp(-r / (9000 * LY))) * LY * 0.7;
-        tmp.copy(cWarm).lerp(cBlue, Math.min(1, r / (30000 * LY)) * 0.7).lerp(cWhite, 0.3);
-      } else {                     // sparse halo, kept within the disk radius
-        const r = Math.pow(Math.random(), 0.6) * 50000 * LY;
-        const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        gx = r * rr * Math.cos(th2); gy = r * rr * Math.sin(th2); gz = r * u * 0.7;
-        tmp.copy(cWhite).multiplyScalar(0.4);
+      } else {                     // on an arm: sample the shared log-spiral
+        const arm = G_ARMS[(Math.random() * 4) | 0]!;
+        const t = Math.pow(Math.random(), 0.8);
+        const th = arm + t * G_SWEEP;
+        const rTex = GC * Math.exp(G_K * t * G_SWEEP);     // texture-space radius
+        const r = (rTex / GE) * DISK;                       // → light-years
+        const spread = r * (0.03 + t * 0.08);
+        gx = Math.cos(th) * r + (Math.random() - 0.5) * 2 * spread;
+        gy = Math.sin(th) * r + (Math.random() - 0.5) * 2 * spread;
+        gz = (Math.random() + Math.random() + Math.random() - 1.5) * (260 + 600 * Math.exp(-r / (9000 * LY))) * LY * 0.7;
+        tmp.copy(cWarm).lerp(cBlue, Math.min(1, t * 1.4)).lerp(cWhite, 0.25);
+        if (Math.random() < 0.05) tmp.setRGB(1, 0.5, 0.62);  // a few pink HII sparks
       }
-      tmp.multiplyScalar(0.55);      // dim — the grain is haze, not the subject
+      tmp.multiplyScalar(0.7);
       pos[i * 3] = gx; pos[i * 3 + 1] = gy; pos[i * 3 + 2] = gz;
       col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
     }
@@ -1247,11 +1247,11 @@ export function mountAtlas(opts: Opts): () => void {
     gg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     gg.setAttribute("color", new THREE.BufferAttribute(col, 3));
     const grain = new THREE.Points(gg, new THREE.PointsMaterial({
-      size: 0.85, sizeAttenuation: false, vertexColors: true,
+      size: 1.1, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     galaxy.add(grain);
-    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.2 });
+    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.32 });
     // the core's vertical glow (a galaxy glows brightest where it is deepest)
     const core = new THREE.Sprite(new THREE.SpriteMaterial({
       map: glowTexture(), color: 0xffe9c4, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
