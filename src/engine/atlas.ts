@@ -1035,7 +1035,7 @@ export function mountAtlas(opts: Opts): () => void {
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   }
-  const galFadeMats: { m: THREE.Material & { opacity: number }; max: number }[] = [];
+  const galFadeMats: { m: THREE.Material & { opacity: number }; max: number; core?: boolean }[] = [];
   {
     // the painted disk itself
     const disk = new THREE.Mesh(
@@ -1043,7 +1043,7 @@ export function mountAtlas(opts: Opts): () => void {
       new THREE.MeshBasicMaterial({ map: galaxyTexture(), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }),
     );
     galaxy.add(disk);
-    galFadeMats.push({ m: disk.material as THREE.MeshBasicMaterial, max: 1 });
+    galFadeMats.push({ m: disk.material as THREE.MeshBasicMaterial, max: 1, core: true });
     // 3D grain: a soft wide stellar disk + thin arm sparkle + halo
     const N = small ? 26000 : 48000;
     const pos = new Float32Array(N * 3);
@@ -1089,7 +1089,7 @@ export function mountAtlas(opts: Opts): () => void {
     }));
     core.scale.setScalar(9000 * LY);
     galaxy.add(core);
-    galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.75 });
+    galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.75, core: true });
   }
 
   // Sagittarius A* — a WORKING black hole: shadow, photon ring, and a
@@ -1163,7 +1163,9 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
     haze.scale.setScalar(RS * 14);
     g.add(haze);
     const sgr = addBody("Sagittarius A*", GAL_C, g, 0);
-    sgr.kind = "star"; sgr.radius = RS; sgr.minD = RS * 6; sgr.dotK = 0.015;
+    // arrive far enough back that the whole accretion disk (RS*11 across)
+    // frames cleanly — minD sits just outside the disk, the fly-to lands at 2x
+    sgr.kind = "star"; sgr.radius = RS; sgr.minD = RS * 12; sgr.dotK = 0.015;
     sgr.line = "Four million Suns crushed into a single point — the still centre our galaxy turns around, 26,660 light-years in.";
     if (sgr.dot) (sgr.dot.material as THREE.SpriteMaterial).color.set(0xffc890);
   }
@@ -1425,7 +1427,13 @@ void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(p
       const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
       const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
       const gFade = g01 * g01 * (3 - 2 * g01);
-      for (const f of galFadeMats) f.m.opacity = gFade * f.max;
+      // near the galactic CORE the flat painted disk and core glow would wash
+      // the view — they retreat as you close in on the black hole, leaving the
+      // 3D grain (which reads fine up close) and a clean shadow against stars
+      const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
+      const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
+      const coreFade = c01 * c01 * (3 - 2 * c01);
+      for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
       (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
     }
     skyGroup.position.set(0, 0, 0);            // the sky rides with the camera
