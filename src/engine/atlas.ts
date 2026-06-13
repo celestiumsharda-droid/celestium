@@ -183,12 +183,21 @@ const LINES: Record<string, string> = {
   Ganymede: "The largest moon in the Solar System — bigger than Mercury.",
   Callisto: "An ancient, crater-saturated archive of the early Solar System.",
   Titan: "Saturn's giant moon, with rain, rivers and seas — of methane.",
+  Enceladus: "A tiny ice moon firing geysers of seawater into space.",
+  Tethys: "An icy Saturnian moon split by a vast canyon, Ithaca Chasma.",
+  Dione: "Wispy ice cliffs streak the trailing face of this Saturnian moon.",
+  Rhea: "Saturn's second-largest moon — a heavily cratered ball of ice.",
+  Iapetus: "The two-faced moon: one hemisphere snow-white, the other pitch-black.",
+  Triton: "Neptune's captured moon, orbiting backwards over nitrogen geysers.",
+  Charon: "Pluto's partner, half its width — a true double world.",
+  Vesta: "The second-largest asteroid — a battered protoplanet in the belt.",
 };
 
 const RADII: Record<string, number> = {
   Sun: 696340, Mercury: 2439.7, Venus: 6051.8, Earth: 6371, Moon: 1737.4,
   Mars: 3389.5, Jupiter: 69911, Saturn: 58232, Uranus: 25362, Neptune: 24622,
   Io: 1821.6, Europa: 1560.8, Ganymede: 2634.1, Callisto: 2410.3, Titan: 2574.7, Pluto: 1188.3,
+  Charon: 606, Enceladus: 252.1, Tethys: 531.1, Dione: 561.4, Rhea: 763.8, Iapetus: 734.5, Triton: 1353.4, Vesta: 262.7,
 };
 
 /* the full reading for each world — facts + a real piece of writing */
@@ -251,6 +260,27 @@ const INFO: Record<string, { facts: [string, string][]; text: string[] }> = {
   ] },
   Titan: { facts: [["Orbit", "15.9 days"], ["Atmosphere", "denser than Earth's"], ["Lakes", "liquid methane"]], text: [
     "Titan is the only moon with a thick atmosphere and the only world besides Earth with standing liquid on its surface — rivers, rain and seas of methane at −179 °C. Beneath the orange haze, a complete hydrological cycle runs on hydrocarbons instead of water. A drone named Dragonfly is on its way.",
+  ] },
+  Enceladus: { facts: [["Radius", "252 km"], ["Orbit", "1.37 days"], ["South pole", "erupting geysers"], ["Beneath", "a global ocean"]], text: [
+    "This brilliant white snowball — only 500 km across — is one of the Solar System's best bets for life. From cracks at its south pole, the 'tiger stripes', it fires towering geysers of salty water vapour straight into space, feeding one of Saturn's rings. The water comes from a global ocean beneath the ice, laced with the organic molecules and energy that life would need.",
+  ] },
+  Tethys: { facts: [["Radius", "531 km"], ["Orbit", "1.89 days"], ["Made of", "almost pure ice"], ["Feature", "Ithaca Chasma"]], text: [
+    "A ball of nearly pure water ice, so light it would float. A colossal canyon, Ithaca Chasma, runs three-quarters of the way around it, and the giant crater Odysseus spans two-fifths of its width — a near-fatal blow that left it cracked but whole.",
+  ] },
+  Dione: { facts: [["Radius", "561 km"], ["Orbit", "2.74 days"], ["Trailing side", "bright ice cliffs"]], text: [
+    "Dione's trailing hemisphere is laced with bright wispy streaks — once thought to be frost, now known to be a network of towering ice cliffs, fractures hundreds of metres high. A faint wisp of oxygen clings to it, and it too may hide liquid water below.",
+  ] },
+  Rhea: { facts: [["Radius", "764 km"], ["Orbit", "4.52 days"], ["Saturn's", "2nd-largest moon"], ["Possible", "a tenuous ring"]], text: [
+    "Saturn's second-largest moon is a frozen, heavily cratered world three-quarters ice, one-quarter rock. It may be the only moon in the Solar System with its own faint ring of debris — and its thin oxygen-and-carbon-dioxide atmosphere is generated as Saturn's radiation splits the surface ice.",
+  ] },
+  Iapetus: { facts: [["Radius", "735 km"], ["Orbit", "79.3 days"], ["One side", "snow-white"], ["Other side", "darker than coal"]], text: [
+    "Iapetus is the strangest of Saturn's moons: one hemisphere is bright as snow, the other black as tar — it sweeps up dark dust as it orbits, which warms and drives off the ice beneath. A bizarre ridge of mountains, ten kilometres high, runs exactly along its equator, as if the moon were a walnut.",
+  ] },
+  Triton: { facts: [["Radius", "1,353 km"], ["Orbit", "5.9 days, backwards"], ["Surface", "−235 °C — the coldest"], ["Geysers", "nitrogen, active"]], text: [
+    "Triton orbits Neptune backwards — the only large moon to do so — which means it didn't form there: it was captured, a Kuiper Belt world like Pluto, dragged in and slowly spiralling to its doom. Its surface, the coldest measured in the Solar System, erupts with geysers of nitrogen, and its strange cantaloupe terrain suggests an interior that still churns.",
+  ] },
+  Vesta: { facts: [["Radius", "263 km"], ["Orbit", "2.36 AU · in the belt"], ["Mass", "9% of the belt"], ["Visited", "Dawn, 2011"]], text: [
+    "Vesta is a protoplanet that never finished — a world frozen mid-formation, with a layered iron core, mantle and crust like the rocky planets. A giant impact near its south pole tore out a crater almost as wide as Vesta itself and flung debris across the Solar System; about one in twenty meteorites that fall to Earth are chips of Vesta.",
   ] },
   "Proxima Centauri": { facts: [["Distance", "4.25 light-years"], ["Type", "red dwarf"], ["Planets", "at least 2"], ["Lifespan", "trillions of years"]], text: [
     "The nearest star to the Sun is one you will never see with your eyes — a dim red ember a seventh the size of our star. Yet it holds a planet, Proxima b, in its temperate zone: the closest possibly-habitable world that will ever exist for us, four and a quarter light-years away.",
@@ -770,18 +800,25 @@ export function mountAtlas(opts: Opts): () => void {
     moonMesh.rotation.y = ang - Math.PI / 2;   // tidal lock — one face forever toward Earth
   };
 
-  // the great moons of Jupiter and Saturn — circular orbits, true radii/periods
+  // the major moons of Jupiter, Saturn and Neptune — real radii, orbital
+  // radii and periods, each in its planet's equatorial plane (inc ≈ the
+  // planet's axial tilt to the ecliptic). Triton orbits RETROGRADE (negative
+  // period) and steeply tilted — the sign of a captured world.
   const jupiter = bodies.find(b => b.name === "Jupiter")!;
   const saturn = bodies.find(b => b.name === "Saturn")!;
-  // each moon orbits in its PLANET's equatorial plane (inc = the planet's
-  // axial tilt to the ecliptic): the Galileans nearly flat (Jupiter 3.1°),
-  // Titan steeply tilted (Saturn 26.7°)
+  const neptune = bodies.find(b => b.name === "Neptune")!;
   const MOONS: { n: string; parent: Body; orbR: number; perD: number; col: number; lblMax: number; inc: number }[] = [
-    { n: "Io",       parent: jupiter, orbR: 421700,  perD: 1.769,  col: 0xd8c060, lblMax: 8e7, inc: 3.1 },
-    { n: "Europa",   parent: jupiter, orbR: 671034,  perD: 3.551,  col: 0xd8cdb8, lblMax: 8e7, inc: 3.1 },
-    { n: "Ganymede", parent: jupiter, orbR: 1070412, perD: 7.155,  col: 0x9a8d7d, lblMax: 8e7, inc: 3.1 },
-    { n: "Callisto", parent: jupiter, orbR: 1882709, perD: 16.689, col: 0x6f665c, lblMax: 8e7, inc: 3.1 },
-    { n: "Titan",    parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 8e7, inc: 26.7 },
+    { n: "Io",        parent: jupiter, orbR: 421700,  perD: 1.769,  col: 0xd8c060, lblMax: 8e7, inc: 3.1 },
+    { n: "Europa",    parent: jupiter, orbR: 671034,  perD: 3.551,  col: 0xd8cdb8, lblMax: 8e7, inc: 3.1 },
+    { n: "Ganymede",  parent: jupiter, orbR: 1070412, perD: 7.155,  col: 0x9a8d7d, lblMax: 8e7, inc: 3.1 },
+    { n: "Callisto",  parent: jupiter, orbR: 1882709, perD: 16.689, col: 0x6f665c, lblMax: 8e7, inc: 3.1 },
+    { n: "Enceladus", parent: saturn,  orbR: 237948,  perD: 1.370,  col: 0xf0f4ff, lblMax: 8e7, inc: 26.7 },
+    { n: "Tethys",    parent: saturn,  orbR: 294619,  perD: 1.888,  col: 0xd8d8d2, lblMax: 8e7, inc: 26.7 },
+    { n: "Dione",     parent: saturn,  orbR: 377396,  perD: 2.737,  col: 0xcccac2, lblMax: 8e7, inc: 26.7 },
+    { n: "Rhea",      parent: saturn,  orbR: 527108,  perD: 4.518,  col: 0xc4bfb6, lblMax: 8e7, inc: 26.7 },
+    { n: "Titan",     parent: saturn,  orbR: 1221870, perD: 15.945, col: 0xd8a35a, lblMax: 1e8, inc: 26.7 },
+    { n: "Iapetus",   parent: saturn,  orbR: 3560820, perD: 79.32,  col: 0x9a8568, lblMax: 1.4e8, inc: 17.3 },
+    { n: "Triton",    parent: neptune, orbR: 354759,  perD: -5.877, col: 0xe8d8c8, lblMax: 8e7, inc: 157 },
   ];
   for (const mn of MOONS) {
     // real mission-derived surface maps (Galileo/Voyager via Björn Jónsson &
@@ -833,6 +870,26 @@ export function mountAtlas(opts: Opts): () => void {
       pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
     };
     pb.update(now, 0);
+
+    // Charon — Pluto's partner, half its size: a true binary, both tidally
+    // locked, forever showing each other the same face (New Horizons map)
+    const chBump = T("moons/charon.jpg"); chBump.colorSpace = THREE.NoColorSpace;
+    const cm = new THREE.Mesh(new THREE.SphereGeometry(RADII["Charon"]!, 64, 40),
+      new THREE.MeshStandardMaterial({ map: T("moons/charon.jpg"), bumpMap: chBump, bumpScale: 3, roughness: 1, metalness: 0 }));
+    const cb = addBody("Charon", { x: 0, y: 0, z: 0 }, cm, 0);
+    cb.labelMax = 4e7; cb.minD = RADII["Charon"]! * 2.5; cb.dotK = 0.006;
+    cb.line = "Pluto's partner, half its width — the two whirl about a point in empty space between them.";
+    INFO["Charon"] = { facts: [["Radius", "606 km"], ["Distance", "19,591 km from Pluto"], ["Month = day", "6.4 days, locked both ways"], ["Visited", "New Horizons, 2015"]], text: [
+      "Charon is so large beside Pluto — half its diameter — that the two don't quite orbit each other: they both circle a point in the empty space between them, a true double world. Each keeps one face permanently toward the other, so from Pluto's near side Charon hangs motionless in the sky, never rising, never setting.",
+    ] };
+    const chPhase = Math.random() * 6.2832, chInc = 99 * D2R;
+    cb.update = (_d, simDays) => {
+      const ang = chPhase + (simDays / 6.387) * 6.2832;
+      const ox = Math.cos(ang) * 19591, oz = -Math.sin(ang) * 19591;
+      cb.pos.x = pb.pos.x + ox; cb.pos.y = pb.pos.y - oz * Math.sin(chInc); cb.pos.z = pb.pos.z + oz * Math.cos(chInc);
+      cm.rotation.y = ang - Math.PI / 2;   // tidally locked
+    };
+    cb.update(now, 0);
   }
 
   /* ---------- the dwarf planets — Ceres in the belt, the rest far beyond Neptune ----------
@@ -847,6 +904,11 @@ export function mountAtlas(opts: Opts): () => void {
     info: { facts: [["Radius", "473 km"], ["Orbit", "2.77 AU · in the belt"], ["Year", "4.6 years"], ["Class", "dwarf planet"], ["Visited", "Dawn, 2015"]], text: [
       "Ceres is the asteroid belt's one true world — round under its own gravity, a third of all the belt's mass in a single body. Beneath its dark, salt-stained crust lies a layer of brine and water ice; bright spots in Occator crater are deposits of salt left where that water reached the surface and boiled away.",
     ] },
+  });
+  defineWorld({
+    name: "Vesta", radiusKm: RADII["Vesta"]!, map: "vesta.jpg", segments: 56, dotColor: 0xc6bca8, dotK: 0.005,
+    orbit: { center: sunCentre, radiusKm: 2.36 * AU, periodDays: 1325, incDeg: 7.1 },
+    line: LINES["Vesta"]!, info: INFO["Vesta"],
   });
   defineWorld({
     name: "Makemake", radiusKm: 715, map: "makemake.jpg", segments: 48, dotColor: 0xc9a878, dotK: 0.006,
@@ -1697,12 +1759,13 @@ export function mountAtlas(opts: Opts): () => void {
      Root → category → (for the exoplanets) system → planets. Only one level
      shows at a time, so the Atlas scales to hundreds of bodies without ever
      becoming an endless scroll. Search flattens across everything. */
-  const DWARFS = ["Ceres", "Pluto", "Haumea", "Makemake", "Eris"];
+  const DWARFS = ["Ceres", "Vesta", "Pluto", "Haumea", "Makemake", "Eris"];
+  const MOON_NAMES = ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Enceladus", "Tethys", "Dione", "Rhea", "Titan", "Iapetus", "Triton", "Charon"];
   interface Cat { label: string; sub: string; match: (b: Body) => boolean; systems?: boolean; sort?: "dist" | "orbit"; }
   const CATS: Cat[] = [
     { label: "The Sun & its planets", sub: "Sol — eight worlds", match: b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name) },
-    { label: "Moons", sub: "of Earth, Jupiter & Saturn", match: b => ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Titan"].includes(b.name) },
-    { label: "Dwarf planets", sub: "Ceres to Eris", match: b => DWARFS.includes(b.name) },
+    { label: "Moons", sub: "of Earth, the giants & Pluto", match: b => MOON_NAMES.includes(b.name) },
+    { label: "Dwarf planets & asteroids", sub: "Ceres, Vesta, the far dwarfs", match: b => DWARFS.includes(b.name) },
     { label: "The machines", sub: "humanity's emissaries", match: b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name) },
     { label: "The wanderers", sub: "comets, drifting in", match: b => b.name.includes("Comet") || b.name.includes("Bopp") },
     { label: "TRAPPIST-1", sub: "a second sun, seven worlds", match: b => b.system === "TRAPPIST-1", systems: true },
