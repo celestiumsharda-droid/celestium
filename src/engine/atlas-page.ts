@@ -26,6 +26,16 @@ const iw = window as IdleWindow;
 const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
 
+// the dive-in: the intro holds until the visitor chooses to begin
+const intro = document.getElementById("at-intro");
+const introGo = document.getElementById("at-intro-go");
+if (intro && introGo) {
+  introGo.addEventListener("click", () => {
+    intro.classList.add("gone");
+    setTimeout(() => intro.remove(), 1200);
+  });
+}
+
 const section = document.getElementById("atlas");
 const canvas = document.getElementById("at-canvas") as HTMLCanvasElement | null;
 const labels = document.getElementById("at-labels");
