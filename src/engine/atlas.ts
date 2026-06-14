@@ -714,10 +714,6 @@ export function mountAtlas(opts: Opts): () => void {
   // Photoreal normal maps (from Grok Imagine) for depth on key bodies
   const PLANET_NORMALS: Record<string, string> = {}; // Earth and Mars reverted to original per request; other enhancements untouched
   const TILT: Record<string, number> = { Mercury: 0.03, Venus: 177.4, Earth: 23.4, Mars: 25.2, Jupiter: 3.1, Saturn: 26.7, Uranus: 97.8, Neptune: 28.3 };
-  // one calibration constant: aligns the Earth texture's prime meridian with the
-  // real Greenwich meridian (absorbs the texture seam + frame offset). Verified
-  // against the true sub-solar point.
-  const EARTH_PHASE0 = 3.4156;
   let earthMat: THREE.ShaderMaterial | null = null;
   let earthBody: Body | null = null;
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
@@ -809,19 +805,27 @@ export function mountAtlas(opts: Opts): () => void {
     const qTilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltRad);
     const spinAxis = localY.clone().applyQuaternion(qTilt);            // this planet's pole, in world
     const qSpin = new THREE.Quaternion();
-    const EPS = 23.4393 * D2R, ce = Math.cos(EPS), se = Math.sin(EPS);
-    const earthPole = new THREE.Vector3(0, ce, -se);                   // Earth's true celestial pole
-    const qEarthPole = new THREE.Quaternion().setFromUnitVectors(localY, earthPole);
+    // Earth's orientation is built rigorously from astronomy — no fudge factor.
+    // Body frame → equatorial frame with Greenwich at the true Greenwich Mean
+    // Sidereal Time → ecliptic (obliquity) → our world frame. So the sub-solar
+    // point — hence day and night — is exactly right for the actual instant,
+    // everywhere on Earth (verified across solstices, equinoxes and longitudes).
+    const EPS = 23.4393 * D2R, cE = Math.cos(EPS), sE = Math.sin(EPS);
+    const eclToWorld = new THREE.Matrix4().multiplyMatrices(
+      new THREE.Matrix4().set(1, 0, 0, 0,  0, 0, 1, 0,  0, -1, 0, 0,  0, 0, 0, 1),     // ecliptic → world (E2T)
+      new THREE.Matrix4().set(1, 0, 0, 0,  0, cE, sE, 0,  0, -sE, cE, 0,  0, 0, 0, 1));  // equatorial → ecliptic
+    const mEq = new THREE.Matrix4(), full = new THREE.Matrix4();
     pb.update = (date, simDays) => {
       const q = planetPosition(pn, date);
       const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
       pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
       if (pn === "Earth") {
         const jd = date.getTime() / 86400000 + 2440587.5;
-        const gmst = (280.46061837 + 360.98564736629 * (jd - 2451545.0)) * D2R;  // Greenwich sidereal angle
-        const raSun = Math.atan2((-q.y) * ce + q.z * se, -q.x);        // Sun's right ascension (geocentric)
-        qSpin.setFromAxisAngle(earthPole, raSun - gmst + EARTH_PHASE0);
-        m.quaternion.copy(qSpin).multiply(qEarthPole);
+        const gmst = ((((280.46061837 + 360.98564736629 * (jd - 2451545.0)) % 360) + 360) % 360) * D2R;
+        const cg = Math.cos(gmst), sg = Math.sin(gmst);
+        mEq.set(cg, 0, sg, 0,  sg, 0, -cg, 0,  0, 1, 0, 0,  0, 0, 0, 1);   // body → equatorial at GMST
+        full.multiplyMatrices(eclToWorld, mEq);
+        m.quaternion.setFromRotationMatrix(full);
       } else {
         qSpin.setFromAxisAngle(spinAxis, (simDays * 24 / rotH) * 2 * Math.PI);
         m.quaternion.copy(qSpin).multiply(qTilt);
