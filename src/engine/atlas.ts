@@ -1873,6 +1873,28 @@ void main(){
     onFrame(({ camKm }) => cloud.position.set(-camKm.x, -camKm.y, -camKm.z));
   }).catch(() => { /* the sky simply stays dark if the catalogue can't load */ });
 
+  // ---- the constellation figures: the 88 patterns humans drew on this sky ----
+  // they are an Earth-bound illusion — Orion is only Orion from here — so they
+  // are drawn while you are home and DISSOLVE as you leave the Sun. Travel far
+  // enough and the figures come apart: a quiet lesson in perspective.
+  let conLines: THREE.LineSegments | null = null;
+  const conMat = new THREE.LineBasicMaterial({ color: 0x8198cc, transparent: true, opacity: 0, depthWrite: false });
+  fetch("/stars/constellations.f32").then(r => r.arrayBuffer()).then(buf => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(buf), 3));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 3e16);
+    conLines = new THREE.LineSegments(g, conMat);
+    conLines.frustumCulled = false; conLines.renderOrder = -1;
+    scene.add(conLines);
+  }).catch(() => { /* figures are optional grace */ });
+  onFrame(({ camKm }) => {
+    if (!conLines) return;
+    conLines.position.set(-camKm.x, -camKm.y, -camKm.z);
+    const sunD = Math.hypot(camKm.x, camKm.y, camKm.z);
+    conMat.opacity = 0.34 * Math.min(1, Math.max(0, (1.4e13 - sunD) / 1.1e13));   // home → full; ~1.5 ly out → gone
+    conLines.visible = conMat.opacity > 0.003;
+  });
+
   /* ---------- the floating-origin camera ---------- */
   let focus = earth;
   let prevFocus = earth;
