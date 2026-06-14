@@ -688,6 +688,10 @@ export function mountAtlas(opts: Opts): () => void {
   // Photoreal normal maps (from Grok Imagine) for depth on key bodies
   const PLANET_NORMALS: Record<string, string> = {}; // Earth and Mars reverted to original per request; other enhancements untouched
   const TILT: Record<string, number> = { Mercury: 0.03, Venus: 177.4, Earth: 23.4, Mars: 25.2, Jupiter: 3.1, Saturn: 26.7, Uranus: 97.8, Neptune: 28.3 };
+  // one calibration constant: aligns the Earth texture's prime meridian with the
+  // real Greenwich meridian (absorbs the texture seam + frame offset). Verified
+  // against the true sub-solar point.
+  const EARTH_PHASE0 = 3.4156;
   let earthMat: THREE.ShaderMaterial | null = null;
   let earthBody: Body | null = null;
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
@@ -720,7 +724,8 @@ export function mountAtlas(opts: Opts): () => void {
       new THREE.SphereGeometry(RADII[pn]!, pseg, pseg / 2),
       mat,
     );
-    m.rotation.z = (TILT[pn] ?? 0) * D2R;
+    // axial tilt + spin are applied together as a quaternion in update() so the
+    // pole stays FIXED in space (a plain rotation.z + rotation.y would cone)
     if (pn === "Earth") {
       // a living Earth: drifting cloud shell + the blue limb of an atmosphere (reverted Earth core to original behavior)
       const clouds = new THREE.Mesh(
@@ -769,13 +774,32 @@ export function mountAtlas(opts: Opts): () => void {
     const pb = addBody(pn, km, m, 0);   // rotation handled in update, not the generic spin
     if (pn === "Earth") earthBody = pb;
     if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
-    // the system RUNS: every planet recomputes its true position AND turns on
-    // its axis at the real rate as sim time flows
+    // a planet spins about its OWN tilted axis, fixed in space (never the world
+    // vertical — that would cone the pole). Earth is special-cased to genuine
+    // real time: its geography is pinned to Greenwich sidereal time, so the right
+    // meridian faces the Sun at the actual current instant — true day and night.
+    const tiltRad = (TILT[pn] ?? 0) * D2R;
+    const localY = new THREE.Vector3(0, 1, 0);
+    const qTilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltRad);
+    const spinAxis = localY.clone().applyQuaternion(qTilt);            // this planet's pole, in world
+    const qSpin = new THREE.Quaternion();
+    const EPS = 23.4393 * D2R, ce = Math.cos(EPS), se = Math.sin(EPS);
+    const earthPole = new THREE.Vector3(0, ce, -se);                   // Earth's true celestial pole
+    const qEarthPole = new THREE.Quaternion().setFromUnitVectors(localY, earthPole);
     pb.update = (date, simDays) => {
       const q = planetPosition(pn, date);
       const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
       pb.pos.x = kk.x; pb.pos.y = kk.y; pb.pos.z = kk.z;
-      m.rotation.y = (simDays * 24 / rotH) * 2 * Math.PI;
+      if (pn === "Earth") {
+        const jd = date.getTime() / 86400000 + 2440587.5;
+        const gmst = (280.46061837 + 360.98564736629 * (jd - 2451545.0)) * D2R;  // Greenwich sidereal angle
+        const raSun = Math.atan2((-q.y) * ce + q.z * se, -q.x);        // Sun's right ascension (geocentric)
+        qSpin.setFromAxisAngle(earthPole, raSun - gmst + EARTH_PHASE0);
+        m.quaternion.copy(qSpin).multiply(qEarthPole);
+      } else {
+        qSpin.setFromAxisAngle(spinAxis, (simDays * 24 / rotH) * 2 * Math.PI);
+        m.quaternion.copy(qSpin).multiply(qTilt);
+      }
     };
     pb.update(now, 0);
   }
@@ -1303,7 +1327,7 @@ export function mountAtlas(opts: Opts): () => void {
 
   /* ---------- the Oort cloud: the Sun's farthest country ---------- */
   {
-    const N = 4200;
+    const N = 11000;                              // a real shell you can fall into, not a whisper
     const arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
@@ -1313,7 +1337,7 @@ export function mountAtlas(opts: Opts): () => void {
     const gg = new THREE.BufferGeometry();
     gg.setAttribute("position", new THREE.BufferAttribute(arr, 3));
     const cloud = new THREE.Points(gg, new THREE.PointsMaterial({
-      color: 0xa8c0e8, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.28, depthWrite: false,
+      color: 0xc4d8f4, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending,
     }));
     // the cloud is SUN-centred (outerGroup carries the floating-origin offset
     // and is visible out to interstellar range) — pure atmosphere, no label
@@ -2067,8 +2091,12 @@ export function mountAtlas(opts: Opts): () => void {
     // the stars breathe — granulation, plage and prominences all animate
     for (const m of starMats) (m.uniforms["uTime"] as { value: number }).value = nowMs * 0.001;
 
-    // time flows — at whatever rate the visitor chose — and the worlds move
-    simMs += dt * 1000 * speed;
+    // time flows — at whatever rate the visitor chose — and the worlds move.
+    // "Now" is the TRUE present, locked to the wall clock every frame (so it can
+    // never drift, and tapping Now after a fast-forward snaps the whole system
+    // back to this instant). Any other speed accumulates from wherever we are.
+    if (speed === 1) simMs = Date.now();
+    else simMs += dt * 1000 * speed;
     const simDate = new Date(simMs);
     const simDays = (simMs - Date.UTC(2000, 0, 1, 12)) / 86400000;
     for (const b of bodies) b.update?.(simDate, simDays);
@@ -2184,7 +2212,9 @@ export function mountAtlas(opts: Opts): () => void {
   stage.addEventListener("wheel", e => {
     if ((e.target as HTMLElement).closest?.(".at-sheet, .at-console")) return;   // panels scroll themselves
     e.preventDefault();
-    tgtDist *= Math.exp(Math.sign(e.deltaY) * 0.16 * Math.min(Math.abs(e.deltaY) / 100, 3));
+    // gentle, controllable steps — a fast flick can't blow past the Oort cloud
+    // or the outer planets the way a ×1.6-per-event curve did
+    tgtDist *= Math.exp(Math.sign(e.deltaY) * 0.135 * Math.min(Math.abs(e.deltaY) / 100, 1.6));
     clampDist();
   }, { passive: false });
 
@@ -2231,6 +2261,9 @@ export function mountAtlas(opts: Opts): () => void {
 
   name.textContent = focus.name;
   line.textContent = focus.line;
+  // pre-compile every material now, in one upfront cost, so flying to a new
+  // world or system never stutters on a first-frame shader compile
+  try { renderer.compile(scene, camera); } catch (_e) { /* compile is best-effort */ }
   raf = requestAnimationFrame(frame);
 
   return () => {
