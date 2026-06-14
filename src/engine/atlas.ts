@@ -1851,12 +1851,21 @@ void main(){
   if (a < 0.01) discard;
   gl_FragColor = vec4(vColor, a);
 }`;
+  // shared with the picker so any of the 108k stars can be studied (positions
+  // and metadata are index-aligned, built from the same catalogue pass)
+  let bubblePos: Float32Array | null = null;
+  let starMeta: DataView | null = null;
+  let starJson: { spect: string[]; con: string[]; names: string[] } | null = null;
+  let starN = 0;
   const starUniforms = { uSizeK: { value: (small ? 1.5 : 2.0) * (devicePixelRatio || 1) } };
   Promise.all([
     fetch("/stars/bubble_pos.f32").then(r => r.arrayBuffer()),
     fetch("/stars/bubble_col.u8").then(r => r.arrayBuffer()),
-  ]).then(([pb, cb]) => {
+    fetch("/stars/bubble_meta.bin").then(r => r.arrayBuffer()),
+    fetch("/stars/bubble_meta.json").then(r => r.json()),
+  ]).then(([pb, cb, mb, mj]) => {
     const positions = new Float32Array(pb), colU8 = new Uint8Array(cb);
+    bubblePos = positions; starMeta = new DataView(mb as ArrayBuffer); starJson = mj as typeof starJson; starN = positions.length / 3;
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const ib = new THREE.InterleavedBuffer(colU8, 4);
@@ -2310,9 +2319,79 @@ void main(){
     clampDist();
   }, { passive: false });
 
+  /* ---------- studying a star: tap any of the 108k catalogued suns ---------- */
+  const sv = new THREE.Vector3();
+  let selStar = -1;
+  const ringCanvas = document.createElement("canvas"); ringCanvas.width = ringCanvas.height = 64;
+  { const c = ringCanvas.getContext("2d")!; c.strokeStyle = "rgba(255,255,255,0.95)"; c.lineWidth = 2.5; c.beginPath(); c.arc(32, 32, 23, 0, 6.2832); c.stroke(); }
+  const selMarker = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(ringCanvas), transparent: true, depthWrite: false, depthTest: false, opacity: 0 }));
+  selMarker.renderOrder = 6; selMarker.visible = false; scene.add(selMarker);
+  // a plain-language read of a spectral type (e.g. "G2V" → "yellow main-sequence star")
+  function starClass(spect: string): string {
+    const s = (spect || "").trim(), c = s.charAt(0).toUpperCase();
+    if (c === "D") return "white dwarf";
+    const colour: Record<string, string> = { O: "blue", B: "blue-white", A: "white", F: "yellow-white", G: "yellow", K: "orange", M: "red", L: "deep-red", T: "infrared", C: "carbon", S: "red", W: "Wolf–Rayet" };
+    const col = colour[c] || "";
+    let lum = "star";
+    if (/VII/.test(s)) lum = "white dwarf";
+    else if (/VI/.test(s)) lum = "subdwarf";
+    else if (/IV/.test(s)) lum = "subgiant";
+    else if (/III/.test(s)) lum = "giant";
+    else if (/II/.test(s)) lum = "bright giant";
+    else if (/Ia|Iab|Ib/.test(s)) lum = "supergiant";
+    else if (/V/.test(s)) lum = "main-sequence star";
+    return (col ? col + " " : "") + lum;
+  }
+  function selectStar(idx: number) {
+    if (!starMeta || !starJson) return;
+    const o = idx * 16;
+    const hip = starMeta.getInt32(o, true);
+    const mag = starMeta.getInt16(o + 4, true) / 100;
+    const distLy = starMeta.getUint16(o + 6, true) / 10;
+    const conName = starJson.con[starMeta.getUint8(o + 8)] || "—";
+    const spect = starJson.spect[starMeta.getUint16(o + 10, true)] || "";
+    const ni = starMeta.getUint16(o + 12, true);
+    const name = ni !== 65535 ? starJson.names[ni]! : (hip ? `HIP ${hip}` : "Unnamed star");
+    selStar = idx;
+    const cls = starClass(spect);
+    const article = /^[aeiou]/i.test(cls) ? "an" : "a";
+    const seen = mag < 6.5 ? "Bright enough to see with the unaided eye." : "Too faint to see without a telescope.";
+    shName.textContent = name;
+    shFacts.innerHTML = ([["Type", spect || "—"], ["Distance", `${distLy.toFixed(1)} ly`], ["Apparent magnitude", mag.toFixed(2)], ["Constellation", conName], ["Catalogue", hip ? `HIP ${hip}` : "—"]] as [string, string][])
+      .map(([k, val]) => `<div class="at-fact"><span class="at-fact-k">${k}</span><span class="at-fact-v">${val}</span></div>`).join("");
+    shProse.innerHTML = `<p>${name} is ${article} ${cls} in the constellation ${conName}, ${distLy.toFixed(1)} light-years from the Sun. ${seen}</p>`;
+    sheet.classList.add("open"); sheet.removeAttribute("hidden");
+  }
+  function pickStarAt(clientX: number, clientY: number) {
+    if (!bubblePos || !starMeta) return;
+    const rect = canvas.getBoundingClientRect();
+    const px = clientX - rect.left, py = clientY - rect.top, w = canvas.clientWidth, h = canvas.clientHeight;
+    let best = -1, bestScore = 1e9;
+    for (let i = 0; i < starN; i++) {
+      sv.set(bubblePos[i * 3]! - camKm.x, bubblePos[i * 3 + 1]! - camKm.y, bubblePos[i * 3 + 2]! - camKm.z).project(camera);
+      if (sv.z > 1) continue;
+      const dp = Math.hypot((sv.x * 0.5 + 0.5) * w - px, (-sv.y * 0.5 + 0.5) * h - py);
+      if (dp > 14) continue;
+      const mag = starMeta.getInt16(i * 16 + 4, true) / 100;
+      const score = dp + (mag + 2) * 1.4;          // a bright star a few px off beats a faint one dead-centre
+      if (score < bestScore) { bestScore = score; best = i; }
+    }
+    if (best >= 0) { try { playClick(); } catch (_e) { /* off */ } selectStar(best); }
+  }
+  // the selection ring rides with its star, at a constant apparent size, while the sheet is open
+  onFrame(({ camKm }) => {
+    if (selStar < 0 || !bubblePos || !sheet.classList.contains("open")) { selMarker.visible = false; return; }
+    const x = bubblePos[selStar * 3]! - camKm.x, y = bubblePos[selStar * 3 + 1]! - camKm.y, z = bubblePos[selStar * 3 + 2]! - camKm.z;
+    const d = Math.hypot(x, y, z) || 1;
+    selMarker.position.set(x, y, z); selMarker.scale.setScalar(d * 0.018);
+    selMarker.material.opacity = 0.85; selMarker.visible = true;
+  });
+
   const ptrs = new Map<number, { x: number; y: number }>();
   let pinchD = 0;
+  let tapX = 0, tapY = 0, tapMoved = false, tapTime = 0;
   canvas.addEventListener("pointerdown", e => {
+    if (ptrs.size === 0) { tapX = e.clientX; tapY = e.clientY; tapMoved = false; tapTime = performance.now(); }
     ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinchD = Math.hypot(a!.x - b!.x, a!.y - b!.y); }
     canvas.setPointerCapture(e.pointerId);
@@ -2320,6 +2399,7 @@ void main(){
   canvas.addEventListener("pointermove", e => {
     const p = ptrs.get(e.pointerId);
     if (!p) return;
+    if (Math.abs(e.clientX - tapX) > 6 || Math.abs(e.clientY - tapY) > 6) tapMoved = true;
     if (ptrs.size === 1) {
       tgtYaw -= (e.clientX - p.x) * 0.005;
       tgtPitch = Math.min(1.45, Math.max(-1.45, tgtPitch + (e.clientY - p.y) * 0.004));
@@ -2332,7 +2412,11 @@ void main(){
       pinchD = d;
     }
   });
-  const lift = (e: PointerEvent) => { ptrs.delete(e.pointerId); pinchD = 0; };
+  const lift = (e: PointerEvent) => {
+    // a clean tap (no drag, one finger, quick) studies the star under it
+    if (ptrs.size === 1 && !tapMoved && performance.now() - tapTime < 400) pickStarAt(e.clientX, e.clientY);
+    ptrs.delete(e.pointerId); pinchD = 0;
+  };
   canvas.addEventListener("pointerup", lift);
   canvas.addEventListener("pointercancel", lift);
 
