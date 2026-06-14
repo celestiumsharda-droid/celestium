@@ -558,12 +558,9 @@ export function mountAtlas(opts: Opts): () => void {
       logarithmicDepthBuffer: true, powerPreference: "high-performance",
     });
   } catch (_e) { return () => {}; }
-  // adaptive resolution: start at the device's sharpness ceiling and trade
-  // pixel density DOWN only when the GPU can't hold the frame — so a heavy
-  // display or a busy view stays buttery, and quality returns when there's room
-  const maxPR = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.75);
-  let curPR = maxPR;
-  renderer.setPixelRatio(curPR);
+  // a fixed, sensible pixel ratio — no per-frame resizing (that was the jitter).
+  // The star LOD keeps the scene light enough that this stays smooth.
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : 1.6));
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -1837,18 +1834,28 @@ export function mountAtlas(opts: Opts): () => void {
   // so from Earth you see the true constellations, and from another star the sky
   // shifts with parallax. One GPU point cloud, coloured by real B–V temperature,
   // sized by real apparent magnitude; sun-centred, offset by the floating origin.
+  // EXTREME LOD: the shader knows each star's ABSOLUTE magnitude and the real
+  // distance to the camera, so it computes the star's APPARENT magnitude from
+  // wherever you are — and draws only the ones bright enough to actually see.
+  // From the Solar System that's the true naked-eye sky (~few thousand stars);
+  // fly to another sun and a different set lights up (real parallax brightness).
+  // The faint majority cost nothing — point size 0, never rasterised.
   const STAR_VERT = `#include <common>
 #include <logdepthbuf_pars_vertex>
 attribute vec3 aColor; attribute float aMag;
-uniform float uSizeK;
+uniform float uSizeK; uniform float uLimit;
 varying vec3 vColor;
 void main(){
-  float mag = aMag * 16.0 - 2.0;                       // decode apparent magnitude
-  float flux = pow(10.0, -0.4 * (mag - 6.0));
-  vColor = aColor * clamp(flux, 0.05, 1.5);            // bright stars blaze, faint ones whisper
-  float bright = clamp((7.5 - mag) / 9.0, 0.0, 1.0);
-  gl_PointSize = uSizeK * (0.5 + 2.0 * bright);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  float distPc = max(length(mv.xyz) / 3.0856776e13, 1e-4);   // km → parsecs
+  float absMag = aMag * 30.0 - 10.0;                          // decode absolute magnitude
+  float appMag = absMag + 5.0 * (log(distPc) * 0.4342945 - 1.0);   // apparent mag from HERE
+  float flux = pow(10.0, -0.4 * (appMag - 6.0));
+  vColor = aColor * clamp(flux, 0.05, 1.7);
+  float bright = clamp((6.2 - appMag) / 7.5, 0.0, 1.0);
+  float vis = step(appMag, uLimit);                          // 1 if visible from here, else cull
+  gl_PointSize = uSizeK * (0.55 + 2.3 * bright) * vis;       // size 0 → not drawn at all
+  gl_Position = projectionMatrix * mv;
 #include <logdepthbuf_vertex>
 }`;
   const STAR_FRAG = `#include <common>
@@ -1902,7 +1909,8 @@ void main(){
   let starMeta: DataView | null = null;
   let starJson: { spect: string[]; con: string[]; names: string[] } | null = null;
   let starN = 0;
-  const starUniforms = { uSizeK: { value: (small ? 1.5 : 2.0) * (devicePixelRatio || 1) } };
+  const STAR_LIMIT = 6.6;                        // naked-eye-ish magnitude cutoff (a rich, uncluttered sky)
+  const starUniforms = { uSizeK: { value: (small ? 1.5 : 2.0) * (devicePixelRatio || 1) }, uLimit: { value: STAR_LIMIT } };
   Promise.all([
     fetch("/stars/bubble_pos.f32").then(r => r.arrayBuffer()),
     fetch("/stars/bubble_col.u8").then(r => r.arrayBuffer()),
@@ -2244,24 +2252,9 @@ void main(){
     if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
   });
 
-  const ftWin: number[] = [];                  // rolling frame-time window for the resolution governor
-  let prTick = 0;
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
-
-    // resolution governor: every ~60 frames, judge the MEDIAN frame time (robust
-    // to one-off load hitches) and nudge pixel density to hold ~60fps. The
-    // deadband is wide (a steady 60fps sits comfortably inside it) so the
-    // governor itself never thrashes the framebuffer — it only acts on a
-    // genuinely slow GPU, or reclaims sharpness when there's real headroom.
-    ftWin.push(dt); if (ftWin.length > 60) ftWin.shift();
-    if (++prTick >= 60 && ftWin.length >= 50) {
-      prTick = 0;
-      const s = [...ftWin].sort((a, b) => a - b), med = s[s.length >> 1]!;
-      if (med > 0.022 && curPR > 0.6) { curPR = Math.max(0.6, curPR - 0.2); renderer.setPixelRatio(curPR); resize(); }
-      else if (med < 0.012 && curPR < maxPR) { curPR = Math.min(maxPR, curPR + 0.15); renderer.setPixelRatio(curPR); resize(); }
-    }
 
     // the stars breathe — granulation, plage and prominences all animate
     for (const m of starMats) (m.uniforms["uTime"] as { value: number }).value = nowMs * 0.001;
@@ -2437,17 +2430,22 @@ void main(){
     sheet.classList.add("open"); sheet.removeAttribute("hidden");
   }
   function pickStarAt(clientX: number, clientY: number) {
-    if (!bubblePos || !starMeta) return;
+    if (!bubblePos || !bubbleCol) return;
     const rect = canvas.getBoundingClientRect();
     const px = clientX - rect.left, py = clientY - rect.top, w = canvas.clientWidth, h = canvas.clientHeight;
     let best = -1, bestScore = 1e9;
     for (let i = 0; i < starN; i++) {
-      sv.set(bubblePos[i * 3]! - camKm.x, bubblePos[i * 3 + 1]! - camKm.y, bubblePos[i * 3 + 2]! - camKm.z).project(camera);
+      const dx = bubblePos[i * 3]! - camKm.x, dy = bubblePos[i * 3 + 1]! - camKm.y, dz = bubblePos[i * 3 + 2]! - camKm.z;
+      sv.set(dx, dy, dz).project(camera);
       if (sv.z > 1) continue;
       const dp = Math.hypot((sv.x * 0.5 + 0.5) * w - px, (-sv.y * 0.5 + 0.5) * h - py);
       if (dp > 14) continue;
-      const mag = starMeta.getInt16(i * 16 + 4, true) / 100;
-      const score = dp + (mag + 2) * 1.4;          // a bright star a few px off beats a faint one dead-centre
+      // only stars actually visible from here are pickable (matches the LOD shader)
+      const absMag = bubbleCol[i * 4 + 3]! / 255 * 30 - 10;
+      const distPc = Math.max(Math.hypot(dx, dy, dz) / 3.0856776e13, 1e-4);
+      const appMag = absMag + 5 * (Math.log10(distPc) - 1);
+      if (appMag > STAR_LIMIT) continue;
+      const score = dp + (appMag + 2) * 1.4;       // a bright star a few px off beats a faint one dead-centre
       if (score < bestScore) { bestScore = score; best = i; }
     }
     if (best >= 0) {
