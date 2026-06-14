@@ -1818,28 +1818,60 @@ export function mountAtlas(opts: Opts): () => void {
     new THREE.SphereGeometry(8e11, 48, 24),
     new THREE.MeshBasicMaterial({ map: T("stars_milky_way.jpg"), side: THREE.BackSide, depthWrite: false, transparent: true }),
   );
-  (mw.material as THREE.MeshBasicMaterial).color.setScalar(0.95);
+  (mw.material as THREE.MeshBasicMaterial).color.setScalar(0.42);   // a soft galactic backdrop; the REAL stars are the foreground
   mw.rotation.x = 60.2 * D2R;        // the galactic plane really is tilted ~60° to the ecliptic
   mw.rotation.y = 0.6;
+  mw.renderOrder = -2;               // band first, real stars on top
   skyGroup.add(mw);
-  // three depths of stars over the panorama: faint grains, mid field, bright jewels
-  const starLayer = (count: number, size: number, color: number, opacity: number) => {
-    const arr = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, r = Math.sqrt(1 - u * u);
-      const R = 7e11;
-      arr[i * 3] = R * r * Math.cos(th); arr[i * 3 + 1] = R * u; arr[i * 3 + 2] = R * r * Math.sin(th);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-    const pts = new THREE.Points(g, new THREE.PointsMaterial({ color, size, sizeAttenuation: false, transparent: true, opacity, depthWrite: false }));
-    skyGroup.add(pts);
-  };
-  const SKY_N = small ? 3200 : 6800;
-  starLayer(Math.floor(SKY_N * 0.62), 1.3, 0xc8d2f0, 0.55);
-  starLayer(Math.floor(SKY_N * 0.28), 2.1, 0xe8edff, 0.8);
-  starLayer(Math.floor(SKY_N * 0.07), 3.1, 0xfff1da, 0.95);
-  starLayer(Math.floor(SKY_N * 0.03), 3.4, 0xa8c0ff, 0.9);
+  // ---- the REAL sky: every catalogued star within 3,000 ly (HYG), at its true
+  // 3D place. Not a backdrop painted on a dome but real suns in real positions —
+  // so from Earth you see the true constellations, and from another star the sky
+  // shifts with parallax. One GPU point cloud, coloured by real B–V temperature,
+  // sized by real apparent magnitude; sun-centred, offset by the floating origin.
+  const STAR_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute vec3 aColor; attribute float aMag;
+uniform float uSizeK;
+varying vec3 vColor;
+void main(){
+  float mag = aMag * 16.0 - 2.0;                       // decode apparent magnitude
+  float flux = pow(10.0, -0.4 * (mag - 6.0));
+  vColor = aColor * clamp(flux, 0.05, 1.5);            // bright stars blaze, faint ones whisper
+  float bright = clamp((7.5 - mag) / 9.0, 0.0, 1.0);
+  gl_PointSize = uSizeK * (0.5 + 2.0 * bright);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+#include <logdepthbuf_vertex>
+}`;
+  const STAR_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
+varying vec3 vColor;
+void main(){
+#include <logdepthbuf_fragment>
+  float a = pow(smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5)), 1.7);
+  if (a < 0.01) discard;
+  gl_FragColor = vec4(vColor, a);
+}`;
+  const starUniforms = { uSizeK: { value: (small ? 1.5 : 2.0) * (devicePixelRatio || 1) } };
+  Promise.all([
+    fetch("/stars/bubble_pos.f32").then(r => r.arrayBuffer()),
+    fetch("/stars/bubble_col.u8").then(r => r.arrayBuffer()),
+  ]).then(([pb, cb]) => {
+    const positions = new Float32Array(pb), colU8 = new Uint8Array(cb);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const ib = new THREE.InterleavedBuffer(colU8, 4);
+    geo.setAttribute("aColor", new THREE.InterleavedBufferAttribute(ib, 3, 0, true));
+    geo.setAttribute("aMag", new THREE.InterleavedBufferAttribute(ib, 1, 3, true));
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 3e16);
+    const cloud = new THREE.Points(geo, new THREE.ShaderMaterial({
+      uniforms: starUniforms, vertexShader: STAR_VERT, fragmentShader: STAR_FRAG,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    cloud.frustumCulled = false;
+    cloud.renderOrder = -1;                            // over the band, under everything solid
+    scene.add(cloud);
+    onFrame(({ camKm }) => cloud.position.set(-camKm.x, -camKm.y, -camKm.z));
+  }).catch(() => { /* the sky simply stays dark if the catalogue can't load */ });
 
   /* ---------- the floating-origin camera ---------- */
   let focus = earth;
