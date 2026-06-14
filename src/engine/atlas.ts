@@ -533,6 +533,7 @@ function livingStar(radiusKm: number, color: number, granScale: number, seg = 64
     map: glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true,
   }));
   halo.scale.setScalar(radiusKm * 7);
+  halo.frustumCulled = false;     // a big sprite must not vanish when its centre leaves the screen
   g.add(halo);
   // the halo belongs to the DISTANT star — close up it would fog the living
   // surface, so the frame loop fades it with proximity via userData.
@@ -700,6 +701,7 @@ export function mountAtlas(opts: Opts): () => void {
   const sunMesh = livingStar(RADII["Sun"]!, 0xffc06a, 26, 80);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
   glow.scale.setScalar(RADII["Sun"]! * 6.5);
+  glow.frustumCulled = false;
   sunMesh.add(glow);
   addBody("Sun", { x: 0, y: 0, z: 0 }, sunMesh, 0.00002);
 
@@ -1051,9 +1053,9 @@ export function mountAtlas(opts: Opts): () => void {
     sg.add(new THREE.Mesh(new THREE.SphereGeometry(starR, 64, 32),
       new THREE.MeshBasicMaterial({ map: T("trappist/star.jpg") })));
     const sglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff5a30, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    sglow.scale.setScalar(starR * 7); sg.add(sglow);
+    sglow.scale.setScalar(starR * 7); sglow.frustumCulled = false; sg.add(sglow);
     const shalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff5a30, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    shalo.scale.setScalar(starR * 7); sg.add(shalo);
+    shalo.scale.setScalar(starR * 7); shalo.frustumCulled = false; sg.add(shalo);
     sg.userData["halo"] = shalo; sg.userData["starR"] = starR;
     const trStar = addBody("TRAPPIST-1", TR_C, sg, 0.00001);
     trStar.kind = "star"; trStar.foreign = true; trStar.system = "TRAPPIST-1"; trStar.radius = starR; trStar.minD = starR * 4; trStar.dotK = 0.006;
@@ -1112,9 +1114,9 @@ export function mountAtlas(opts: Opts): () => void {
     sg.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24), new THREE.MeshBasicMaterial({ map: T(`exo/${sys.pack}/star.jpg`) })));
     const glowCol = sys.pulsar ? 0xbcd2ff : sys.col;
     const sglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: glowCol, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    sglow.scale.setScalar(r * 7); sg.add(sglow);
+    sglow.scale.setScalar(r * 7); sglow.frustumCulled = false; sg.add(sglow);
     const shalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: glowCol, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    shalo.scale.setScalar(r * 7); sg.add(shalo);
+    shalo.scale.setScalar(r * 7); shalo.frustumCulled = false; sg.add(shalo);
     sg.userData["halo"] = shalo; sg.userData["starR"] = r;
     const sb = addBody(sys.star, C, sg, 0.00001);
     sb.kind = "star"; sb.foreign = true; sb.system = sys.star; sb.radius = r; sb.minD = r * 4; sb.dotK = 0.007;
@@ -1349,6 +1351,7 @@ export function mountAtlas(opts: Opts): () => void {
   }
 
   /* ---------- the Oort cloud: the Sun's farthest country ---------- */
+  let oortMat: THREE.PointsMaterial | null = null;
   {
     const N = 11000;                              // a real shell you can fall into, not a whisper
     const arr = new Float32Array(N * 3);
@@ -1359,11 +1362,12 @@ export function mountAtlas(opts: Opts): () => void {
     }
     const gg = new THREE.BufferGeometry();
     gg.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-    const cloud = new THREE.Points(gg, new THREE.PointsMaterial({
+    oortMat = new THREE.PointsMaterial({
       color: 0xc4d8f4, size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending,
-    }));
-    // the cloud is SUN-centred (outerGroup carries the floating-origin offset
-    // and is visible out to interstellar range) — pure atmosphere, no label
+    });
+    const cloud = new THREE.Points(gg, oortMat);
+    // the cloud is SUN-centred (outerGroup carries the floating-origin offset);
+    // it fades out as you leave so it never hangs as a ball at the Sun from afar
     outerGroup.add(cloud);
   }
 
@@ -1883,9 +1887,10 @@ void main(){
   }).catch(() => { /* the sky simply stays dark if the catalogue can't load */ });
 
   // ---- the constellation figures: the 88 patterns humans drew on this sky ----
-  // they are an Earth-bound illusion — Orion is only Orion from here — so they
-  // are drawn while you are home and DISSOLVE as you leave the Sun. Travel far
-  // enough and the figures come apart: a quiet lesson in perspective.
+  // They are an Earth-bound illusion — Orion is only Orion from here — so they
+  // belong to ONE place: standing on Earth, looking up. In free flight they are
+  // hidden (they only cluttered the view); the planetarium turns them on.
+  let earthView = false;                          // true only while standing on Earth, looking up
   let conLines: THREE.LineSegments | null = null;
   const conMat = new THREE.LineBasicMaterial({ color: 0x8198cc, transparent: true, opacity: 0, depthWrite: false });
   fetch("/stars/constellations.f32").then(r => r.arrayBuffer()).then(buf => {
@@ -1894,14 +1899,14 @@ void main(){
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 3e16);
     conLines = new THREE.LineSegments(g, conMat);
     conLines.frustumCulled = false; conLines.renderOrder = -1;
+    conLines.visible = false;
     scene.add(conLines);
   }).catch(() => { /* figures are optional grace */ });
   onFrame(({ camKm }) => {
     if (!conLines) return;
     conLines.position.set(-camKm.x, -camKm.y, -camKm.z);
-    const sunD = Math.hypot(camKm.x, camKm.y, camKm.z);
-    conMat.opacity = 0.34 * Math.min(1, Math.max(0, (1.4e13 - sunD) / 1.1e13));   // home → full; ~1.5 ly out → gone
-    conLines.visible = conMat.opacity > 0.003;
+    conMat.opacity = earthView ? 0.5 : 0;
+    conLines.visible = earthView;
   });
 
   /* ---------- the floating-origin camera ---------- */
@@ -2109,7 +2114,12 @@ void main(){
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
     orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;
-    outerGroup.visible = distKm > 4e7 && distKm < 6e13;
+    // the belts + Oort belong to the Sun: fade the Oort shell out as you leave
+    // the neighbourhood (so it never becomes a ball hanging at the Sun from
+    // another star), and drop the whole outer layer once you're truly away.
+    const sunDist = Math.hypot(camKm.x, camKm.y, camKm.z);
+    if (oortMat) oortMat.opacity = 0.55 * Math.min(1, Math.max(0, (2.8e13 - sunDist) / 1.3e13));
+    outerGroup.visible = distKm > 4e7 && sunDist < 3e13;
   });
 
   // the galaxy emerges as you rise above the neighbourhood; the camera-glued
