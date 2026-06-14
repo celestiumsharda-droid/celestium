@@ -12,6 +12,7 @@
    to travel, drag to orbit, tap a name to fly there.
    ===================================================================== */
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { planetPosition, PLANETS, kepler, rad, norm360, julianCenturies, type PlanetName } from "./ephemeris";
 import EXO_SYSTEMS from "../data/exo";
 import { playClick } from "./sound";
@@ -1190,6 +1191,116 @@ export function mountAtlas(opts: Opts): () => void {
     orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat));
   }
 
+  /* ---------- visited small bodies: real radar/SfM shape models ----------
+     Five worlds humanity has flown to and mapped — four near-Earth asteroids
+     and a comet — each rendered from its ACTUAL shape model (NASA, JAXA, ESA),
+     scaled to true size, placed at its real position today from JPL osculating
+     elements, and tumbling at its measured spin period. Irregular lumps, as
+     they are in life — never spheres. The small GLBs load lazily; until each
+     arrives the body still drifts as its point of light. */
+  interface ShapeDef {
+    name: string; file: string; rKm: number; color: number; dotCol: number;
+    spinH: number; retro?: boolean; comet?: boolean; line: string;
+    a: number; e: number; i: number; N: number; w: number; tpJD: number; perD: number;
+    info: { facts: [string, string][]; text: string[] };
+  }
+  const jd2ms = (jd: number): number => (jd - 2440587.5) * 86400000;
+  const SHAPES: ShapeDef[] = [
+    { name: "Bennu", file: "/models/asteroids/bennu.glb", rKm: 0.252, color: 0x5d574e, dotCol: 0x9c958a, spinH: 4.296, retro: true,
+      a: 1.12639103, e: 0.20374508, i: 6.03494, N: 2.06087, w: 66.22306, tpJD: 2455439.141941, perD: 436.64873,
+      line: "A fragile rubble-pile asteroid — and a fistful of it is now on Earth.",
+      info: { facts: [["Type", "Carbonaceous (B-type)"], ["Width", "490 metres"], ["Day", "4.3 hours"], ["Visited", "OSIRIS-REx, 2018–21"], ["Sample", "121 g, home 2023"]], text: [
+        "Bennu is a loose pile of rubble barely 490 metres across, held together more by its own feeble gravity than by any solid rock. NASA's OSIRIS-REx orbited it for over two years — the smallest world ever orbited — and in 2020 reached down and touched its surface, which behaved less like ground than like a ball pit: the sampling arm sank in as if into a fluid.",
+        "In September 2023 a capsule parachuted 121 grams of Bennu into the Utah desert — pristine carbon-rich dust older than the planets, carrying the water-bearing clays and organic molecules from which the chemistry of life was built. Bennu also carries a small chance of striking Earth in the late 2100s, which is part of why we went to meet it." ] } },
+    { name: "Ryugu", file: "/models/asteroids/ryugu.glb", rKm: 0.502, color: 0x575650, dotCol: 0x9a958e, spinH: 7.6326, retro: true,
+      a: 1.19091893, e: 0.19107300, i: 5.86644, N: 251.28971, w: 211.60899, tpJD: 2461118.296422, perD: 474.70273,
+      line: "A spinning-top of primordial carbon — twice sampled, brought home to Japan.",
+      info: { facts: [["Type", "Carbonaceous (Cb-type)"], ["Width", "900 metres"], ["Day", "7.6 hours"], ["Visited", "Hayabusa2, 2018–19"], ["Sample", "5.4 g, home 2020"]], text: [
+        "Ryugu is a top-shaped pile of rubble, its equator bulged into a sharp ridge by a faster spin long ago. Japan's Hayabusa2 met it in 2018, dropped rovers that hopped across the surface in the microgravity, and fired a copper impactor to blast an artificial crater and expose buried, unweathered material.",
+        "It then collected samples from two sites — including from beneath the surface — and returned 5.4 grams to the Australian outback in December 2020. In them, scientists found amino acids and the building blocks of RNA: hard evidence that the ingredients of life were sown across the young Solar System by bodies exactly like this one." ] } },
+    { name: "Eros", file: "/models/asteroids/eros.glb", rKm: 17.2, color: 0x9a8568, dotCol: 0xd0bc94, spinH: 5.27,
+      a: 1.45824372, e: 0.22287796, i: 10.82854, N: 304.26797, w: 178.91813, tpJD: 2461088.813494, perD: 643.19639,
+      line: "The first asteroid ever orbited — and the first ever landed on.",
+      info: { facts: [["Type", "Stony (S-type)"], ["Length", "34 km"], ["Day", "5.3 hours"], ["Class", "Amor near-Earth"], ["Visited", "NEAR Shoemaker, 2000–01"]], text: [
+        "Eros is an elongated stony asteroid, 34 kilometres end to end and shaped like a peanut or a foot. In February 2000 NASA's NEAR Shoemaker became the first spacecraft ever to orbit an asteroid, circling Eros for a year and mapping every crater, ridge and boulder of its battered grey surface.",
+        "Then, in an ending nobody had planned, controllers gently set the orbiter down onto Eros in February 2001 — the first soft landing on an asteroid — and it kept transmitting from the surface for two more weeks. Eros is an Amor-class near-Earth object: its orbit reaches in past Mars but never quite crosses our own." ] } },
+    { name: "Itokawa", file: "/models/asteroids/itokawa.glb", rKm: 0.268, color: 0xa89074, dotCol: 0xccb792, spinH: 12.132,
+      a: 1.32405228, e: 0.28017764, i: 1.62094, N: 69.07450, w: 162.84090, tpJD: 2460936.702994, perD: 556.48842,
+      line: "A 500-metre rubble pile — the first asteroid we ever brought home.",
+      info: { facts: [["Type", "Stony (S-type)"], ["Length", "535 metres"], ["Day", "12.1 hours"], ["Class", "Apollo near-Earth"], ["Visited", "Hayabusa, 2005"]], text: [
+        "Itokawa is a tiny, sea-otter-shaped rubble pile just 535 metres long — not solid rock but a loose heap of gravel and boulders barely held together by gravity. Japan's first Hayabusa probe reached it in 2005, surveyed its smooth 'seas' and rough 'highlands', and made two fraught touchdowns to grab a sample.",
+        "After a crippled, years-long limp home, Hayabusa's capsule streaked back through Earth's atmosphere in 2010 carrying some 1,500 microscopic grains — the first material ever returned from an asteroid. Those grains proved that the common S-type asteroids are the parent bodies of the most common meteorites that fall to Earth." ] } },
+    { name: "Comet 67P", file: "/models/asteroids/comet67p.glb", rKm: 2.15, color: 0x4a443d, dotCol: 0xbcd0e0, spinH: 12.7613, comet: true,
+      a: 3.46224949, e: 0.64090813, i: 7.04029, N: 50.13557, w: 12.79825, tpJD: 2457247.588658, perD: 2353.07607,
+      line: "The duck-shaped comet where a robot landed — Rosetta's whole world.",
+      info: { facts: [["Type", "Jupiter-family comet"], ["Shape", "4.3 km, two lobes"], ["Day", "12.4 hours"], ["Orbit", "6.4 years"], ["Visited", "Rosetta & Philae, 2014–16"]], text: [
+        "Comet 67P/Churyumov–Gerasimenko is a four-kilometre chunk of ice and dust shaped like a rubber duck — two bodies that gently merged in the dawn of the Solar System. ESA's Rosetta chased it for ten years and arrived in 2014, the first spacecraft ever to orbit a comet, then dropped the little lander Philae onto its surface — the first soft landing on a comet's nucleus.",
+        "For two years Rosetta flew alongside as 67P fell sunward and woke, its ices boiling into jets and a lengthening tail. It found the comet's water chemically unlike Earth's oceans, oxygen locked in its ice since the Solar System's birth, and the amino acid glycine drifting in its coma. In 2016 Rosetta ended its mission by descending to land on the comet itself." ] } },
+  ];
+  const shapeLoader = new GLTFLoader();
+  for (const sh of SHAPES) {
+    const g = new THREE.Group();
+    const pivot = new THREE.Group();
+    pivot.rotation.set(0.5, 0, 0.28);          // a gentle, fixed obliquity so it tumbles rather than spins upright
+    g.add(pivot);
+    const el: CometEl = { a: sh.a, e: sh.e, i: sh.i, N: sh.N, w: sh.w, periMs: jd2ms(sh.tpJD), periodD: sh.perD };
+    const cb = addBody(sh.name, { x: 0, y: 0, z: 0 }, g, 0);
+    cb.radius = sh.rKm;
+    cb.minD = Math.max(sh.rKm * 1.3, 0.08);
+    cb.drift = true;                            // stays a point of light at range; only its name hides
+    cb.labelMax = 8e7;                          // named only within ~0.5 AU
+    cb.dotK = 0.007;
+    cb.arriveK = 6;
+    cb.line = sh.line;
+    INFO[sh.name] = sh.info;
+    if (cb.dot) (cb.dot.material as THREE.SpriteMaterial).color.set(sh.dotCol);
+    // the real shape model — small GLBs, loaded lazily; rocky matte material, true size
+    shapeLoader.load(sh.file, (gltf) => {
+      const mat = new THREE.MeshStandardMaterial({ color: sh.color, roughness: 0.97, metalness: 0 });
+      gltf.scene.traverse((o) => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat; });
+      gltf.scene.scale.setScalar(sh.rKm);
+      pivot.add(gltf.scene);
+    });
+    // a comet wakes near the Sun: a coma and two tails, always pointing away from it
+    let tails: THREE.Group | null = null, dust: THREE.Points | null = null, ion: THREE.Points | null = null, coma: THREE.Sprite | null = null;
+    if (sh.comet) {
+      coma = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xd8ecff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+      coma.scale.setScalar(8e4); g.add(coma);
+      tails = new THREE.Group();
+      dust = cometTail(150, 0xffe2c4, 7e5, 9e6);
+      ion = cometTail(100, 0x7ec8ff, 2.6e5, 1.5e7);
+      tails.add(dust); tails.add(ion); g.add(tails);
+    }
+    const spinRate = (Math.PI * 2 * 24 / sh.spinH) * (sh.retro ? -1 : 1);   // rad per sim-day, real sidereal rate
+    const Z = new THREE.Vector3(0, 0, 1), dirV = new THREE.Vector3();
+    cb.update = (date, sd) => {
+      const q = cometPos(el, date);
+      const kk = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      cb.pos.x = kk.x; cb.pos.y = kk.y; cb.pos.z = kk.z;
+      pivot.rotation.y = (sd * spinRate) % (Math.PI * 2);
+      if (tails) {
+        const rAU = Math.hypot(q.x, q.y, q.z);
+        const wake = Math.max(0, Math.min(1, (3.5 - rAU) / 2.6));
+        dirV.set(kk.x, kk.y, kk.z).normalize();
+        tails.quaternion.setFromUnitVectors(Z, dirV);
+        tails.scale.setScalar(Math.max(wake, 1e-4));
+        (dust!.material as THREE.PointsMaterial).opacity = wake * 0.7;
+        (ion!.material as THREE.PointsMaterial).opacity = wake * 0.55;
+        (coma!.material as THREE.SpriteMaterial).opacity = wake * 0.45;
+      }
+    };
+    cb.update(now, 0);
+    // its real orbit, drawn once
+    const opts: THREE.Vector3[] = [];
+    for (let k = 0; k <= 256; k++) {
+      const d = new Date(el.periMs + (k / 256) * el.periodD * 86400000);
+      const q = cometPos(el, d);
+      const p = E2T({ x: q.x * AU, y: q.y * AU, z: q.z * AU });
+      opts.push(new THREE.Vector3(p.x, p.y, p.z));
+    }
+    orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(opts), orbitMat));
+  }
+
   /* ---------- the Oort cloud: the Sun's farthest country ---------- */
   {
     const N = 4200;
@@ -1766,6 +1877,7 @@ export function mountAtlas(opts: Opts): () => void {
     { label: "The Sun & its planets", sub: "Sol — eight worlds", match: b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name) },
     { label: "Moons", sub: "of Earth, the giants & Pluto", match: b => MOON_NAMES.includes(b.name) },
     { label: "Dwarf planets & asteroids", sub: "Ceres, Vesta, the far dwarfs", match: b => DWARFS.includes(b.name) },
+    { label: "Near-Earth asteroids", sub: "the rocks we've flown to", match: b => ["Bennu", "Ryugu", "Eros", "Itokawa"].includes(b.name) },
     { label: "The machines", sub: "humanity's emissaries", match: b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name) },
     { label: "The wanderers", sub: "comets, drifting in", match: b => b.name.includes("Comet") || b.name.includes("Bopp") },
     { label: "TRAPPIST-1", sub: "a second sun, seven worlds", match: b => b.system === "TRAPPIST-1", systems: true },
@@ -1794,7 +1906,7 @@ export function mountAtlas(opts: Opts): () => void {
       btn.addEventListener("click", () => {
         try { playClick(); } catch (_e) { /* off */ }
         if (btn.dataset["cat"]) cnav = { kind: "cat", i: +btn.dataset["cat"]! };
-        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : 6 };
+        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : 7 };
         renderConsole();
       }));
   }
