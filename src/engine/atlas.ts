@@ -1901,6 +1901,7 @@ void main(){
     flyStar.name = name; flyStar.line = line; flyStar.label.textContent = name;
   }
   let heroByCloudIdx: Map<number, string> | null = null;
+  let nameToCloud: Int32Array | null = null;     // names-table index → cloud star index, for search
 
   // shared with the picker so any of the 108k stars can be studied (positions
   // and metadata are index-aligned, built from the same catalogue pass)
@@ -1938,6 +1939,12 @@ void main(){
         if (mag < bestMag) { bestMag = mag; bi = i; }
       }
       if (bi >= 0) heroByCloudIdx.set(bi, b.name);
+    }
+    // index every NAMED star so search can find it among the 108k
+    nameToCloud = new Int32Array((mj as typeof starJson)!.names.length).fill(-1);
+    for (let i = 0; i < starN; i++) {
+      const ni = (starMeta as DataView).getUint16(i * 16 + 12, true);
+      if (ni !== 65535) nameToCloud[ni] = i;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -2073,6 +2080,16 @@ void main(){
     { label: "The galaxy", sub: "the heart of the Milky Way", match: b => b.name === "Sagittarius A*" },
   ];
   type NavView = { kind: "root" } | { kind: "cat"; i: number } | { kind: "sys"; star: string; from: number };
+  const TRAPPIST_CAT = CATS.findIndex(c => c.label === "TRAPPIST-1");
+  const EXO_CAT = CATS.findIndex(c => c.label === "Exoplanet systems");
+  // open the console where you ALREADY are — inside a system it shows that
+  // system's worlds, so you can hop between siblings without restarting at the top.
+  const contextView = (): NavView => {
+    const sys = focus.system;
+    if (sys) return { kind: "sys", star: sys, from: sys === "TRAPPIST-1" ? TRAPPIST_CAT : EXO_CAT };
+    const ci = CATS.findIndex(c => !c.systems && c.match(focus));
+    return ci >= 0 ? { kind: "cat", i: ci } : { kind: "root" };
+  };
   let cnav: NavView = { kind: "root" };
   const conBack = consoleEl.querySelector<HTMLElement>(".at-con-back")!;
   const conTitle = consoleEl.querySelector<HTMLElement>(".at-con-title")!;
@@ -2088,7 +2105,14 @@ void main(){
 
   function wireRows() {
     conList.querySelectorAll<HTMLButtonElement>(".at-con-item").forEach(btn =>
-      btn.addEventListener("click", () => { focusBody(btn.dataset["n"]!, true); closeConsole(); }));
+      btn.addEventListener("click", () => {
+        if (btn.dataset["star"] !== undefined) { flyToStar(+btn.dataset["star"]!); closeConsole(); }   // a catalogue-star search hit
+        else {
+          focusBody(btn.dataset["n"]!, true);                          // a body — fly, but STAY in the menu so you can hop
+          if (conSearch.value) { conSearch.value = ""; cnav = contextView(); }   // from search → land in its system/group
+          renderConsole();
+        }
+      }));
     conList.querySelectorAll<HTMLButtonElement>(".at-con-cat").forEach(btn =>
       btn.addEventListener("click", () => {
         try { playClick(); } catch (_e) { /* off */ }
@@ -2104,10 +2128,22 @@ void main(){
   }
   function renderConsole() {
     const q = conSearch.value.trim().toLowerCase();
-    if (q) {                                   // search flattens across everything
+    if (q) {                                   // search flattens across planets, systems AND the star catalogue
       const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) =>
         Math.hypot(a.pos.x - camKm.x, a.pos.y - camKm.y, a.pos.z - camKm.z) - Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
-      conList.innerHTML = hits.slice(0, 80).map(b => itemRow(b, b.system && b.system !== b.name ? b.system : undefined)).join("") || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
+      let html = hits.slice(0, 30).map(b => itemRow(b, b.system && b.system !== b.name ? b.system : undefined)).join("");
+      // the 108k catalogue: every NAMED star is findable by name
+      if (nameToCloud && starJson && starMeta && q.length >= 2) {
+        const names = starJson.names; let n = 0;
+        for (let ni = 0; ni < names.length && n < 50; ni++) {
+          if (!names[ni]!.toLowerCase().includes(q)) continue;
+          const ci = nameToCloud[ni]!; if (ci < 0 || heroByCloudIdx?.has(ci)) continue;   // skip those already shown as bodies
+          const distLy = starMeta.getUint16(ci * 16 + 6, true) / 10;
+          html += `<button type="button" class="at-con-item" data-star="${ci}"><i style="--c:#cfe0ff"></i><span>${names[ni]}</span><b>${distLy.toFixed(0)} ly</b></button>`;
+          n++;
+        }
+      }
+      conList.innerHTML = html || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
       setHead("Search", null); wireRows(); return;
     }
     if (cnav.kind === "root") {
@@ -2146,7 +2182,8 @@ void main(){
   const buildConsole = (_f?: string) => renderConsole();
   function openConsole() {
     sheet.classList.remove("open");      // one panel at a time
-    cnav = { kind: "root" };             // always open at the top level
+    conSearch.value = "";
+    cnav = contextView();                // open where you ARE, not always the top
     renderConsole();
     consoleEl.removeAttribute("hidden");
     requestAnimationFrame(() => consoleEl.classList.add("open"));
@@ -2429,6 +2466,27 @@ void main(){
     shProse.innerHTML = `<p>${name} is ${article} ${cls} in the constellation ${conName}, ${distLy.toFixed(1)} light-years from the Sun. ${seen}</p>`;
     sheet.classList.add("open"); sheet.removeAttribute("hidden");
   }
+  // fly to a catalogued star by its cloud index — a hero star routes to its real
+  // body; any other re-skins the fly-star. Used by both tapping and search.
+  function flyToStar(idx: number) {
+    if (!starMeta || !bubblePos || !bubbleCol) return;
+    try { playClick(); } catch (_e) { /* off */ }
+    const hero = heroByCloudIdx?.get(idx);
+    if (hero) {
+      focusBody(hero, false);
+    } else {
+      const o = idx * 16, ci = idx * 4;
+      const spect = starJson!.spect[starMeta.getUint16(o + 10, true)] || "";
+      const distLy = starMeta.getUint16(o + 6, true) / 10;
+      const niv = starMeta.getUint16(o + 12, true), hipv = starMeta.getInt32(o, true);
+      const nm = niv !== 65535 ? starJson!.names[niv]! : (hipv ? `HIP ${hipv}` : "Unnamed star");
+      const col = (bubbleCol[ci]! << 16) | (bubbleCol[ci + 1]! << 8) | bubbleCol[ci + 2]!;
+      flyStar.pos.x = bubblePos[idx * 3]!; flyStar.pos.y = bubblePos[idx * 3 + 1]!; flyStar.pos.z = bubblePos[idx * 3 + 2]!;
+      skinFlyStar(col, estStarRadiusKm(spect), nm, `${starClass(spect)} · ${distLy.toFixed(1)} light-years from home.`);
+      focusOn(flyStar, false);
+    }
+    selectStar(idx);
+  }
   function pickStarAt(clientX: number, clientY: number) {
     if (!bubblePos || !bubbleCol) return;
     const rect = canvas.getBoundingClientRect();
@@ -2448,25 +2506,7 @@ void main(){
       const score = dp + (appMag + 2) * 1.4;       // a bright star a few px off beats a faint one dead-centre
       if (score < bestScore) { bestScore = score; best = i; }
     }
-    if (best >= 0) {
-      try { playClick(); } catch (_e) { /* off */ }
-      const hero = heroByCloudIdx?.get(best);
-      if (hero) {
-        focusBody(hero, false);                  // tap a hero star → fly to its real, detailed body
-      } else {
-        // re-skin the fly-star to this catalogued sun and travel to it
-        const o = best * 16, ci = best * 4;
-        const spect = starJson!.spect[starMeta.getUint16(o + 10, true)] || "";
-        const distLy = starMeta.getUint16(o + 6, true) / 10;
-        const niv = starMeta.getUint16(o + 12, true), hipv = starMeta.getInt32(o, true);
-        const nm = niv !== 65535 ? starJson!.names[niv]! : (hipv ? `HIP ${hipv}` : "Unnamed star");
-        const col = (bubbleCol![ci]! << 16) | (bubbleCol![ci + 1]! << 8) | bubbleCol![ci + 2]!;
-        flyStar.pos.x = bubblePos[best * 3]!; flyStar.pos.y = bubblePos[best * 3 + 1]!; flyStar.pos.z = bubblePos[best * 3 + 2]!;
-        skinFlyStar(col, estStarRadiusKm(spect), nm, `${starClass(spect)} · ${distLy.toFixed(1)} light-years from home.`);
-        focusOn(flyStar, false);
-      }
-      selectStar(best);                          // the study sheet (generated, consistent) + the selection ring
-    }
+    if (best >= 0) flyToStar(best);
   }
   // the selection ring rides with its star, at a constant apparent size, while the sheet is open
   onFrame(({ camKm }) => {
