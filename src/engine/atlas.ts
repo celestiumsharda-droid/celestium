@@ -77,6 +77,7 @@ interface Body {
   foreign?: boolean;                 // belongs to another star system (TRAPPIST, exoplanets) — gated by labelMax, not the "our planets retire" rule
   system?: string;                   // which system this body belongs to (for the drill-down navigator)
   dotK?: number;                     // apparent-size class of its point of light
+  adhoc?: boolean;                   // the reusable "fly to any star" body — hidden from menus/search
 }
 
 /* ---- the stellar neighbourhood: real stars, real places ----
@@ -1855,9 +1856,45 @@ void main(){
   if (a < 0.01) discard;
   gl_FragColor = vec4(vColor, a);
 }`;
+  // ---- the star you FLY to: one reusable living star, re-skinned for whichever
+  // catalogued sun you tap. (The ~40 hero stars keep their own detailed bodies;
+  // a tap on one of those routes to it instead — see heroByCloudIdx.) ----
+  const R_SUN = 695700;                          // km
+  const flyGroup = livingStar(R_SUN, 0xfff0e0, 26);
+  flyGroup.visible = false;
+  const flyStar = addBody("✦", { x: 2e17, y: 0, z: 0 }, flyGroup, 0.00002);
+  flyStar.kind = "star"; flyStar.labelMax = 6e7; flyStar.adhoc = true;
+  if (flyStar.dot) flyStar.dot.visible = false;
+  const STAR_R_SUN: Record<string, number> = { O: 8, B: 4, A: 1.8, F: 1.4, G: 1.0, K: 0.8, M: 0.45, L: 0.12, T: 0.1 };
+  function estStarRadiusKm(spect: string): number {
+    const s = (spect || "").trim(), c = s.charAt(0).toUpperCase();
+    let r = STAR_R_SUN[c] ?? 1.0;
+    if (c === "D" || /VII/.test(s)) r = 0.013;            // white dwarf
+    else if (/IV/.test(s)) r *= 2.4;                       // subgiant
+    else if (/III/.test(s)) r = (STAR_R_SUN[c] ?? 1) * 18; // giant
+    else if (/II/.test(s)) r = (STAR_R_SUN[c] ?? 1) * 45;  // bright giant
+    else if (/Ia|Iab|Ib/.test(s)) r = (STAR_R_SUN[c] ?? 1) * 110;  // supergiant
+    return Math.max(0.01, r) * R_SUN;
+  }
+  function skinFlyStar(col: number, radiusKm: number, name: string, line: string) {
+    const c = new THREE.Color(col), hot = c.clone().lerp(new THREE.Color(0xffffff), 0.55);
+    for (const m of flyGroup.userData["lodMats"] as THREE.ShaderMaterial[]) {
+      (m.uniforms["uCol"]!.value as THREE.Color).copy(c);
+      (m.uniforms["uHot"]!.value as THREE.Color).copy(hot);
+    }
+    ((flyGroup.userData["halo"] as THREE.Sprite).material as THREE.SpriteMaterial).color.copy(c);
+    flyGroup.scale.setScalar(radiusKm / R_SUN);
+    flyGroup.userData["starR"] = radiusKm;
+    flyGroup.visible = true;
+    flyStar.radius = radiusKm; flyStar.minD = radiusKm * 1.6;
+    flyStar.name = name; flyStar.line = line; flyStar.label.textContent = name;
+  }
+  let heroByCloudIdx: Map<number, string> | null = null;
+
   // shared with the picker so any of the 108k stars can be studied (positions
   // and metadata are index-aligned, built from the same catalogue pass)
   let bubblePos: Float32Array | null = null;
+  let bubbleCol: Uint8Array | null = null;
   let starMeta: DataView | null = null;
   let starJson: { spect: string[]; con: string[]; names: string[] } | null = null;
   let starN = 0;
@@ -1869,7 +1906,27 @@ void main(){
     fetch("/stars/bubble_meta.json").then(r => r.json()),
   ]).then(([pb, cb, mb, mj]) => {
     const positions = new Float32Array(pb), colU8 = new Uint8Array(cb);
-    bubblePos = positions; starMeta = new DataView(mb as ArrayBuffer); starJson = mj as typeof starJson; starN = positions.length / 3;
+    bubblePos = positions; bubbleCol = colU8; starMeta = new DataView(mb as ArrayBuffer); starJson = mj as typeof starJson; starN = positions.length / 3;
+    // map each detailed hero star to its catalogue point, so tapping that point
+    // flies to the real body (its true surface) rather than a generic fly-star
+    heroByCloudIdx = new Map();
+    for (const b of bodies) {
+      if (b.kind !== "star" || b.adhoc || b.name === "Sagittarius A*" || b.name === "Sun") continue;
+      const bl = Math.hypot(b.pos.x, b.pos.y, b.pos.z); if (bl < 1) continue;
+      const bx = b.pos.x / bl, by = b.pos.y / bl, bz = b.pos.z / bl;
+      // a hero and its catalogue twin share a DIRECTION (same RA/Dec) even when
+      // the two catalogues disagree on distance — so match the brightest cloud
+      // star within ~0.6° of the hero's line of sight, not the nearest in 3D.
+      let bi = -1, bestMag = 99;
+      for (let i = 0; i < starN; i++) {
+        const px = positions[i * 3]!, py = positions[i * 3 + 1]!, pz = positions[i * 3 + 2]!;
+        const pl = Math.hypot(px, py, pz) || 1;
+        if ((px * bx + py * by + pz * bz) / pl < 0.99994) continue;     // outside the cone
+        const mag = starMeta!.getInt16(i * 16 + 4, true) / 100;
+        if (mag < bestMag) { bestMag = mag; bi = i; }
+      }
+      if (bi >= 0) heroByCloudIdx.set(bi, b.name);
+    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const ib = new THREE.InterleavedBuffer(colU8, 4);
@@ -1919,7 +1976,10 @@ void main(){
 
   function focusBody(n: string, click = false) {
     const b = bodies.find(x => x.name === n);
-    if (!b || b === focus) return;
+    if (b) focusOn(b, click);
+  }
+  function focusOn(b: Body, click = false) {
+    if (b === focus && !b.adhoc) return;        // re-tap of a fixed body: ignore; the fly-star always re-targets
     prevFocus = focus; focus = b; focusBlend = 0;
     tgtDist = Math.max(b.radius * (b.arriveK ?? 5), b.minD * 2);
     // arrive on the DAY side: come in from the Sun's direction (offset a
@@ -1997,7 +2057,7 @@ void main(){
     { label: "The wanderers", sub: "comets, drifting in", match: b => b.name.includes("Comet") || b.name.includes("Bopp") },
     { label: "TRAPPIST-1", sub: "a second sun, seven worlds", match: b => b.system === "TRAPPIST-1", systems: true },
     { label: "Exoplanet systems", sub: "worlds around other suns", match: b => b.kind === "star" && !!b.foreign && b.system !== "TRAPPIST-1", systems: true, sort: "dist" },
-    { label: "The stars", sub: "the solar neighbourhood", match: b => b.kind === "star" && !b.foreign && b.name !== "Sagittarius A*", sort: "dist" },
+    { label: "The stars", sub: "the solar neighbourhood", match: b => b.kind === "star" && !b.foreign && !b.adhoc && b.name !== "Sagittarius A*", sort: "dist" },
     { label: "The galaxy", sub: "the heart of the Milky Way", match: b => b.name === "Sagittarius A*" },
   ];
   type NavView = { kind: "root" } | { kind: "cat"; i: number } | { kind: "sys"; star: string; from: number };
@@ -2033,7 +2093,7 @@ void main(){
   function renderConsole() {
     const q = conSearch.value.trim().toLowerCase();
     if (q) {                                   // search flattens across everything
-      const hits = bodies.filter(b => b.name.toLowerCase().includes(q)).sort((a, b) =>
+      const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) =>
         Math.hypot(a.pos.x - camKm.x, a.pos.y - camKm.y, a.pos.z - camKm.z) - Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
       conList.innerHTML = hits.slice(0, 80).map(b => itemRow(b, b.system && b.system !== b.name ? b.system : undefined)).join("") || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
       setHead("Search", null); wireRows(); return;
@@ -2386,7 +2446,25 @@ void main(){
       const score = dp + (mag + 2) * 1.4;          // a bright star a few px off beats a faint one dead-centre
       if (score < bestScore) { bestScore = score; best = i; }
     }
-    if (best >= 0) { try { playClick(); } catch (_e) { /* off */ } selectStar(best); }
+    if (best >= 0) {
+      try { playClick(); } catch (_e) { /* off */ }
+      const hero = heroByCloudIdx?.get(best);
+      if (hero) {
+        focusBody(hero, false);                  // tap a hero star → fly to its real, detailed body
+      } else {
+        // re-skin the fly-star to this catalogued sun and travel to it
+        const o = best * 16, ci = best * 4;
+        const spect = starJson!.spect[starMeta.getUint16(o + 10, true)] || "";
+        const distLy = starMeta.getUint16(o + 6, true) / 10;
+        const niv = starMeta.getUint16(o + 12, true), hipv = starMeta.getInt32(o, true);
+        const nm = niv !== 65535 ? starJson!.names[niv]! : (hipv ? `HIP ${hipv}` : "Unnamed star");
+        const col = (bubbleCol![ci]! << 16) | (bubbleCol![ci + 1]! << 8) | bubbleCol![ci + 2]!;
+        flyStar.pos.x = bubblePos[best * 3]!; flyStar.pos.y = bubblePos[best * 3 + 1]!; flyStar.pos.z = bubblePos[best * 3 + 2]!;
+        skinFlyStar(col, estStarRadiusKm(spect), nm, `${starClass(spect)} · ${distLy.toFixed(1)} light-years from home.`);
+        focusOn(flyStar, false);
+      }
+      selectStar(best);                          // the study sheet (generated, consistent) + the selection ring
+    }
   }
   // the selection ring rides with its star, at a constant apparent size, while the sheet is open
   onFrame(({ camKm }) => {
