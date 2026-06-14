@@ -556,7 +556,12 @@ export function mountAtlas(opts: Opts): () => void {
       logarithmicDepthBuffer: true, powerPreference: "high-performance",
     });
   } catch (_e) { return () => {}; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : 2));
+  // adaptive resolution: start at the device's sharpness ceiling and trade
+  // pixel density DOWN only when the GPU can't hold the frame — so a heavy
+  // display or a busy view stays buttery, and quality returns when there's room
+  const maxPR = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.75);
+  let curPR = maxPR;
+  renderer.setPixelRatio(curPR);
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -567,8 +572,26 @@ export function mountAtlas(opts: Opts): () => void {
   const sunLight = new THREE.PointLight(0xfff2dc, 2.6, 0, 0);
   scene.add(sunLight);
 
-  const tex = new THREE.TextureLoader();
-  const T = (f: string) => { const t = tex.load(`/textures/${f}`); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  // Textures decode OFF the main thread via createImageBitmap, so a heavy map
+  // streaming in mid-flight can never freeze a frame — the synchronous JPEG
+  // decode was the cause of the big stutters. The bitmap is pre-flipped (WebGL
+  // ignores flipY on ImageBitmap) and non-premultiplied to match the renderer.
+  // The texture pops in when ready, exactly as before, just without the stall.
+  const texLoader = new THREE.TextureLoader();
+  const T = (f: string): THREE.Texture => {
+    const t = new THREE.Texture();
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.flipY = false;
+    if (typeof createImageBitmap === "function") {
+      fetch(`/textures/${f}`)
+        .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+        .then(b => createImageBitmap(b, { imageOrientation: "flipY", premultiplyAlpha: "none" }))
+        .then(bm => { t.image = bm; t.needsUpdate = true; })
+        .catch(() => { /* a missing texture simply stays blank */ });
+      return t;
+    }
+    // ancient fallback: the classic main-thread loader
+    const tl = texLoader.load(`/textures/${f}`); tl.colorSpace = THREE.SRGBColorSpace; tl.anisotropy = 4; return tl;
+  };
 
   /* ---------- the engine core ----------
      Two registries make the Atlas extensible: `bodies` (everything the
@@ -2084,9 +2107,24 @@ export function mountAtlas(opts: Opts): () => void {
     if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
   });
 
+  const ftWin: number[] = [];                  // rolling frame-time window for the resolution governor
+  let prTick = 0;
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
+
+    // resolution governor: every ~60 frames, judge the MEDIAN frame time (robust
+    // to one-off load hitches) and nudge pixel density to hold ~60fps. The
+    // deadband is wide (a steady 60fps sits comfortably inside it) so the
+    // governor itself never thrashes the framebuffer — it only acts on a
+    // genuinely slow GPU, or reclaims sharpness when there's real headroom.
+    ftWin.push(dt); if (ftWin.length > 60) ftWin.shift();
+    if (++prTick >= 60 && ftWin.length >= 50) {
+      prTick = 0;
+      const s = [...ftWin].sort((a, b) => a - b), med = s[s.length >> 1]!;
+      if (med > 0.022 && curPR > 0.6) { curPR = Math.max(0.6, curPR - 0.2); renderer.setPixelRatio(curPR); resize(); }
+      else if (med < 0.012 && curPR < maxPR) { curPR = Math.min(maxPR, curPR + 0.15); renderer.setPixelRatio(curPR); resize(); }
+    }
 
     // the stars breathe — granulation, plage and prominences all animate
     for (const m of starMats) (m.uniforms["uTime"] as { value: number }).value = nowMs * 0.001;
