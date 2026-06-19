@@ -2026,14 +2026,37 @@ void main(){
   // the ground: a random night-landscape dome. Sky half is transparent (the real
   // stars show through); the opaque ground is drawn over whatever lies below the
   // horizon (depthTest off → it always wins beneath the skyline).
-  const PANOS = ["mountains", "forest", "desert", "city", "plains"];
-  const domeMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false, opacity: 0 });
+  // real CC0 night panoramas (Poly Haven) — the ground is kept, the photo's sky
+  // is faded away in-shader so the visitor's true real-time stars show above it
+  const PANOS = ["moonless_golf", "kloppenheim_02", "dikhololo_night"];
+  const domeUniforms = { map: { value: T(`panorama/${PANOS[0]}.jpg`) }, uFade: { value: 0 } };
+  const domeMat = new THREE.ShaderMaterial({
+    uniforms: domeUniforms, side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false,
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform sampler2D map; uniform float uFade; varying vec2 vUv;
+      void main(){
+        vec4 c = texture2D(map, vUv);
+        float ground = 1.0 - smoothstep(0.52, 0.63, vUv.y);   // keep ground, dissolve the sky into the real stars
+        float a = ground * uFade;
+        if (a < 0.004) discard;
+        gl_FragColor = vec4(c.rgb, a);
+      }`,
+  });
   const domeMesh = new THREE.Mesh(new THREE.SphereGeometry(5e7, 64, 40), domeMat);
   domeMesh.renderOrder = 3; domeMesh.frustumCulled = false; domeMesh.visible = false;
   scene.add(domeMesh);
   const _basis = new THREE.Matrix4();
-  function pickPano(): void { domeMat.map = T(`panorama/pano-${PANOS[(Math.random() * PANOS.length) | 0]}.png`); domeMat.needsUpdate = true; }
+  function pickPano(): void { domeUniforms.map.value = T(`panorama/${PANOS[(Math.random() * PANOS.length) | 0]}.jpg`); }
   pickPano();
+
+  // the liquid-jewel disk the visitor stands on — a glowing glass platform at
+  // the feet, hiding the panorama's nadir and reading as a Celestium artefact
+  const diskMat = new THREE.MeshBasicMaterial({ map: T("panorama/jewel-disk.png"), transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, opacity: 0, blending: THREE.NormalBlending });
+  const diskMesh = new THREE.Mesh(new THREE.CircleGeometry(130, 96), diskMat);
+  diskMesh.renderOrder = 4; diskMesh.frustumCulled = false; diskMesh.visible = false;
+  scene.add(diskMesh);
+  const _up0 = new THREE.Vector3(0, 0, 1);
+  const NAKED_EYE = new Set(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]);
 
   // liquid-jewel tags (cardinals + constellation names) live in the labels layer
   const stageEl = (canvas.parentElement ?? canvas) as HTMLElement;
@@ -2089,8 +2112,9 @@ void main(){
     fadeThen(() => {
       earthView = true;
       focusOn(earth, false);
-      tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.62;          // look up toward the south-ish sky
-      domeMesh.visible = true;
+      tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.16;          // a natural standing gaze: landscape, horizon and sky together
+      domeUniforms.uFade.value = 0;
+      domeMesh.visible = true; diskMesh.visible = true;
       skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
       requestAnimationFrame(() => { skyHud.classList.add("in"); leaveBtn.classList.add("in"); });
       try { playClick(); } catch { /* off */ }
@@ -2102,7 +2126,7 @@ void main(){
     skyHud.classList.remove("in"); leaveBtn.classList.remove("in");
     fadeThen(() => {
       earthView = false;
-      domeMesh.visible = false; domeMat.opacity = 0;
+      domeMesh.visible = false; diskMesh.visible = false; domeUniforms.uFade.value = 0; diskMat.opacity = 0;
       skyHud.hidden = true; leaveBtn.hidden = true;
       for (const c of cardinals) c.el.style.opacity = "0";
       if (conTags) for (const t of conTags) t.el.style.opacity = "0";
@@ -2134,7 +2158,11 @@ void main(){
     computeHorizon();
     cardinals[2]!.v.copy(north).negate(); cardinals[3]!.v.copy(east).negate();   // S, W
     _basis.makeBasis(east, zenith, north); domeMesh.quaternion.setFromRotationMatrix(_basis);
-    domeMat.opacity = Math.min(1, domeMat.opacity + 0.04);
+    domeUniforms.uFade.value = Math.min(1, domeUniforms.uFade.value + 0.035);
+    // the jewel disk lies flat at the visitor's feet, just below eye level
+    diskMesh.quaternion.setFromUnitVectors(_up0, zenith);
+    diskMesh.position.set(-zenith.x * 30, -zenith.y * 30, -zenith.z * 30);
+    diskMat.opacity = Math.min(1, diskMat.opacity + 0.03);
 
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const place = (dir: THREE.Vector3, el: HTMLElement, minAlt: number, base: number): void => {
@@ -2387,13 +2415,13 @@ void main(){
     outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
-    orbitGroup.visible = orbitMat.opacity > 0.004 && distKm < 2e10;
+    orbitGroup.visible = !earthView && orbitMat.opacity > 0.004 && distKm < 2e10;
     // the belts + Oort belong to the Sun: fade the Oort shell out as you leave
     // the neighbourhood (so it never becomes a ball hanging at the Sun from
     // another star), and drop the whole outer layer once you're truly away.
     const sunDist = Math.hypot(camKm.x, camKm.y, camKm.z);
     if (oortMat) oortMat.opacity = 0.55 * Math.min(1, Math.max(0, (2.8e13 - sunDist) / 1.3e13));
-    outerGroup.visible = distKm > 4e7 && sunDist < 3e13;
+    outerGroup.visible = !earthView && distKm > 4e7 && sunDist < 3e13;
   });
 
   // the galaxy emerges as you rise above the neighbourhood; the camera-glued
@@ -2523,6 +2551,13 @@ void main(){
         if (lod) { const show = sr / ds > 0.0012; if (lod[0]!.visible !== show) { lod[0]!.visible = show; lod[1]!.visible = show; } }
       }
       if (b.dot) {
+        // standing on Earth: only the naked-eye wanderers belong in the sky —
+        // no exoplanets, no spacecraft, no asteroids, and nothing below the horizon
+        if (earthView) {
+          const mat = b.dot.material as THREE.SpriteMaterial;
+          const up = ((b.pos.x - camKm.x) * zenith.x + (b.pos.y - camKm.y) * zenith.y + (b.pos.z - camKm.z) * zenith.z);
+          if (!NAKED_EYE.has(b.name) || up < 0) { mat.opacity = 0; continue; }
+        }
         // hold every world at a minimum apparent size; hand over to the real
         // disk as you get close enough for it to be visibly round
         const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
@@ -2560,6 +2595,11 @@ void main(){
     // distant catalogue stars hush so the system you're visiting reads cleanly
     const inSystem = sunD < 2e10 || trapD < 8e9;
     for (const b of bodies) {
+      // in the planetarium only the naked-eye wanderers, above the horizon, are named
+      if (earthView) {
+        const up = (b.pos.x - camKm.x) * zenith.x + (b.pos.y - camKm.y) * zenith.y + (b.pos.z - camKm.z) * zenith.z;
+        if (!NAKED_EYE.has(b.name) || up < 0) { b.label.style.opacity = "0"; b.label.style.pointerEvents = "none"; continue; }
+      }
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
       v.project(camera);
