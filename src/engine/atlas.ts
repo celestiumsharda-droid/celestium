@@ -650,6 +650,7 @@ export function mountAtlas(opts: Opts): () => void {
   type Vec3 = { x: number; y: number; z: number };
   interface WorldDef {
     name: string; radiusKm: number; map: string; normal?: string;
+    roughMap?: string; specMap?: string; clouds?: string; cloudOpacity?: number;
     segments?: number; tiltDeg?: number; spin?: number; roughness?: number;
     orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; incDeg?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
     fixedPos?: Vec3;
@@ -661,8 +662,22 @@ export function mountAtlas(opts: Opts): () => void {
     const seg = def.segments ?? segMain;
     const mat = new THREE.MeshStandardMaterial({ map: T(def.map), roughness: def.roughness ?? 0.92, metalness: 0 });
     if (def.normal) { const nm = T(def.normal); nm.colorSpace = THREE.NoColorSpace; mat.normalMap = nm; mat.normalScale = new THREE.Vector2(1.1, 1.1); }
+    // PBR surface detail from the full texture pack: a roughness map (smooth on
+    // ice/water → a wet glint under the star) and a faint specular→metalness
+    // map (capped low so water sheens but land stays dielectric).
+    if (def.roughMap) { const rm = T(def.roughMap); rm.colorSpace = THREE.NoColorSpace; mat.roughnessMap = rm; mat.roughness = 1; }
+    if (def.specMap)  { const sm = T(def.specMap);  sm.colorSpace = THREE.NoColorSpace; mat.metalnessMap = sm; mat.metalness = 0.2; }
     const m = new THREE.Mesh(new THREE.SphereGeometry(def.radiusKm, seg, Math.max(8, seg / 2)), mat);
     if (def.tiltDeg) m.rotation.z = def.tiltDeg * D2R;
+    // a thin drifting cloud shell (the loop at the bottom rotates userData.clouds)
+    if (def.clouds) {
+      const cm = new THREE.Mesh(
+        new THREE.SphereGeometry(def.radiusKm * 1.018, seg, Math.max(8, seg / 2)),
+        new THREE.MeshPhongMaterial({ map: T(def.clouds), transparent: true, opacity: def.cloudOpacity ?? 0.9, depthWrite: false }),
+      );
+      m.add(cm);
+      (m as THREE.Mesh & { userData: { clouds?: THREE.Mesh } }).userData["clouds"] = cm;
+    }
     const b = addBody(def.name, def.fixedPos ?? { x: 0, y: 0, z: 0 }, m, def.spin ?? 0.00018);
     b.radius = def.radiusKm;
     b.minD = def.radiusKm * (def.minDk ?? 1.4);
@@ -1090,6 +1105,8 @@ export function mountAtlas(opts: Opts): () => void {
       defineWorld({
         name: `TRAPPIST-1${k}`, radiusKm: rE * ER,
         map: `trappist/${k}.jpg`, normal: `trappist/${k}_n.jpg`,
+        roughMap: `trappist/${k}_r.jpg`, specMap: `trappist/${k}_s.jpg`,
+        clouds: `trappist/${k}_c.png`, cloudOpacity: 0.85,
         segments: 48, tiltDeg: 2.9, minDk: 3, dotK: 0.006, labelMax: 6e7, foreign: true, system: "TRAPPIST-1",
         line: `${kind} around TRAPPIST-1 · ${sub}.`,
         orbit: { center: () => TR_C, radiusKm: au * AU, periodDays: per, ringGroup: trOrbitGroup, ringMat: trOrbitMat },
