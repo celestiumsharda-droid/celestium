@@ -1998,8 +1998,156 @@ void main(){
   onFrame(({ camKm }) => {
     if (!conLines) return;
     conLines.position.set(-camKm.x, -camKm.y, -camKm.z);
-    conMat.opacity = earthView ? 0.5 : 0;
+    conMat.opacity = earthView ? 0.42 : 0;
     conLines.visible = earthView;
+  });
+
+  /* ===================== THE EARTH PLANETARIUM =====================
+     Stand on the real Earth, at the visitor's own location, and look up at
+     tonight's actual sky. The observer's zenith and the cardinal directions are
+     derived from Earth's already-rigorous orientation (GMST + obliquity), so the
+     horizon, the slowly-turning stars and the constellations are all correct for
+     THIS place and THIS instant. A random night-landscape dome rings the horizon;
+     N/E/S/W and the constellation names float as liquid-jewel tags. */
+  let obsLat = 28.61, obsLon = 77.21, obsName = "a default sky", obsExact = false;
+  const zenith = new THREE.Vector3(0, 1, 0), north = new THREE.Vector3(0, 0, 1), east = new THREE.Vector3(1, 0, 0);
+  const lookDir = new THREE.Vector3(0, 0, 1);
+  const _zb = new THREE.Vector3(), _ncp = new THREE.Vector3();
+  function computeHorizon(): void {
+    if (!earthBody) return;
+    const phi = obsLat * D2R, lam = obsLon * D2R, cphi = Math.cos(phi);
+    _zb.set(cphi * Math.cos(lam), Math.sin(phi), -cphi * Math.sin(lam));     // zenith in Earth's body frame
+    zenith.copy(_zb).applyQuaternion(earthBody.mesh.quaternion).normalize(); // → world
+    _ncp.set(0, 1, 0).applyQuaternion(earthBody.mesh.quaternion).normalize();// north celestial pole
+    north.copy(_ncp).addScaledVector(zenith, -_ncp.dot(zenith)).normalize(); // true north along the horizon
+    east.crossVectors(north, zenith).normalize();                            // E = N × up
+  }
+
+  // the ground: a random night-landscape dome. Sky half is transparent (the real
+  // stars show through); the opaque ground is drawn over whatever lies below the
+  // horizon (depthTest off → it always wins beneath the skyline).
+  const PANOS = ["mountains", "forest", "desert", "city", "plains"];
+  const domeMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false, opacity: 0 });
+  const domeMesh = new THREE.Mesh(new THREE.SphereGeometry(5e7, 64, 40), domeMat);
+  domeMesh.renderOrder = 3; domeMesh.frustumCulled = false; domeMesh.visible = false;
+  scene.add(domeMesh);
+  const _basis = new THREE.Matrix4();
+  function pickPano(): void { domeMat.map = T(`panorama/pano-${PANOS[(Math.random() * PANOS.length) | 0]}.png`); domeMat.needsUpdate = true; }
+  pickPano();
+
+  // liquid-jewel tags (cardinals + constellation names) live in the labels layer
+  const stageEl = (canvas.parentElement ?? canvas) as HTMLElement;
+  function tag(cls: string, txt: string): HTMLElement { const e = document.createElement("div"); e.className = cls; e.textContent = txt; e.style.opacity = "0"; labels.appendChild(e); return e; }
+  const cardinals: { v: THREE.Vector3; el: HTMLElement }[] = [
+    { v: north, el: tag("at-card", "N") }, { v: east, el: tag("at-card", "E") },
+    { v: new THREE.Vector3(), el: tag("at-card", "S") }, { v: new THREE.Vector3(), el: tag("at-card", "W") },
+  ];
+  let conTags: { dir: THREE.Vector3; el: HTMLElement }[] | null = null;
+  function buildConLabels(): void {
+    if (conTags || !bubblePos || !starMeta || !starJson) return;
+    const acc: { x: number; y: number; z: number; n: number }[] = Array.from({ length: 88 }, () => ({ x: 0, y: 0, z: 0, n: 0 }));
+    for (let i = 0; i < starN; i++) {
+      const ci = starMeta.getUint8(i * 16 + 8); const a = acc[ci]!;
+      const px = bubblePos[i * 3]!, py = bubblePos[i * 3 + 1]!, pz = bubblePos[i * 3 + 2]!;
+      const l = Math.hypot(px, py, pz) || 1; a.x += px / l; a.y += py / l; a.z += pz / l; a.n++;
+    }
+    conTags = [];
+    for (let c = 0; c < 88; c++) {
+      const a = acc[c]!; if (a.n < 6) continue;
+      conTags.push({ dir: new THREE.Vector3(a.x, a.y, a.z).normalize(), el: tag("at-con-label", starJson.con[c] || "") });
+    }
+  }
+
+  // the planetarium HUD + the two doorways (step outside / back to space)
+  const skyHud = document.createElement("div"); skyHud.className = "at-sky"; skyHud.hidden = true;
+  skyHud.innerHTML = `<p class="at-sky-k">Your sky · tonight</p><h2 class="at-sky-place" id="at-sky-place">—</h2><p class="at-sky-time mono" id="at-sky-time">—</p><p class="at-sky-hint">Drag to look around · tap a star to study it</p>`;
+  stageEl.appendChild(skyHud);
+  const skyPlace = skyHud.querySelector<HTMLElement>("#at-sky-place")!, skyTime = skyHud.querySelector<HTMLElement>("#at-sky-time")!;
+  const skyHint = skyHud.querySelector<HTMLElement>(".at-sky-hint")!;
+  const groundBtn = document.createElement("button"); groundBtn.type = "button"; groundBtn.className = "at-ground"; groundBtn.innerHTML = `Step outside &mdash; tonight's sky&nbsp;&nbsp;&#8595;`; groundBtn.style.display = "none"; stageEl.appendChild(groundBtn);
+  const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "at-leave"; leaveBtn.innerHTML = `&#8593;&nbsp;&nbsp;Back to space`; leaveBtn.hidden = true; stageEl.appendChild(leaveBtn);
+  const fade = document.createElement("div"); fade.className = "at-fade"; stageEl.appendChild(fade);
+  function fadeThen(cb: () => void): void { fade.classList.add("on"); setTimeout(() => { cb(); fade.classList.remove("on"); }, 620); }
+
+  async function resolvePlace(): Promise<void> {
+    const ns = obsLat >= 0 ? "N" : "S", ew = obsLon >= 0 ? "E" : "W";
+    obsName = `${Math.abs(obsLat).toFixed(1)}°${ns}, ${Math.abs(obsLon).toFixed(1)}°${ew}`;
+    try {
+      const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${obsLat}&longitude=${obsLon}&localityLanguage=en`);
+      if (r.ok) { const j = await r.json() as { city?: string; locality?: string; principalSubdivision?: string; countryName?: string };
+        const place = [j.city || j.locality, j.principalSubdivision, j.countryName].filter(Boolean).slice(0, 2).join(", ");
+        if (place) obsName = place;
+      }
+    } catch { /* coordinates are a fine fallback */ }
+    skyPlace.textContent = obsName;
+    skyHint.textContent = obsExact ? "Drag to look around · tap a star to study it" : "A default sky — allow location for your own";
+  }
+
+  function enterPlanetarium(): void {
+    if (earthView) return;
+    buildConLabels(); pickPano();
+    fadeThen(() => {
+      earthView = true;
+      focusOn(earth, false);
+      tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.62;          // look up toward the south-ish sky
+      domeMesh.visible = true;
+      skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
+      requestAnimationFrame(() => { skyHud.classList.add("in"); leaveBtn.classList.add("in"); });
+      try { playClick(); } catch { /* off */ }
+    });
+    void resolvePlace();
+  }
+  function exitPlanetarium(): void {
+    if (!earthView) return;
+    skyHud.classList.remove("in"); leaveBtn.classList.remove("in");
+    fadeThen(() => {
+      earthView = false;
+      domeMesh.visible = false; domeMat.opacity = 0;
+      skyHud.hidden = true; leaveBtn.hidden = true;
+      for (const c of cardinals) c.el.style.opacity = "0";
+      if (conTags) for (const t of conTags) t.el.style.opacity = "0";
+      tgtDist = earth.radius * 5; tgtPitch = 0.22;
+      focusOn(earth, false);
+      try { playClick(); } catch { /* off */ }
+    });
+  }
+  groundBtn.addEventListener("click", () => {
+    if (navigator.geolocation) {
+      groundBtn.classList.add("loading");
+      navigator.geolocation.getCurrentPosition(
+        pos => { obsLat = pos.coords.latitude; obsLon = pos.coords.longitude; obsExact = true; groundBtn.classList.remove("loading"); enterPlanetarium(); },
+        () => { obsExact = false; groundBtn.classList.remove("loading"); enterPlanetarium(); },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 6e5 },
+      );
+    } else enterPlanetarium();
+  });
+  leaveBtn.addEventListener("click", exitPlanetarium);
+  addEventListener("keydown", e => { if (e.key === "Escape" && earthView) exitPlanetarium(); });
+
+  // per-frame: orient the dome to the live horizon, place the tags, run the HUD clock
+  const _p = new THREE.Vector3();
+  let lastClock = "";
+  onFrame(() => {
+    // the doorway shows whenever you're resting at Earth and not already inside
+    groundBtn.style.display = (!earthView && focus === earth) ? "" : "none";
+    if (!earthView) return;
+    computeHorizon();
+    cardinals[2]!.v.copy(north).negate(); cardinals[3]!.v.copy(east).negate();   // S, W
+    _basis.makeBasis(east, zenith, north); domeMesh.quaternion.setFromRotationMatrix(_basis);
+    domeMat.opacity = Math.min(1, domeMat.opacity + 0.04);
+
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const place = (dir: THREE.Vector3, el: HTMLElement, minAlt: number, base: number): void => {
+      const alt = dir.dot(zenith);
+      _p.copy(dir).multiplyScalar(1e9); _p.project(camera);
+      const sx = (_p.x * 0.5 + 0.5) * w, sy = (-_p.y * 0.5 + 0.5) * h;
+      if (alt < minAlt || _p.z > 1 || sx < -60 || sx > w + 60 || sy < 60 || sy > h + 30) { el.style.opacity = "0"; el.style.pointerEvents = "none"; }
+      else { el.style.opacity = String(base); el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`; }
+    };
+    for (const c of cardinals) place(c.v, c.el, -0.18, 0.92);
+    if (conTags) for (const t of conTags) place(t.dir, t.el, 0.12, 0.62);
+
+    if (skyTime) { const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); if (t !== lastClock) { skyTime.textContent = `${t} · local`; lastClock = t; } }
   });
 
   /* ---------- the floating-origin camera ---------- */
@@ -2335,14 +2483,28 @@ void main(){
     const fy = prevFocus.pos.y + (focus.pos.y - prevFocus.pos.y) * s;
     const fz = prevFocus.pos.z + (focus.pos.z - prevFocus.pos.z) * s;
 
-    const cp = Math.cos(pitch), sp = Math.sin(pitch);
-    camKm.x = fx + distKm * cp * Math.sin(yaw);
-    camKm.y = fy + distKm * sp;
-    camKm.z = fz + distKm * cp * Math.cos(yaw);
-
-    // floating origin: camera sits at 0; the world is placed relative to it
-    camera.position.set(0, 0, 0);
-    camera.lookAt(fx - camKm.x, fy - camKm.y, fz - camKm.z);
+    if (earthView && earthBody) {
+      // standing on the surface: the camera sits at the observer's feet and is
+      // free to look around the real sky (yaw = azimuth, pitch = altitude)
+      computeHorizon();
+      const ca = Math.cos(pitch), saa = Math.sin(pitch);
+      lookDir.copy(north).multiplyScalar(ca * Math.cos(yaw)).addScaledVector(east, ca * Math.sin(yaw)).addScaledVector(zenith, saa).normalize();
+      camKm.x = earthBody.pos.x + zenith.x * earthBody.radius;
+      camKm.y = earthBody.pos.y + zenith.y * earthBody.radius;
+      camKm.z = earthBody.pos.z + zenith.z * earthBody.radius;
+      camera.position.set(0, 0, 0);
+      camera.up.set(zenith.x, zenith.y, zenith.z);
+      camera.lookAt(lookDir.x, lookDir.y, lookDir.z);
+    } else {
+      const cp = Math.cos(pitch), sp = Math.sin(pitch);
+      camKm.x = fx + distKm * cp * Math.sin(yaw);
+      camKm.y = fy + distKm * sp;
+      camKm.z = fz + distKm * cp * Math.cos(yaw);
+      // floating origin: camera sits at 0; the world is placed relative to it
+      camera.position.set(0, 0, 0);
+      camera.up.set(0, 1, 0);
+      camera.lookAt(fx - camKm.x, fy - camKm.y, fz - camKm.z);
+    }
     for (const b of bodies) {
       b.mesh.position.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       if (b.spin) b.mesh.rotation.y += b.spin * dt * 60;
