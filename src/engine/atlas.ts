@@ -2023,40 +2023,135 @@ void main(){
     east.crossVectors(north, zenith).normalize();                            // E = N × up
   }
 
-  // the ground: a random night-landscape dome. Sky half is transparent (the real
-  // stars show through); the opaque ground is drawn over whatever lies below the
-  // horizon (depthTest off → it always wins beneath the skyline).
-  // real CC0 night panoramas (Poly Haven) — the ground is kept, the photo's sky
-  // is faded away in-shader so the visitor's true real-time stars show above it
-  const PANOS = ["moonless_golf", "kloppenheim_02", "dikhololo_night"];
-  const domeUniforms = { map: { value: T(`panorama/${PANOS[0]}.jpg`) }, uFade: { value: 0 } };
-  const domeMat = new THREE.ShaderMaterial({
-    uniforms: domeUniforms, side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false,
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `uniform sampler2D map; uniform float uFade; varying vec2 vUv;
-      void main(){
-        vec4 c = texture2D(map, vUv);
-        float ground = 1.0 - smoothstep(0.52, 0.63, vUv.y);   // keep ground, dissolve the sky into the real stars
-        float a = ground * uFade;
-        if (a < 0.004) discard;
-        gl_FragColor = vec4(c.rgb, a);
-      }`,
-  });
-  const domeMesh = new THREE.Mesh(new THREE.SphereGeometry(5e7, 64, 40), domeMat);
-  domeMesh.renderOrder = 3; domeMesh.frustumCulled = false; domeMesh.visible = false;
-  scene.add(domeMesh);
-  const _basis = new THREE.Matrix4();
-  function pickPano(): void { domeUniforms.map.value = T(`panorama/${PANOS[(Math.random() * PANOS.length) | 0]}.jpg`); }
-  pickPano();
-
-  // the liquid-jewel disk the visitor stands on — a glowing glass platform at
-  // the feet, hiding the panorama's nadir and reading as a Celestium artefact
-  const diskMat = new THREE.MeshBasicMaterial({ map: T("panorama/jewel-disk.png"), transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, opacity: 0, blending: THREE.NormalBlending });
-  const diskMesh = new THREE.Mesh(new THREE.CircleGeometry(130, 96), diskMat);
-  diskMesh.renderOrder = 4; diskMesh.frustumCulled = false; diskMesh.visible = false;
-  scene.add(diskMesh);
+  const _q0 = new THREE.Quaternion();
   const _up0 = new THREE.Vector3(0, 0, 1);
   const NAKED_EYE = new Set(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]);
+
+  // ---- the ocean: a real Gerstner-wave sea to the horizon, dark water lit by
+  // drifting bioluminescent plankton. The visitor stands EYE units above it. A
+  // polar grid is dense at the feet and sparse at the rim, so the near waves are
+  // crisp and the far water is flat (and float-safe) right out to the waterline.
+  const EYE = 2.2;
+  function buildOceanGeo(maxR: number, rings: number, sectors: number): THREE.BufferGeometry {
+    const pos: number[] = [0, 0, 0]; const idx: number[] = [];
+    for (let i = 1; i <= rings; i++) {
+      const r = Math.pow(i / rings, 3) * maxR;
+      for (let j = 0; j < sectors; j++) { const a = (j / sectors) * 6.2831853; pos.push(Math.cos(a) * r, Math.sin(a) * r, 0); }
+    }
+    for (let j = 0; j < sectors; j++) idx.push(0, 1 + j, 1 + ((j + 1) % sectors));
+    for (let i = 1; i < rings; i++) {
+      const s0 = 1 + (i - 1) * sectors, s1 = 1 + i * sectors;
+      for (let j = 0; j < sectors; j++) { const a = s0 + j, b = s0 + (j + 1) % sectors, c = s1 + j, d = s1 + (j + 1) % sectors; idx.push(a, c, b, b, c, d); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+    return g;
+  }
+  const OCEAN_VERT = `#include <common>
+    #include <logdepthbuf_pars_vertex>
+    uniform float uTime;
+    varying vec3 vPos; varying vec3 vN; varying float vR; varying float vCrest;
+    void wave(vec2 p, vec2 d, float L, float A, float Q, float spd, inout vec3 disp, inout vec3 dn, inout float crest){
+      float w = 6.2831853 / L; float ph = w*dot(d,p) + spd*uTime;
+      float c = cos(ph), s = sin(ph); float WA = w*A;
+      disp.x += Q*A*d.x*c; disp.y += Q*A*d.y*c; disp.z += A*s;
+      dn.x += d.x*WA*c; dn.y += d.y*WA*c; dn.z += Q*WA*s; crest += A*s;
+    }
+    void main(){
+      vec2 p = position.xy; float r = length(p);
+      float fall = 1.0 - smoothstep(110.0, 520.0, r);
+      vec3 disp = vec3(0.0), dn = vec3(0.0); float crest = 0.0;
+      wave(p, normalize(vec2( 1.0, 0.18)), 26.0, 0.42, 0.55, 0.85, disp, dn, crest);
+      wave(p, normalize(vec2( 0.7, 0.72)), 15.0, 0.26, 0.65, 1.05, disp, dn, crest);
+      wave(p, normalize(vec2(-0.5, 0.82)),  8.5, 0.16, 0.78, 1.40, disp, dn, crest);
+      wave(p, normalize(vec2( 0.2,-1.00)),  5.0, 0.10, 0.88, 1.85, disp, dn, crest);
+      wave(p, normalize(vec2(-0.9,-0.30)),  3.2, 0.06, 1.00, 2.35, disp, dn, crest);
+      vec3 pos2 = position + disp * fall;
+      vN = normalize(vec3(-dn.x*fall, -dn.y*fall, 1.0 - dn.z*fall));
+      vPos = pos2; vR = r; vCrest = crest;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos2, 1.0);
+      #include <logdepthbuf_vertex>
+    }`;
+  const OCEAN_FRAG = `#include <common>
+    #include <logdepthbuf_pars_fragment>
+    uniform float uTime; uniform vec3 uCam; uniform vec3 uMoon;
+    varying vec3 vPos; varying vec3 vN; varying float vR; varying float vCrest;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+    float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+      return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+    float fbm(vec2 p){ float v=0.0,a=0.5; for(int i=0;i<4;i++){ v+=a*vnoise(p); p*=2.03; a*=0.5; } return v; }
+    void main(){
+      #include <logdepthbuf_fragment>
+      vec3 N = normalize(vN);
+      vec3 V = normalize(uCam - vPos);
+      float ndv = max(dot(N,V), 0.0);
+      float fres = mix(0.03, 1.0, pow(1.0 - ndv, 5.0));
+      vec3 Rr = reflect(-V, N);
+      // reflected night sky: deep indigo overhead, a touch of glow near the waterline
+      vec3 reflCol = mix(vec3(0.08,0.12,0.22), vec3(0.012,0.02,0.05), smoothstep(0.0,0.45,clamp(Rr.z,0.0,1.0)));
+      vec3 base = vec3(0.004, 0.013, 0.024);               // deep dark sea
+      base += N.z * vec3(0.004, 0.011, 0.018);             // faint sky-dome ambient on up-faces
+
+      // moonlight glitter: a bright path toward the key light, sparkling on wavelets
+      vec3 H = normalize(V + uMoon);
+      float gl = pow(max(dot(N,H),0.0), 200.0);
+      gl *= 0.35 + 1.0*step(0.5, vnoise(vPos.xy*1.5 + uTime*0.3));
+      vec3 glitter = vec3(0.8,0.86,1.0) * gl * 1.7;
+
+      // foam on the steep crests
+      float crestN = vCrest;
+      float foam = smoothstep(0.55, 0.96, crestN) * (0.4 + 0.6*fbm(vPos.xy*0.8));
+
+      // BIOLUMINESCENCE — the hero, but selective: drifting plankton blooms that
+      // FLARE in the churn of the waves, glowing blue-green on otherwise dark water.
+      vec2 dp = vPos.xy*0.09 + vec2(uTime*0.026, -uTime*0.019);
+      float blooms = smoothstep(0.46, 0.86, fbm(dp)*1.1 + 0.25*fbm(dp*3.1 + 4.0));
+      float fine = smoothstep(0.62, 0.97, vnoise(vPos.xy*0.85 - uTime*0.14));  // sparkle grain
+      float agitate = smoothstep(0.18, 0.78, crestN) + foam*1.3;              // flares on wave faces/crests
+      float bio = blooms * (0.14 + 0.85*agitate) + 0.10*blooms*fine;
+      vec3 bioCol = vec3(0.07, 1.0, 0.64) * bio * 2.3;
+
+      float detail = 1.0 - smoothstep(150.0, 620.0, vR);
+      vec3 col = mix(base, reflCol, fres*0.9);
+      col += glitter;
+      col += bioCol * (0.35 + 0.65*detail);
+      col += vec3(0.8,0.95,1.0) * foam * 0.55 * detail;
+      col = mix(col, vec3(0.02,0.045,0.075), smoothstep(360.0, 1500.0, vR));  // deep water → glowing waterline
+      gl_FragColor = vec4(col, 1.0);
+    }`;
+  const oceanUniforms = { uTime: { value: 0 }, uCam: { value: new THREE.Vector3(0, 0, EYE) }, uMoon: { value: new THREE.Vector3(0.55, 0.22, 0.30).normalize() } };
+  const oceanMat = new THREE.ShaderMaterial({ uniforms: oceanUniforms, vertexShader: OCEAN_VERT, fragmentShader: OCEAN_FRAG, side: THREE.DoubleSide });
+  const oceanMesh = new THREE.Mesh(buildOceanGeo(2600, 150, 220), oceanMat);
+  oceanMesh.frustumCulled = false; oceanMesh.visible = false; oceanMesh.renderOrder = 0;
+  scene.add(oceanMesh);
+
+  // ---- the convex jewel lens the visitor stands on: a plano-convex glass disk
+  // floating on the sea. Real screen-space refraction (MeshPhysicalMaterial
+  // transmission) magnifies the water and stars beneath it; a gold rim torus
+  // gives it the Celestium jewel edge.
+  const LENS_R = 1.15, LENS_BULGE = 0.34;
+  function buildLensGeo(): THREE.BufferGeometry {
+    const seg = 120, rings = 40, pos: number[] = [0, 0, LENS_BULGE], idx: number[] = [];
+    for (let i = 1; i <= rings; i++) { const t = i / rings, r = t * LENS_R, z = LENS_BULGE * (1.0 - t * t);
+      for (let j = 0; j < seg; j++) { const a = (j / seg) * 6.2831853; pos.push(Math.cos(a) * r, Math.sin(a) * r, z); } }
+    for (let j = 0; j < seg; j++) idx.push(0, 1 + j, 1 + ((j + 1) % seg));
+    for (let i = 1; i < rings; i++) { const s0 = 1 + (i - 1) * seg, s1 = 1 + i * seg;
+      for (let j = 0; j < seg; j++) { const a = s0 + j, b = s0 + (j + 1) % seg, c = s1 + j, d = s1 + (j + 1) % seg; idx.push(a, c, b, b, c, d); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  const lensMat = new THREE.MeshPhysicalMaterial({
+    transmission: 1.0, thickness: 1.4, ior: 1.45, roughness: 0.06, metalness: 0.0,
+    transparent: true, color: new THREE.Color(0x0a1224), attenuationColor: new THREE.Color(0x2a6cff), attenuationDistance: 4.0,
+    clearcoat: 1.0, clearcoatRoughness: 0.05, side: THREE.DoubleSide,
+  });
+  const lensGroup = new THREE.Group();
+  const lensMesh = new THREE.Mesh(buildLensGeo(), lensMat);
+  const lensRim = new THREE.Mesh(new THREE.TorusGeometry(LENS_R, 0.022, 16, 140), new THREE.MeshBasicMaterial({ color: 0xf2e0ad, transparent: true, opacity: 0.85, depthTest: false }));
+  lensRim.renderOrder = 7;                                   // the rim always crowns the lens
+  lensGroup.add(lensMesh, lensRim);
+  lensGroup.renderOrder = 6; lensGroup.visible = false;
+  scene.add(lensGroup);
 
   // liquid-jewel tags (cardinals + constellation names) live in the labels layer
   const stageEl = (canvas.parentElement ?? canvas) as HTMLElement;
@@ -2108,13 +2203,13 @@ void main(){
 
   function enterPlanetarium(): void {
     if (earthView) return;
-    buildConLabels(); pickPano();
+    buildConLabels();
     fadeThen(() => {
       earthView = true;
       focusOn(earth, false);
-      tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.16;          // a natural standing gaze: landscape, horizon and sky together
-      domeUniforms.uFade.value = 0;
-      domeMesh.visible = true; diskMesh.visible = true;
+      tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.04;          // a natural standing gaze: the sea, the waterline and the sky
+      oceanMesh.visible = true; lensGroup.visible = true;
+      earth.mesh.visible = false;                            // we're standing on it — the sea takes its place
       skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
       requestAnimationFrame(() => { skyHud.classList.add("in"); leaveBtn.classList.add("in"); });
       try { playClick(); } catch { /* off */ }
@@ -2126,7 +2221,8 @@ void main(){
     skyHud.classList.remove("in"); leaveBtn.classList.remove("in");
     fadeThen(() => {
       earthView = false;
-      domeMesh.visible = false; diskMesh.visible = false; domeUniforms.uFade.value = 0; diskMat.opacity = 0;
+      oceanMesh.visible = false; lensGroup.visible = false;
+      earth.mesh.visible = true;
       skyHud.hidden = true; leaveBtn.hidden = true;
       for (const c of cardinals) c.el.style.opacity = "0";
       if (conTags) for (const t of conTags) t.el.style.opacity = "0";
@@ -2148,21 +2244,21 @@ void main(){
   leaveBtn.addEventListener("click", exitPlanetarium);
   addEventListener("keydown", e => { if (e.key === "Escape" && earthView) exitPlanetarium(); });
 
-  // per-frame: orient the dome to the live horizon, place the tags, run the HUD clock
+  // per-frame: orient the sea + lens to the live horizon, place the tags, run the HUD clock
   const _p = new THREE.Vector3();
   let lastClock = "";
-  onFrame(() => {
+  onFrame(({ nowMs }) => {
     // the doorway shows whenever you're resting at Earth and not already inside
     groundBtn.style.display = (!earthView && focus === earth) ? "" : "none";
     if (!earthView) return;
     computeHorizon();
     cardinals[2]!.v.copy(north).negate(); cardinals[3]!.v.copy(east).negate();   // S, W
-    _basis.makeBasis(east, zenith, north); domeMesh.quaternion.setFromRotationMatrix(_basis);
-    domeUniforms.uFade.value = Math.min(1, domeUniforms.uFade.value + 0.035);
-    // the jewel disk lies flat at the visitor's feet, just below eye level
-    diskMesh.quaternion.setFromUnitVectors(_up0, zenith);
-    diskMesh.position.set(-zenith.x * 30, -zenith.y * 30, -zenith.z * 30);
-    diskMat.opacity = Math.min(1, diskMat.opacity + 0.03);
+    // the sea lies flat on the local horizon, EYE below the camera; the lens
+    // floats on it at the visitor's feet. Both share the up-vector quaternion.
+    const qUp = _q0.setFromUnitVectors(_up0, zenith);
+    oceanMesh.quaternion.copy(qUp); oceanMesh.position.set(-zenith.x * EYE, -zenith.y * EYE, -zenith.z * EYE);
+    lensGroup.quaternion.copy(qUp); lensGroup.position.set(-zenith.x * (EYE - 0.15), -zenith.y * (EYE - 0.15), -zenith.z * (EYE - 0.15));
+    oceanUniforms.uTime.value = nowMs * 0.001;
 
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const place = (dir: THREE.Vector3, el: HTMLElement, minAlt: number, base: number): void => {
