@@ -1984,6 +1984,8 @@ void main(){
   // belong to ONE place: standing on Earth, looking up. In free flight they are
   // hidden (they only cluttered the view); the planetarium turns them on.
   let earthView = false;                          // true only while standing on Earth, looking up
+  let skyFocus: { dir: THREE.Vector3 } | null = null;   // a tapped star/planet, spotlit against a blacked-out sky
+  let skyDim = 0;                                  // 0 = full sky, 1 = everything but the focus faded to black
   let conLines: THREE.LineSegments | null = null;
   const conMat = new THREE.LineBasicMaterial({ color: 0x8198cc, transparent: true, opacity: 0, depthWrite: false });
   fetch("/stars/constellations.f32").then(r => r.arrayBuffer()).then(buf => {
@@ -1998,7 +2000,7 @@ void main(){
   onFrame(({ camKm }) => {
     if (!conLines) return;
     conLines.position.set(-camKm.x, -camKm.y, -camKm.z);
-    conMat.opacity = earthView ? 0.42 : 0;
+    conMat.opacity = earthView ? 0.42 * (1 - skyDim) : 0;   // constellations dissolve when a single object is spotlit
     conLines.visible = earthView;
   });
 
@@ -2026,6 +2028,43 @@ void main(){
   const _q0 = new THREE.Quaternion();
   const _up0 = new THREE.Vector3(0, 0, 1);
   const NAKED_EYE = new Set(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]);
+  const SPOT_TEX: Record<string, string> = { ...PLANET_TEX, Moon: "moon_4k.jpg" };
+  const mwMat = mw.material as THREE.MeshBasicMaterial;
+
+  // ---- the spotlight: tap a star or planet and the rest of the sky dissolves to
+  // black, leaving that one body glowing above the sea (and mirrored in it). A
+  // floating orb — the real planet's face, or a star's coloured light.
+  const FOCUS_D = 4.0e7;
+  const focusGrp = new THREE.Group();
+  const focusBall = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }));
+  const focusHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  focusGrp.add(focusHalo, focusBall); focusGrp.visible = false; focusGrp.renderOrder = 5; scene.add(focusGrp);
+  focusGrp.frustumCulled = false; focusBall.frustumCulled = false; focusHalo.frustumCulled = false;
+  const _fd = new THREE.Vector3();
+  function aimAt(dir: THREE.Vector3): void {
+    const alt = Math.asin(Math.max(-1, Math.min(1, dir.dot(zenith))));
+    let az = Math.atan2(dir.dot(east), dir.dot(north));
+    tgtPitch = Math.max(-0.05, Math.min(1.45, alt));
+    while (az - yaw > Math.PI) az -= 2 * Math.PI; while (az - yaw < -Math.PI) az += 2 * Math.PI;
+    tgtYaw = az;
+  }
+  function spotlight(dir: THREE.Vector3, color: number, tex: string | null): void {
+    skyFocus = { dir: dir.clone().normalize() };
+    aimAt(skyFocus.dir);
+    const m = focusBall.material as THREE.MeshBasicMaterial;
+    if (tex) { m.map = T(tex); m.color.set(0xffffff); } else { m.map = null; m.color.setHex(color); }
+    m.needsUpdate = true;
+    (focusHalo.material as THREE.SpriteMaterial).color.setHex(color);
+    focusGrp.visible = true;
+    try { playClick(); } catch { /* off */ }
+  }
+  function spotlightBody(b: Body): void {
+    _fd.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+    const tint = b.dot ? (b.dot.material as THREE.SpriteMaterial).color.getHex() : 0xffffff;
+    spotlight(_fd, tint, SPOT_TEX[b.name] ?? null);
+    fillSheet(b); sheet.classList.add("open"); sheet.removeAttribute("hidden");
+  }
+  function clearSpotlight(): void { skyFocus = null; sheet.classList.remove("open"); selStar = -1; }
 
   // ---- the ocean: a real Gerstner-wave sea to the horizon, dark water lit by
   // drifting bioluminescent plankton. The visitor stands on a glass platform that
@@ -2223,6 +2262,7 @@ void main(){
       tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.04;          // a natural standing gaze: the sea, the waterline and the sky
       oceanMesh.visible = true; lensGroup.visible = true;
       earth.mesh.visible = false;                            // we're standing on it — the sea takes its place
+      stageEl.classList.add("in-sky");                       // hide the orbit readout + travel hint
       skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
       requestAnimationFrame(() => { skyHud.classList.add("in"); leaveBtn.classList.add("in"); });
       try { playClick(); } catch { /* off */ }
@@ -2234,8 +2274,11 @@ void main(){
     skyHud.classList.remove("in"); leaveBtn.classList.remove("in");
     fadeThen(() => {
       earthView = false;
+      skyFocus = null; skyDim = 0; focusGrp.visible = false;
+      starUniforms.uLimit.value = STAR_LIMIT; mwMat.opacity = 1;
       oceanMesh.visible = false; lensGroup.visible = false;
       earth.mesh.visible = true;
+      stageEl.classList.remove("in-sky");
       skyHud.hidden = true; leaveBtn.hidden = true;
       for (const c of cardinals) c.el.style.opacity = "0";
       if (conTags) for (const t of conTags) t.el.style.opacity = "0";
@@ -2261,11 +2304,24 @@ void main(){
   const _p = new THREE.Vector3();
   let lastClock = "";
   let cubeTick = 0;
-  onFrame(({ nowMs }) => {
+  onFrame(({ nowMs, dt }) => {
     // the doorway shows whenever you're resting at Earth and not already inside
     groundBtn.style.display = (!earthView && focus === earth) ? "" : "none";
     if (!earthView) return;
     computeHorizon();
+    // the spotlight: ease the sky to black around a tapped body, lift the orb into it
+    skyDim += ((skyFocus ? 1 : 0) - skyDim) * Math.min(1, dt * 2.6);
+    starUniforms.uLimit.value = STAR_LIMIT - skyDim * 15;       // cull the field as it dims
+    mwMat.opacity = 1 - 0.92 * skyDim;
+    if (skyFocus || skyDim > 0.02) {
+      focusGrp.visible = true;
+      focusGrp.position.copy(skyFocus ? skyFocus.dir : focusGrp.position).normalize().multiplyScalar(FOCUS_D);
+      focusBall.scale.setScalar(FOCUS_D * 0.07); focusHalo.scale.setScalar(FOCUS_D * 0.42);
+      (focusBall.material as THREE.MeshBasicMaterial).opacity = skyDim;
+      (focusHalo.material as THREE.SpriteMaterial).opacity = 0.6 * skyDim;
+      focusBall.rotation.y += dt * 0.06;
+      if (!skyFocus && skyDim <= 0.02) focusGrp.visible = false;
+    }
     cardinals[2]!.v.copy(north).negate(); cardinals[3]!.v.copy(east).negate();   // S, W
     // the sea lies flat on the horizon, WATER_H below the camera; the glass
     // platform floats PLAT_H below, a clear gap above the waves.
@@ -2289,12 +2345,12 @@ void main(){
       _p.copy(dir).multiplyScalar(1e9); _p.project(camera);
       const sx = (_p.x * 0.5 + 0.5) * w, sy = (-_p.y * 0.5 + 0.5) * h;
       if (alt < minAlt || _p.z > 1 || sx < -60 || sx > w + 60 || sy < 60 || sy > h + 30) { el.style.opacity = "0"; el.style.pointerEvents = "none"; }
-      else { el.style.opacity = String(base); el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`; }
+      else { el.style.opacity = String(base * (1 - skyDim)); el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`; }
     };
     for (const c of cardinals) place(c.v, c.el, -0.18, 0.92);
     if (conTags) for (const t of conTags) place(t.dir, t.el, 0.12, 0.62);
 
-    if (skyTime) { const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); if (t !== lastClock) { skyTime.textContent = `${t} · local`; lastClock = t; } }
+    if (skyTime) { const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); if (t !== lastClock) { skyTime.textContent = `${t} local`; lastClock = t; } }
   });
 
   /* ---------- the floating-origin camera ---------- */
@@ -2310,6 +2366,7 @@ void main(){
     if (b) focusOn(b, click);
   }
   function focusOn(b: Body, click = false) {
+    if (earthView && click) { spotlightBody(b); return; }   // in the planetarium, tapping a world spotlights it instead of flying
     if (b === focus && !b.adhoc) return;        // re-tap of a fixed body: ignore; the fly-star always re-targets
     prevFocus = focus; focus = b; focusBlend = 0;
     tgtDist = Math.max(b.radius * (b.arriveK ?? 5), b.minD * 2);
@@ -2369,7 +2426,7 @@ void main(){
     sheet.removeAttribute("hidden");
     try { playClick(); } catch (_e) { /* off */ }
   });
-  shClose.addEventListener("click", () => { sheet.classList.remove("open"); });
+  shClose.addEventListener("click", () => { sheet.classList.remove("open"); if (earthView) clearSpotlight(); });
   addEventListener("keydown", e => { if (e.key === "Escape") { sheet.classList.remove("open"); closeConsole(); } });
 
   /* ---------- the navigation console: a drill-down chart ----------
@@ -2675,7 +2732,7 @@ void main(){
         if (earthView) {
           const mat = b.dot.material as THREE.SpriteMaterial;
           const up = ((b.pos.x - camKm.x) * zenith.x + (b.pos.y - camKm.y) * zenith.y + (b.pos.z - camKm.z) * zenith.z);
-          if (!NAKED_EYE.has(b.name) || up < 0) { mat.opacity = 0; continue; }
+          if (!NAKED_EYE.has(b.name) || up < 0 || skyDim > 0.6) { mat.opacity = 0; continue; }
         }
         // hold every world at a minimum apparent size; hand over to the real
         // disk as you get close enough for it to be visibly round
@@ -2717,7 +2774,7 @@ void main(){
       // in the planetarium only the naked-eye wanderers, above the horizon, are named
       if (earthView) {
         const up = (b.pos.x - camKm.x) * zenith.x + (b.pos.y - camKm.y) * zenith.y + (b.pos.z - camKm.z) * zenith.z;
-        if (!NAKED_EYE.has(b.name) || up < 0) { b.label.style.opacity = "0"; b.label.style.pointerEvents = "none"; continue; }
+        if (!NAKED_EYE.has(b.name) || up < 0 || skyDim > 0.6) { b.label.style.opacity = "0"; b.label.style.pointerEvents = "none"; continue; }
       }
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
@@ -2844,11 +2901,22 @@ void main(){
       const score = dp + (appMag + 2) * 1.4;       // a bright star a few px off beats a faint one dead-centre
       if (score < bestScore) { bestScore = score; best = i; }
     }
+    if (earthView) {
+      // in the planetarium a tap SPOTLIGHTS the star; a tap on empty sky releases it
+      if (best >= 0) {
+        const ci = best * 4;
+        const col = (bubbleCol[ci]! << 16) | (bubbleCol[ci + 1]! << 8) | bubbleCol[ci + 2]!;
+        selectStar(best);
+        _fd.set(bubblePos[best * 3]! - camKm.x, bubblePos[best * 3 + 1]! - camKm.y, bubblePos[best * 3 + 2]! - camKm.z);
+        spotlight(_fd, col, null);
+      } else if (skyFocus) clearSpotlight();
+      return;
+    }
     if (best >= 0) flyToStar(best);
   }
   // the selection ring rides with its star, at a constant apparent size, while the sheet is open
   onFrame(({ camKm }) => {
-    if (selStar < 0 || !bubblePos || !sheet.classList.contains("open")) { selMarker.visible = false; return; }
+    if (earthView || selStar < 0 || !bubblePos || !sheet.classList.contains("open")) { selMarker.visible = false; return; }
     const x = bubblePos[selStar * 3]! - camKm.x, y = bubblePos[selStar * 3 + 1]! - camKm.y, z = bubblePos[selStar * 3 + 2]! - camKm.z;
     const d = Math.hypot(x, y, z) || 1;
     selMarker.position.set(x, y, z); selMarker.scale.setScalar(d * 0.018);

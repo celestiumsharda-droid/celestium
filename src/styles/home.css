@@ -673,20 +673,25 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-leave:hover { border-color: rgba(255,255,255,.35); color: var(--accent); }
 
 /* the planetarium HUD: your place + local time */
+/* a slim location chip — never covers the sky */
 .at-sky {
-  position: absolute; z-index: 6; left: clamp(16px, 4vw, 40px); bottom: clamp(24px, 6vh, 54px);
-  width: min(330px, calc(100vw - 32px)); pointer-events: none;
-  border: 1px solid var(--glass-edge); border-radius: var(--radius);
-  background: radial-gradient(260px 200px at var(--gx,28%) var(--gy,-10%), var(--glass-hi), transparent 74%), var(--glass-sheen-face), rgba(10,13,21,.32);
+  position: absolute; z-index: 6; left: clamp(14px, 4vw, 32px); bottom: clamp(18px, 5vh, 40px);
+  display: inline-flex; align-items: center; gap: 12px; width: auto; max-width: calc(100vw - 28px); pointer-events: none;
+  border: 1px solid var(--glass-edge); border-radius: 999px;
+  background: radial-gradient(160px 90px at var(--gx,30%) var(--gy,-20%), var(--glass-hi), transparent 76%), var(--glass-sheen-face), rgba(10,13,21,.34);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-bevel), 0 16px 44px rgba(0,0,0,.4);
-  padding: 18px 22px; opacity: 0; transform: translateY(12px); transition: opacity .7s var(--ease), transform .7s var(--ease);
+  box-shadow: var(--glass-bevel), 0 10px 30px rgba(0,0,0,.4);
+  padding: 9px 17px 9px 15px; opacity: 0; transform: translateY(10px); transition: opacity .7s var(--ease), transform .7s var(--ease);
 }
 .at-sky.in { opacity: 1; transform: none; }
-.at-sky-k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold-deep, #caa860); }
-.at-sky-place { font-family: var(--display); font-weight: 300; font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: -.01em; color: var(--ink); margin: 5px 0 3px; line-height: 1.05; }
-.at-sky-time { font-size: 12px; letter-spacing: .08em; color: var(--mut); }
-.at-sky-hint { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-top: 12px; }
+.at-sky::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--gold, #ecd49a); box-shadow: 0 0 9px 1px rgba(236,212,154,.7); flex: none; }
+.at-sky-k { display: none; }
+.at-sky-place { font-family: var(--display); font-weight: 400; font-size: 1.02rem; letter-spacing: 0; color: var(--ink); line-height: 1; white-space: nowrap; }
+.at-sky-time { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--mut); white-space: nowrap; }
+.at-sky-time::before { content: "· "; color: var(--dim); }
+.at-sky-hint { display: none; }
+/* in the planetarium, the orbit "Earth / distance" readout and travel hint step aside */
+.at-stage.in-sky .at-readout, .at-stage.in-sky .at-hint { opacity: 0; pointer-events: none; }
 
 /* the entry / exit dip */
 .at-fade { position: absolute; inset: 0; z-index: 8; background: #02030a; opacity: 0; pointer-events: none; transition: opacity .6s var(--ease); }
