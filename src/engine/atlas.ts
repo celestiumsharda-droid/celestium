@@ -2028,10 +2028,11 @@ void main(){
   const NAKED_EYE = new Set(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]);
 
   // ---- the ocean: a real Gerstner-wave sea to the horizon, dark water lit by
-  // drifting bioluminescent plankton. The visitor stands EYE units above it. A
-  // polar grid is dense at the feet and sparse at the rim, so the near waves are
-  // crisp and the far water is flat (and float-safe) right out to the waterline.
-  const EYE = 2.2;
+  // drifting bioluminescent plankton. The visitor stands on a glass platform that
+  // floats PLAT_H below the eye; the sea is WATER_H below, so the platform hangs a
+  // clear gap above the waves. A polar grid is dense at the feet and sparse at the
+  // rim, so the near waves are crisp and the far water is flat (and float-safe).
+  const PLAT_H = 1.7, WATER_H = 4.0;
   function buildOceanGeo(maxR: number, rings: number, sectors: number): THREE.BufferGeometry {
     const pos: number[] = [0, 0, 0]; const idx: number[] = [];
     for (let i = 1; i <= rings; i++) {
@@ -2065,7 +2066,10 @@ void main(){
       wave(p, normalize(vec2( 0.7, 0.72)), 15.0, 0.26, 0.65, 1.05, disp, dn, crest);
       wave(p, normalize(vec2(-0.5, 0.82)),  8.5, 0.16, 0.78, 1.40, disp, dn, crest);
       wave(p, normalize(vec2( 0.2,-1.00)),  5.0, 0.10, 0.88, 1.85, disp, dn, crest);
-      wave(p, normalize(vec2(-0.9,-0.30)),  3.2, 0.06, 1.00, 2.35, disp, dn, crest);
+      wave(p, normalize(vec2(-0.9,-0.30)),  3.2, 0.065,1.00, 2.35, disp, dn, crest);
+      wave(p, normalize(vec2( 0.55,0.5 )),  2.1, 0.040,1.00, 2.90, disp, dn, crest);
+      wave(p, normalize(vec2(-0.8, 0.25)),  1.35,0.025,1.00, 3.60, disp, dn, crest);
+      wave(p, normalize(vec2( 0.3,-0.95)),  0.85,0.015,1.00, 4.45, disp, dn, crest);
       vec3 pos2 = position + disp * fall;
       vN = normalize(vec3(-dn.x*fall, -dn.y*fall, 1.0 - dn.z*fall));
       vPos = pos2; vR = r; vCrest = crest;
@@ -2083,6 +2087,16 @@ void main(){
     void main(){
       #include <logdepthbuf_fragment>
       vec3 N = normalize(vN);
+      // fine ripple detail: a fragment-space normal bump from drifting noise, so
+      // the surface stays crisp and alive between the larger Gerstner waves
+      {
+        float e = 0.6; vec2 q = vPos.xy + vec2(uTime*0.05, -uTime*0.04);
+        float n0 = fbm(q*0.7);
+        float nx = fbm((q + vec2(e,0.0))*0.7) - n0;
+        float ny = fbm((q + vec2(0.0,e))*0.7) - n0;
+        float dFade = 1.0 - smoothstep(70.0, 280.0, vR);
+        N = normalize(N + vec3(-nx, -ny, 0.0) * 1.8 * dFade);
+      }
       vec3 V = normalize(uCam - vPos);
       float ndv = max(dot(N,V), 0.0);
       float fres = mix(0.03, 1.0, pow(1.0 - ndv, 5.0));
@@ -2105,11 +2119,11 @@ void main(){
       // BIOLUMINESCENCE — the hero, but selective: drifting plankton blooms that
       // FLARE in the churn of the waves, glowing blue-green on otherwise dark water.
       vec2 dp = vPos.xy*0.09 + vec2(uTime*0.026, -uTime*0.019);
-      float blooms = smoothstep(0.46, 0.86, fbm(dp)*1.1 + 0.25*fbm(dp*3.1 + 4.0));
-      float fine = smoothstep(0.62, 0.97, vnoise(vPos.xy*0.85 - uTime*0.14));  // sparkle grain
-      float agitate = smoothstep(0.18, 0.78, crestN) + foam*1.3;              // flares on wave faces/crests
-      float bio = blooms * (0.14 + 0.85*agitate) + 0.10*blooms*fine;
-      vec3 bioCol = vec3(0.07, 1.0, 0.64) * bio * 2.3;
+      float blooms = smoothstep(0.52, 0.9, fbm(dp)*1.1 + 0.25*fbm(dp*3.1 + 4.0));
+      float fine = smoothstep(0.66, 0.98, vnoise(vPos.xy*0.85 - uTime*0.14));  // sparkle grain
+      float agitate = smoothstep(0.24, 0.82, crestN) + foam*1.2;              // flares on wave faces/crests
+      float bio = blooms * (0.10 + 0.8*agitate) + 0.08*blooms*fine;
+      vec3 bioCol = vec3(0.07, 1.0, 0.64) * bio * 1.7;
 
       float detail = 1.0 - smoothstep(150.0, 620.0, vR);
       vec3 col = mix(base, reflCol, fres*0.9);
@@ -2119,36 +2133,35 @@ void main(){
       col = mix(col, vec3(0.02,0.045,0.075), smoothstep(360.0, 1500.0, vR));  // deep water → glowing waterline
       gl_FragColor = vec4(col, 1.0);
     }`;
-  const oceanUniforms = { uTime: { value: 0 }, uCam: { value: new THREE.Vector3(0, 0, EYE) }, uMoon: { value: new THREE.Vector3(0.55, 0.22, 0.30).normalize() } };
+  const oceanUniforms = { uTime: { value: 0 }, uCam: { value: new THREE.Vector3(0, 0, WATER_H) }, uMoon: { value: new THREE.Vector3(0.55, 0.22, 0.30).normalize() } };
   const oceanMat = new THREE.ShaderMaterial({ uniforms: oceanUniforms, vertexShader: OCEAN_VERT, fragmentShader: OCEAN_FRAG, side: THREE.DoubleSide });
-  const oceanMesh = new THREE.Mesh(buildOceanGeo(2600, 150, 220), oceanMat);
+  const oceanMesh = new THREE.Mesh(buildOceanGeo(2600, 184, 264), oceanMat);
   oceanMesh.frustumCulled = false; oceanMesh.visible = false; oceanMesh.renderOrder = 0;
   scene.add(oceanMesh);
 
-  // ---- the convex jewel lens the visitor stands on: a plano-convex glass disk
-  // floating on the sea. Real screen-space refraction (MeshPhysicalMaterial
-  // transmission) magnifies the water and stars beneath it; a gold rim torus
-  // gives it the Celestium jewel edge.
-  const LENS_R = 1.15, LENS_BULGE = 0.34;
-  function buildLensGeo(): THREE.BufferGeometry {
-    const seg = 120, rings = 40, pos: number[] = [0, 0, LENS_BULGE], idx: number[] = [];
-    for (let i = 1; i <= rings; i++) { const t = i / rings, r = t * LENS_R, z = LENS_BULGE * (1.0 - t * t);
-      for (let j = 0; j < seg; j++) { const a = (j / seg) * 6.2831853; pos.push(Math.cos(a) * r, Math.sin(a) * r, z); } }
-    for (let j = 0; j < seg; j++) idx.push(0, 1 + j, 1 + ((j + 1) % seg));
-    for (let i = 1; i < rings; i++) { const s0 = 1 + (i - 1) * seg, s1 = 1 + i * seg;
-      for (let j = 0; j < seg; j++) { const a = s0 + j, b = s0 + (j + 1) % seg, c = s1 + j, d = s1 + (j + 1) % seg; idx.push(a, c, b, b, c, d); } }
-    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  // ---- the glass platform the visitor stands on: a clear, polished disk of
+  // liquid glass floating above the sea. It REFRACTS the glowing water beneath it
+  // (real screen-space transmission) and REFLECTS the bioluminescent ocean and
+  // the stars off its surface (a live cube-camera env map). A thin gold rim and a
+  // faint Celestium sigil edge make it a jewel underfoot.
+  const PLAT_R = 1.35, PLAT_TH = 0.22;
+  function buildPlatformGeo(): THREE.BufferGeometry {
+    const g = new THREE.CylinderGeometry(PLAT_R, PLAT_R * 0.94, PLAT_TH, 128, 1, false);
+    g.rotateX(Math.PI / 2);                                  // cylinder axis Y → Z (so the flat top faces local +Z = up)
     return g;
   }
+  const cubeRT = new THREE.WebGLCubeRenderTarget(160, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+  const cubeCam = new THREE.CubeCamera(0.05, 2e19, cubeRT);
+  scene.add(cubeCam);
   const lensMat = new THREE.MeshPhysicalMaterial({
-    transmission: 1.0, thickness: 1.4, ior: 1.45, roughness: 0.06, metalness: 0.0,
-    transparent: true, color: new THREE.Color(0x0a1224), attenuationColor: new THREE.Color(0x2a6cff), attenuationDistance: 4.0,
-    clearcoat: 1.0, clearcoatRoughness: 0.05, side: THREE.DoubleSide,
+    transmission: 1.0, thickness: 0.5, ior: 1.42, roughness: 0.015, metalness: 0.0, transparent: true,
+    color: new THREE.Color(0xcfe6ff), attenuationColor: new THREE.Color(0x2f93b0), attenuationDistance: 3.2,
+    clearcoat: 1.0, clearcoatRoughness: 0.03, envMap: cubeRT.texture, envMapIntensity: 1.8, side: THREE.DoubleSide,
   });
   const lensGroup = new THREE.Group();
-  const lensMesh = new THREE.Mesh(buildLensGeo(), lensMat);
-  const lensRim = new THREE.Mesh(new THREE.TorusGeometry(LENS_R, 0.022, 16, 140), new THREE.MeshBasicMaterial({ color: 0xf2e0ad, transparent: true, opacity: 0.85, depthTest: false }));
-  lensRim.renderOrder = 7;                                   // the rim always crowns the lens
+  const lensMesh = new THREE.Mesh(buildPlatformGeo(), lensMat);
+  const lensRim = new THREE.Mesh(new THREE.TorusGeometry(PLAT_R, 0.02, 18, 160), new THREE.MeshBasicMaterial({ color: 0xf2e0ad, transparent: true, opacity: 0.8, depthTest: false }));
+  lensRim.position.z = PLAT_TH / 2; lensRim.renderOrder = 7;  // crown the top edge
   lensGroup.add(lensMesh, lensRim);
   lensGroup.renderOrder = 6; lensGroup.visible = false;
   scene.add(lensGroup);
@@ -2247,18 +2260,28 @@ void main(){
   // per-frame: orient the sea + lens to the live horizon, place the tags, run the HUD clock
   const _p = new THREE.Vector3();
   let lastClock = "";
+  let cubeTick = 0;
   onFrame(({ nowMs }) => {
     // the doorway shows whenever you're resting at Earth and not already inside
     groundBtn.style.display = (!earthView && focus === earth) ? "" : "none";
     if (!earthView) return;
     computeHorizon();
     cardinals[2]!.v.copy(north).negate(); cardinals[3]!.v.copy(east).negate();   // S, W
-    // the sea lies flat on the local horizon, EYE below the camera; the lens
-    // floats on it at the visitor's feet. Both share the up-vector quaternion.
+    // the sea lies flat on the horizon, WATER_H below the camera; the glass
+    // platform floats PLAT_H below, a clear gap above the waves.
     const qUp = _q0.setFromUnitVectors(_up0, zenith);
-    oceanMesh.quaternion.copy(qUp); oceanMesh.position.set(-zenith.x * EYE, -zenith.y * EYE, -zenith.z * EYE);
-    lensGroup.quaternion.copy(qUp); lensGroup.position.set(-zenith.x * (EYE - 0.15), -zenith.y * (EYE - 0.15), -zenith.z * (EYE - 0.15));
+    oceanMesh.quaternion.copy(qUp); oceanMesh.position.set(-zenith.x * WATER_H, -zenith.y * WATER_H, -zenith.z * WATER_H);
+    lensGroup.quaternion.copy(qUp); lensGroup.position.set(-zenith.x * PLAT_H, -zenith.y * PLAT_H, -zenith.z * PLAT_H);
     oceanUniforms.uTime.value = nowMs * 0.001;
+    // live reflection: capture the sea + sky into the platform's env map (the glass
+    // is hidden during the grab so it never mirrors itself). Throttled for cost.
+    cubeTick = (cubeTick + 1) % 3;
+    if (cubeTick === 0) {
+      lensGroup.visible = false;
+      cubeCam.position.set(-zenith.x * PLAT_H, -zenith.y * PLAT_H, -zenith.z * PLAT_H);
+      cubeCam.update(renderer, scene);
+      lensGroup.visible = true;
+    }
 
     const w = canvas.clientWidth, h = canvas.clientHeight;
     const place = (dir: THREE.Vector3, el: HTMLElement, minAlt: number, base: number): void => {
