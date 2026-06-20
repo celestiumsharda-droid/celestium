@@ -599,6 +599,33 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-intro-stats { margin-top: 30px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); opacity: 0; animation: rise 1s .9s forwards var(--ease); }
 @media (max-width: 600px) { .at-intro { align-items: flex-end; } .at-intro-inner { padding-bottom: 12vh; } .at-intro::after { background: linear-gradient(180deg, rgba(2,3,9,.5), rgba(2,3,9,.55) 40%, rgba(2,3,9,.92)); } }
 
+/* ---- the launch page: a fast, light hero (the heavy engine prefetches behind it) ---- */
+.at-land-stars { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; }
+.at-intro-inner { position: relative; z-index: 1; }
+.at-land-cta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.at-intro-go { display: inline-flex; align-items: center; gap: 6px; }
+.at-intro-go .ar { display: inline-block; transition: transform .3s var(--ease); }
+.at-intro-go:hover .ar { transform: translateX(4px); }
+.at-intro-go.loading { pointer-events: none; opacity: .65; }
+.at-land-ready { font-family: var(--mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); opacity: 0; animation: rise 1s 1.1s forwards var(--ease); display: inline-flex; align-items: center; gap: 8px; }
+.at-land-ready::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); transition: background .5s, box-shadow .5s; }
+.at-land-ready.go { color: var(--star); }
+.at-land-ready.go::before { background: #6ee29a; box-shadow: 0 0 10px #6ee29a; }
+.at-land-feats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 42px; opacity: 0; animation: rise 1s 1s forwards var(--ease); }
+.at-land-feat {
+  border: 1px solid var(--glass-edge); border-radius: 14px; padding: 13px 17px; min-width: 156px;
+  background: var(--glass-sheen-face), var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-bevel);
+}
+.at-land-feat b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.16rem; color: var(--ink); letter-spacing: -.01em; line-height: 1.1; }
+.at-land-feat span { font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.at-land-load { position: absolute; left: 0; right: 0; bottom: clamp(40px, 9vh, 90px); display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 2; }
+.at-land-load[hidden] { display: none; }
+.at-land-bar { width: min(360px, 70vw); height: 2px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.at-land-bar i { display: block; height: 100%; width: 0%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), #fff); box-shadow: 0 0 14px var(--accent); transition: width .45s var(--ease); }
+.at-land-loadtxt { font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--mut); }
+@media (max-width: 600px) { .at-land-feats { gap: 10px; margin-top: 30px; } .at-land-feat { min-width: 132px; padding: 10px 13px; } }
+
 .at-stage { display: none; }
 #atlas.live .at-stage { display: block; position: fixed; inset: 0; z-index: 1; overflow: hidden; background: #000; }
 #atlas.live .at-fallback { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

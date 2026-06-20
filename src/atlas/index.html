@@ -66,15 +66,29 @@
 
 <main id="top">
   <section id="atlas">
-    <!-- the dive-in: the first thing you see — a JWST deep field and a doorway -->
+    <!-- the launch page: a fast, light hero that loads instantly while the heavy
+         3-D engine + star catalogue prefetch in the background, ready to launch -->
     <div class="at-intro" id="at-intro">
+      <canvas class="at-land-stars" id="at-land-stars" aria-hidden="true"></canvas>
       <div class="at-intro-bg" aria-hidden="true"></div>
       <div class="at-intro-inner">
         <p class="at-intro-eyebrow">The Celestium Atlas</p>
         <h1 class="at-intro-title">The known universe,<br>to scale, in one&nbsp;flight.</h1>
-        <p class="at-intro-dek">Forty light-years of real star systems, the planets where they truly are tonight, a living black hole at the heart of the galaxy, and the cosmic web beyond — the most advanced map of the universe ever put in a browser. Begin at home; travel as far as you dare.</p>
-        <button class="at-intro-go" id="at-intro-go" type="button">Begin the journey&nbsp;&nbsp;&#8594;</button>
-        <p class="at-intro-stats" id="at-intro-stats">Earth &middot; the Solar System &middot; TRAPPIST-1 &middot; 40 named stars &middot; the Milky Way &middot; Sagittarius A*</p>
+        <p class="at-intro-dek">Begin on the shore of your own sky and fly, in one unbroken motion, to the edge of the galaxy — every star, planet and world at its true place, tonight. The most advanced map of the universe ever put in a browser.</p>
+        <div class="at-land-cta">
+          <button class="at-intro-go" id="at-intro-go" type="button"><span class="lbl">Launch the Atlas</span><span class="ar">&#8594;</span></button>
+          <span class="at-land-ready" id="at-land-ready">preparing&nbsp;the&nbsp;engine&hellip;</span>
+        </div>
+        <div class="at-land-feats" aria-hidden="true">
+          <div class="at-land-feat"><b>108,000+</b><span>real stars · true positions</span></div>
+          <div class="at-land-feat"><b>Stand on Earth</b><span>your sky tonight, on the sea</span></div>
+          <div class="at-land-feat"><b>Sagittarius A*</b><span>a live, lensed black hole</span></div>
+          <div class="at-land-feat"><b>Real-time</b><span>the planets where they are now</span></div>
+        </div>
+      </div>
+      <div class="at-land-load" id="at-land-load" hidden aria-hidden="true">
+        <div class="at-land-bar"><i id="at-land-prog"></i></div>
+        <p class="at-land-loadtxt" id="at-land-loadtxt">Charting the universe&hellip;</p>
       </div>
     </div>
 
