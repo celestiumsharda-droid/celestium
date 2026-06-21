@@ -145,21 +145,36 @@ a { color: inherit; text-decoration: none; }
    adaptive bead that inverts against any background (bright on dark, dark on
    light, like the macOS cursor). Together they read as a true drop of crystal. */
 .lj-cursor { position: fixed; top: 0; left: 0; pointer-events: none; border-radius: 50%; will-change: transform; opacity: 0;
-  transition: width .22s var(--ease, cubic-bezier(.2,.7,.2,1)), height .22s var(--ease, cubic-bezier(.2,.7,.2,1)), margin .22s var(--ease, cubic-bezier(.2,.7,.2,1)), opacity .35s ease; }
+  transition: width .2s var(--ease, cubic-bezier(.2,.7,.2,1)), height .2s var(--ease, cubic-bezier(.2,.7,.2,1)), margin .2s var(--ease, cubic-bezier(.2,.7,.2,1)), opacity .35s ease; }
 .lj-cursor.show { opacity: 1; }
-.lj-lens { z-index: 2147483645; width: 28px; height: 28px; margin: -14px 0 0 -14px;
-  -webkit-backdrop-filter: blur(1.6px) saturate(1.5) brightness(1.06); backdrop-filter: blur(1.6px) saturate(1.5) brightness(1.06);
-  background: radial-gradient(circle at 33% 28%, rgba(255,255,255,.24), rgba(255,255,255,.05) 46%, rgba(255,255,255,0) 72%);
-  border: 0.5px solid rgba(255,255,255,.20);
-  box-shadow: inset 1.5px 2px 5px rgba(255,255,255,.34), inset -2px -2px 6px rgba(0,0,0,.18), 0 3px 12px rgba(0,0,0,.28); }
-.lj-lens::after { content: ""; position: absolute; top: 20%; left: 24%; width: 24%; height: 24%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 70%); }
-.lj-lens.hot { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
-.lj-lens.down { width: 22px; height: 22px; margin: -11px 0 0 -11px; }
-.lj-bead { z-index: 2147483646; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; mix-blend-mode: difference;
-  background: radial-gradient(circle at 38% 34%, #fff 0%, rgba(255,255,255,.85) 40%, rgba(180,180,180,.4) 76%, rgba(255,255,255,0) 100%); }
-.lj-bead.hot { width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; }
-.lj-bead.down { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; }
+/* the jewel body — a clear cut stone that refracts the page, cross-lit by facets
+   that slowly turn (the shimmer) and ringed with dispersion fire. Never dark. */
+.lj-lens { z-index: 2147483645; width: 26px; height: 26px; margin: -13px 0 0 -13px; overflow: visible;
+  -webkit-backdrop-filter: blur(.5px) saturate(2.3) brightness(1.14); backdrop-filter: blur(.5px) saturate(2.3) brightness(1.14);
+  border: 0.5px solid rgba(255,255,255,.42);
+  box-shadow: 0 0 13px -2px rgba(184,216,255,.6), inset 0 0 6px rgba(255,255,255,.22);
+  background: radial-gradient(circle at 37% 31%, rgba(255,255,255,.42), rgba(255,255,255,.06) 44%, rgba(255,255,255,0) 68%); }
+.lj-lens::after {                                   /* the brilliant-cut facets, slowly turning */
+  content: ""; position: absolute; inset: 0; border-radius: 50%; mix-blend-mode: screen;
+  background: conic-gradient(from 0deg,
+    rgba(255,255,255,0) 0deg, rgba(255,255,255,.5) 12deg, rgba(255,255,255,0) 33deg,
+    rgba(255,255,255,.3) 60deg, rgba(255,255,255,0) 86deg,
+    rgba(255,255,255,.48) 122deg, rgba(255,255,255,0) 150deg,
+    rgba(255,255,255,.26) 196deg, rgba(255,255,255,0) 226deg,
+    rgba(255,255,255,.42) 284deg, rgba(255,255,255,0) 316deg, rgba(255,255,255,0) 360deg);
+  animation: ljSpin 7s linear infinite; }
+.lj-lens::before {                                  /* dispersion — the rainbow fire, counter-turning */
+  content: ""; position: absolute; inset: -1.5px; border-radius: 50%; padding: 1.5px; mix-blend-mode: screen; opacity: .8;
+  background: conic-gradient(from 30deg, #ff6b8a, #ffd36e, #7dffc6, #6ea8ff, #c98bff, #ff6b8a);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+  animation: ljSpin 13s linear infinite reverse; }
+.lj-lens.hot { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
+.lj-lens.down { width: 21px; height: 21px; margin: -10.5px 0 0 -10.5px; }
+@keyframes ljSpin { to { transform: rotate(1turn); } }
+/* the adaptive heart — a soft glow that brightens on dark, darkens on light */
+.lj-bead { z-index: 2147483646; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; mix-blend-mode: difference;
+  background: radial-gradient(circle, rgba(255,255,255,.92) 0%, rgba(255,255,255,.4) 36%, rgba(255,255,255,0) 72%); }
+.lj-bead.hot { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
 @media (pointer: fine) and (hover: hover) { * { cursor: none !important; } }
 @media (pointer: coarse), (hover: none) { .lj-cursor { display: none !important; } }
 
