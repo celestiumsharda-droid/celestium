@@ -78,6 +78,9 @@ interface Body {
   system?: string;                   // which system this body belongs to (for the drill-down navigator)
   dotK?: number;                     // apparent-size class of its point of light
   adhoc?: boolean;                   // the reusable "fly to any star" body — hidden from menus/search
+  lblOp?: string;                    // last-written label opacity / pointer-events / transform —
+  lblPE?: string;                    // we only touch the DOM when one of these actually changes,
+  lblTf?: string;                    // so a screen full of hidden labels costs zero style recalcs
 }
 
 /* ---- the stellar neighbourhood: real stars, real places ----
@@ -558,9 +561,14 @@ export function mountAtlas(opts: Opts): () => void {
       logarithmicDepthBuffer: true, powerPreference: "high-performance",
     });
   } catch (_e) { return () => {}; }
-  // a fixed, sensible pixel ratio — no per-frame resizing (that was the jitter).
-  // The star LOD keeps the scene light enough that this stays smooth.
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, small ? 1.5 : 1.6));
+  // Pixel ratio is governed adaptively (see the frame loop): it starts at this
+  // sensible cap and only ever steps DOWN a notch — and at most once a second,
+  // never per-frame — when the GPU can't hold the budget. That keeps it smooth
+  // on weak hardware without the resize jitter that per-frame scaling caused.
+  const maxDpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.6);
+  const minDpr = small ? 0.9 : 1.0;
+  let curDpr = maxDpr;
+  renderer.setPixelRatio(maxDpr);
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -605,6 +613,7 @@ export function mountAtlas(opts: Opts): () => void {
   interface FrameCtx {
     dt: number; nowMs: number; simDays: number; simDate: Date;
     camKm: { x: number; y: number; z: number };   // true camera position (km, doubles)
+    camDist: number;                                // |camKm| — distance from the Sun, computed once per frame
     distKm: number;                                 // distance to the focus
     focus: Body;
   }
@@ -2392,11 +2401,20 @@ void main(){
 
   const camKm = { x: 0, y: 0, z: 0 };          // doubles — the true camera position
   const v = new THREE.Vector3();
+  // canvas pixel size, cached from resize() — reading clientWidth/Height in the
+  // frame forces a synchronous layout every frame; this avoids that reflow
+  let cw = 1, ch = 1;
 
   /* ---------- simulated time: the system actually runs ---------- */
   let simMs = now.getTime();
   let speed = 1;                                // sim-seconds per real second
   let lastDateTxt = "";
+  // the ephemeris (a Kepler solve per body) is the frame's heaviest CPU cost.
+  // At real-time or paused the worlds move sub-pixel between frames, so we
+  // recompute it at ~7 Hz; only an active fast-forward needs every-frame motion.
+  let lastEphemAt = -1e15, lastEphemSimMs = NaN;
+  // adaptive-resolution governor state (evaluated at ~1 Hz, see the frame loop)
+  let govAccumMs = 0, govFrames = 0, lastGovAt = 0;
   function bindTime() {
     time.querySelectorAll<HTMLButtonElement>("button").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -2568,7 +2586,7 @@ void main(){
 
   // the shared context object passed to every frame hook (mutated in place
   // each frame to avoid per-frame allocation)
-  const frameCtx: FrameCtx = { dt: 0, nowMs: 0, simDays: 0, simDate: now, camKm, distKm: 0, focus };
+  const frameCtx: FrameCtx = { dt: 0, nowMs: 0, simDays: 0, simDate: now, camKm, camDist: 0, distKm: 0, focus };
 
   /* ---------- per-frame subsystems ----------
      Each block below is one self-contained update, registered as a hook.
@@ -2578,15 +2596,14 @@ void main(){
 
   // the Sun is the system's beacon: its glow grows with range so it never
   // fades to a dim dot, however far out you fly
-  onFrame(({ camKm }) => {
-    const ds = Math.hypot(camKm.x, camKm.y, camKm.z);
-    glow.scale.setScalar(Math.max(RADII["Sun"]! * 6.5, ds * 0.05));
+  onFrame(({ camKm, camDist }) => {
+    glow.scale.setScalar(Math.max(RADII["Sun"]! * 6.5, camDist * 0.05));
     sunLight.position.set(-camKm.x, -camKm.y, -camKm.z);
   });
 
   // orbit lines (inner system) + the belts/Oort (outer) — placed in the
   // floating-origin frame, faded out near a world and gone far past the system
-  onFrame(({ camKm, distKm }) => {
+  onFrame(({ camKm, distKm, camDist }) => {
     orbitGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
     outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
@@ -2595,21 +2612,20 @@ void main(){
     // the belts + Oort belong to the Sun: fade the Oort shell out as you leave
     // the neighbourhood (so it never becomes a ball hanging at the Sun from
     // another star), and drop the whole outer layer once you're truly away.
-    const sunDist = Math.hypot(camKm.x, camKm.y, camKm.z);
-    if (oortMat) oortMat.opacity = 0.55 * Math.min(1, Math.max(0, (2.8e13 - sunDist) / 1.3e13));
-    outerGroup.visible = !earthView && distKm > 4e7 && sunDist < 3e13;
+    if (oortMat) oortMat.opacity = 0.55 * Math.min(1, Math.max(0, (2.8e13 - camDist) / 1.3e13));
+    outerGroup.visible = !earthView && distKm > 4e7 && camDist < 3e13;
   });
 
   // the galaxy emerges as you rise above the neighbourhood; the camera-glued
   // panorama hands over to the real 3D structure; the core retreats up close
-  onFrame(({ camKm }) => {
+  onFrame(({ camKm, camDist }) => {
     galaxy.position.set(GAL_C.x - camKm.x, GAL_C.y - camKm.y, GAL_C.z - camKm.z);
-    const sd = Math.hypot(camKm.x, camKm.y, camKm.z);
-    const g01 = Math.min(1, Math.max(0, (sd - 6e15) / 7.4e16));
+    const g01 = Math.min(1, Math.max(0, (camDist - 6e15) / 7.4e16));
     const gFade = g01 * g01 * (3 - 2 * g01);
     galaxy.visible = gFade > 0.003;
     if (galaxy.visible) {
-      const cd = Math.hypot(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z);
+      const gx = camKm.x - GAL_C.x, gy = camKm.y - GAL_C.y, gz = camKm.z - GAL_C.z;
+      const cd = Math.sqrt(gx * gx + gy * gy + gz * gz);
       const c01 = Math.min(1, Math.max(0, (cd - 1200 * LY) / (7000 * LY)));
       const coreFade = c01 * c01 * (3 - 2 * c01);
       for (const f of galFadeMats) f.m.opacity = gFade * f.max * (f.core ? coreFade : 1);
@@ -2639,10 +2655,11 @@ void main(){
     // right colour, right place — and our Sun stands down
     let best: { pos: Vec3; col: number; span: number; orbits?: THREE.Group } | null = null, bestD = Infinity;
     for (const fs of foreignSuns) {
-      const d = Math.hypot(camKm.x - fs.pos.x, camKm.y - fs.pos.y, camKm.z - fs.pos.z);
+      const fdx = camKm.x - fs.pos.x, fdy = camKm.y - fs.pos.y, fdz = camKm.z - fs.pos.z;
+      const d = fdx * fdx + fdy * fdy + fdz * fdz;     // squared — we only compare, never use the magnitude
       if (d < bestD) { bestD = d; best = fs; }
     }
-    const inForeign = best !== null && bestD < best.span;
+    const inForeign = best !== null && bestD < best.span * best.span;   // bestD is squared
     if (inForeign && best) {
       trLight.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z);
       trLight.color.set(best.col);
@@ -2658,6 +2675,11 @@ void main(){
     if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
   });
 
+  // hide a body's label, touching the DOM only when it was previously shown
+  function hideLabel(b: Body): void {
+    if (b.lblOp !== "0") { b.label.style.opacity = "0"; b.label.style.pointerEvents = "none"; b.lblOp = "0"; }
+  }
+
   function frame(nowMs: number) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min((nowMs - last) / 1000, 0.05); last = nowMs;
@@ -2670,12 +2692,20 @@ void main(){
     // never drift, and tapping Now after a fast-forward snaps the whole system
     // back to this instant). Any other speed accumulates from wherever we are.
     if (speed === 1) simMs = Date.now();
-    else simMs += dt * 1000 * speed;
-    const simDate = new Date(simMs);
-    const simDays = (simMs - Date.UTC(2000, 0, 1, 12)) / 86400000;
-    for (const b of bodies) b.update?.(simDate, simDays);
-    const dTxt = speed === 1 ? "now" : simDate.toUTCString().slice(5, 16);
-    if (dTxt !== lastDateTxt) { date.textContent = dTxt; lastDateTxt = dTxt; }
+    else if (speed !== 0) simMs += dt * 1000 * speed;
+    // recompute world positions only when they would visibly change: every frame
+    // while fast-forwarding, ~7 Hz at real-time, and never while paused. The
+    // floating-origin placement below still runs every frame, so motion the
+    // camera makes stays perfectly smooth — only the orbital march is throttled.
+    if (simMs !== lastEphemSimMs && (speed > 1.0001 || nowMs - lastEphemAt >= 140)) {
+      lastEphemAt = nowMs; lastEphemSimMs = simMs;
+      const simDate = new Date(simMs);
+      const simDays = (simMs - Date.UTC(2000, 0, 1, 12)) / 86400000;
+      for (const b of bodies) b.update?.(simDate, simDays);
+      frameCtx.simDate = simDate; frameCtx.simDays = simDays;
+      const dTxt = speed === 1 ? "now" : simDate.toUTCString().slice(5, 16);
+      if (dTxt !== lastDateTxt) { date.textContent = dTxt; lastDateTxt = dTxt; }
+    }
 
     // eased camera state
     yaw += (tgtYaw - yaw) * Math.min(1, dt * 7);
@@ -2709,6 +2739,10 @@ void main(){
       camera.up.set(0, 1, 0);
       camera.lookAt(fx - camKm.x, fy - camKm.y, fz - camKm.z);
     }
+    // distance from the Sun (scene origin), computed once and shared with every
+    // subsystem hook — replaces five separate Math.hypot(camKm) calls per frame
+    const camDist = Math.sqrt(camKm.x * camKm.x + camKm.y * camKm.y + camKm.z * camKm.z);
+    frameCtx.camDist = camDist;
     for (const b of bodies) {
       b.mesh.position.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       if (b.spin) b.mesh.rotation.y += b.spin * dt * 60;
@@ -2718,7 +2752,8 @@ void main(){
       const sh = b.mesh.userData["halo"] as THREE.Sprite | undefined;
       if (sh) {
         const sr = b.mesh.userData["starR"] as number;
-        const ds = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+        const dx0 = b.pos.x - camKm.x, dy0 = b.pos.y - camKm.y, dz0 = b.pos.z - camKm.z;
+        const ds = Math.sqrt(dx0 * dx0 + dy0 * dy0 + dz0 * dz0);
         (sh.material as THREE.SpriteMaterial).opacity = Math.min(1, Math.max(0.06, (ds - sr * 6) / (sr * 40)));
         // LOD: the costly fbm surface + flare shaders render only when the
         // star is big enough on screen to read as a disk — a vast saving when
@@ -2736,10 +2771,11 @@ void main(){
         }
         // hold every world at a minimum apparent size; hand over to the real
         // disk as you get close enough for it to be visibly round
-        const d = Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+        const ddx = b.pos.x - camKm.x, ddy = b.pos.y - camKm.y, ddz = b.pos.z - camKm.z;
+        const d = Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz);
         const ang = b.radius / d;                       // ~radians subtended
         const mat = b.dot.material as THREE.SpriteMaterial;
-        const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.foreign && Math.hypot(camKm.x, camKm.y, camKm.z) > 2.5e11;
+        const planetRetired = b.kind !== "star" && b.name !== "Sun" && !b.foreign && camDist > 2.5e11;
         // drifting objects (comets, craft) keep their point past labelMax — only
         // their NAME hides — so they drift visibly without cluttering with tags
         const dotCulled = b.labelMax !== undefined && !b.drift && d > b.labelMax;
@@ -2757,16 +2793,17 @@ void main(){
     // every registered subsystem updates here — galaxy, black hole, the Sun's
     // beacon, the belts, Earth's terminator, the TRAPPIST system, and anything
     // added later — all from one generic pass over the hook registry
-    frameCtx.dt = dt; frameCtx.nowMs = nowMs; frameCtx.simDays = simDays; frameCtx.simDate = simDate;
+    frameCtx.dt = dt; frameCtx.nowMs = nowMs;
     frameCtx.distKm = distKm; frameCtx.focus = focus;
     for (const hk of frameHooks) hk(frameCtx);
 
     // labels: project each body, place its name beside it. The Atlas has
     // scales — inside the system, planet names; pull past ~Neptune and the
     // star names wake while the planets retire.
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    const sunD = Math.hypot(camKm.x, camKm.y, camKm.z);
-    const trapD = Math.hypot(camKm.x - TR_C.x, camKm.y - TR_C.y, camKm.z - TR_C.z);
+    const w = cw, h = ch;                          // cached canvas size — no per-frame reflow
+    const sunD = camDist;
+    const tdx = camKm.x - TR_C.x, tdy = camKm.y - TR_C.y, tdz = camKm.z - TR_C.z;
+    const trapD = Math.sqrt(tdx * tdx + tdy * tdy + tdz * tdz);
     // "in a system" = deep inside the Sun's OR TRAPPIST's neighbourhood: the
     // distant catalogue stars hush so the system you're visiting reads cleanly
     const inSystem = sunD < 2e10 || trapD < 8e9;
@@ -2774,7 +2811,7 @@ void main(){
       // in the planetarium only the naked-eye wanderers, above the horizon, are named
       if (earthView) {
         const up = (b.pos.x - camKm.x) * zenith.x + (b.pos.y - camKm.y) * zenith.y + (b.pos.z - camKm.z) * zenith.z;
-        if (!NAKED_EYE.has(b.name) || up < 0 || skyDim > 0.6) { b.label.style.opacity = "0"; b.label.style.pointerEvents = "none"; continue; }
+        if (!NAKED_EYE.has(b.name) || up < 0 || skyDim > 0.6) { hideLabel(b); continue; }
       }
       v.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
       const d = v.length();
@@ -2788,11 +2825,12 @@ void main(){
         (b.kind !== "star" && b.name !== "Sun" && !b.foreign && sunD > 2.5e11)   // our planets retire among the stars (TRAPPIST's are gated by labelMax)
       );
       if (behind || tooClose || tooFar || wrongScale || sx < -40 || sx > w + 40 || sy < 70 || sy > h + 20) {
-        b.label.style.opacity = "0"; b.label.style.pointerEvents = "none";
+        hideLabel(b);
       } else {
-        b.label.style.opacity = b === focus ? "1" : "0.78";
-        b.label.style.pointerEvents = "auto";
-        b.label.style.transform = `translate(${sx.toFixed(1)}px, ${(sy - 14).toFixed(1)}px)`;
+        const op = b === focus ? "1" : "0.78";
+        const tf = `translate(${sx.toFixed(1)}px, ${(sy - 14).toFixed(1)}px)`;
+        if (b.lblTf !== tf) { b.label.style.transform = tf; b.lblTf = tf; }
+        if (b.lblOp !== op) { b.label.style.opacity = op; b.label.style.pointerEvents = "auto"; b.lblOp = op; }
       }
     }
 
@@ -2802,6 +2840,23 @@ void main(){
     if (dist.textContent !== txt) dist.textContent = txt;
 
     renderer.render(scene, camera);
+
+    // adaptive-resolution governor — evaluate the running frame budget once a
+    // second (never more), so reallocating the drawing buffer can't stutter the
+    // animation. Sustained sub-45fps drops the pixel ratio a notch; genuine
+    // headroom (only detectable on >60Hz panels past vsync) climbs it back.
+    govAccumMs += dt * 1000; govFrames++;
+    if (nowMs - lastGovAt >= 1000) {
+      const avg = govAccumMs / govFrames;
+      if (govFrames >= 12) {                                   // ignore tab-switch / stall intervals
+        if (avg > 22 && curDpr > minDpr) {
+          curDpr = Math.max(minDpr, curDpr - 0.15); renderer.setPixelRatio(curDpr); renderer.setSize(cw, ch, false);
+        } else if (avg < 12 && curDpr < maxDpr) {
+          curDpr = Math.min(maxDpr, curDpr + 0.15); renderer.setPixelRatio(curDpr); renderer.setSize(cw, ch, false);
+        }
+      }
+      lastGovAt = nowMs; govAccumMs = 0; govFrames = 0;
+    }
   }
 
   /* ---------- controls: scroll/pinch = travel, drag = orbit ---------- */
@@ -2958,6 +3013,7 @@ void main(){
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    cw = w; ch = h;                              // cache for the frame loop (no per-frame reflow)
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
