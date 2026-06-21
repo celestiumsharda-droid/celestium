@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import { startClock, loadAPOD, startISS } from "./living-sky";
@@ -345,3 +346,5 @@ const loadPalette = () => { import("./command-palette").then(m => m.initCommandP
 const iw = window as IdleWindow;
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 });
 else setTimeout(loadPalette, 1200);
+
+initCursor();

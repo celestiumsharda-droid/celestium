@@ -6,6 +6,7 @@
  */
 import { enableViewTransitions } from "./view-transitions";
 import { initSound } from "./sound";
+import { initCursor } from "./cursor";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
@@ -105,23 +106,7 @@ if (gallery && matchMedia("(pointer: fine)").matches) {
   }, { passive: true });
 }
 
-/* the liquid-jewel cursor — a glass bead that lags the pointer and swells over
-   anything you can touch. Desktop only; coarse pointers keep the native cursor. */
-function initJewelCursor(): void {
-  if (!matchMedia("(pointer: fine) and (hover: hover)").matches) return;
-  const cur = document.createElement("div"); cur.className = "lj-cursor"; cur.innerHTML = "<i></i>";
-  document.body.appendChild(cur);
-  let tx = innerWidth / 2, ty = innerHeight / 2, x = tx, y = ty, shown = false;
-  const loop = (): void => { x += (tx - x) * 0.3; y += (ty - y) * 0.3; cur.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; requestAnimationFrame(loop); };
-  addEventListener("pointermove", e => {
-    tx = e.clientX; ty = e.clientY; if (!shown) { shown = true; cur.classList.add("show"); }
-    const el = e.target as Element | null;
-    cur.classList.toggle("hot", !!(el?.closest?.("a,button,input,.at-label,.at-con-item,.at-con-cat,.lg-shot,.at-more,.at-sheet-close,.at-con-close,.at-time button")));
-  }, { passive: true });
-  addEventListener("pointerdown", () => cur.classList.add("hot"));
-  loop();
-}
-initJewelCursor();
+initCursor();
 
 /* the launch-page starfield: ambient drift + the odd shooting star, with a
    "jump to lightspeed" warp that streaks every star out of frame on launch. */

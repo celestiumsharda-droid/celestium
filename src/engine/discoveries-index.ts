@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — DISCOVERIES INDEX
  * The catalogue, built to stay findable at any scale: every article is
@@ -130,3 +131,5 @@ const loadPalette = () => { import("./command-palette").then(m => m.initCommandP
 const iw = window as IdleWindow;
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 });
 else setTimeout(loadPalette, 1200);
+
+initCursor();

@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — ABOUT page engine.
  * Just the shared chrome: starfield, view transitions, theme toggle,
@@ -40,3 +41,5 @@ mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
 
 initSound($("sound"), { pad: true });
 initCommandPalette();
+
+initCursor();

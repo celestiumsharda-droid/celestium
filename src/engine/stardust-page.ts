@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — "You Are Stardust" page entry.
  * Shared chrome + the lazy-mounted particle journey. The written chapters
@@ -133,3 +134,5 @@ function buildPersonalizer(handle: { setPerson: (p: ReturnType<typeof computePer
     if (tr) { const top = tr.getBoundingClientRect().top + scrollY; const span = tr.offsetHeight - innerHeight; scrollTo({ top: top + span * 0.98, behavior: "smooth" }); }
   });
 }
+
+initCursor();

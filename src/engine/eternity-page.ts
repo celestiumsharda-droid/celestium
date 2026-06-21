@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — "The Whole of Time" page entry.
  * Shared chrome + the lazy-mounted cosmic flight. The written era list in
@@ -46,3 +47,5 @@ if (section && canvas && cont && startOverlay && beginBtn && !reduce) {
     })
     .catch(err => console.warn("The Whole of Time is unavailable; keeping the written eras.", err));
 }
+
+initCursor();

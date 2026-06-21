@@ -659,19 +659,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .at-land-cta { gap: 16px; }
 }
 
-/* ---- the liquid-jewel cursor (desktop, fine pointer only) ---- */
-.lj-cursor { position: fixed; top: 0; left: 0; z-index: 60; pointer-events: none; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; will-change: transform; opacity: 0;
-  border: 1px solid rgba(236,212,154,.55);
-  background: radial-gradient(circle at 38% 34%, rgba(255,255,255,.5), rgba(190,210,255,.12) 42%, transparent 64%);
-  box-shadow: 0 0 18px -2px rgba(236,212,154,.5), inset 0 0 10px rgba(190,210,255,.3);
-  transition: width .25s var(--ease), height .25s var(--ease), margin .25s var(--ease), border-color .25s, opacity .3s; }
-.lj-cursor.show { opacity: 1; }
-.lj-cursor i { position: absolute; inset: 0; margin: auto; width: 4px; height: 4px; border-radius: 50%; background: var(--gold, #ecd49a); box-shadow: 0 0 8px 1px rgba(236,212,154,.85); }
-.lj-cursor.hot { width: 54px; height: 54px; margin: -27px 0 0 -27px; border-color: rgba(236,212,154,.9); }
-@media (pointer: fine) and (hover: hover) {
-  #atlas, #atlas a, #atlas button, #at-canvas, #at-canvas:active, .at-intro, .at-intro button { cursor: none; }
-}
-@media (pointer: coarse) { .lj-cursor { display: none; } }
+/* the adaptive crystal cursor lives in tokens.css (it is site-wide) */
 
 .at-stage { display: none; }
 #atlas.live .at-stage { display: block; position: fixed; inset: 0; z-index: 1; overflow: hidden; background: #000; }

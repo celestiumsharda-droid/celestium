@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — the Timeline page ("Two clocks, one story" / Genesis).
  * Its own full-screen home for the particle journey: shared chrome, the
@@ -79,3 +80,5 @@ if (section && track && canvas && !reduce) {
     })
     .catch(err => console.warn("Timeline unavailable; keeping the list.", err));
 }
+
+initCursor();

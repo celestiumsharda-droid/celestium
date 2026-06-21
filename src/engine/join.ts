@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 /**
  * CELESTIUM — JOIN page engine.
  * Shared chrome (starfield, view transitions, command palette, ambient
@@ -67,3 +68,5 @@ if (form && email && note) {
 
 initSound($("sound"), { pad: true });
 initCommandPalette();
+
+initCursor();

@@ -1,3 +1,4 @@
+import { initCursor } from "./cursor";
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
 import DISCOVERIES from "../data/discoveries";
@@ -413,3 +414,5 @@ initSound($("sound"), { pad: true });
 /* ---------- ⌘K command palette + highlight-to-share ---------- */
 initCommandPalette();
 initHighlightShare();
+
+initCursor();
