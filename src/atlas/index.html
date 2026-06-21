@@ -66,40 +66,27 @@
 
 <main id="top">
   <section id="atlas">
-    <!-- the launch page: a light, cinematic hero (the heavy 3-D engine + star
-         catalogue prefetch in the background, ready to launch at lightspeed) -->
+    <!-- THE THRESHOLD — darkness, particles gathering into the mark and morphing
+         through the forms of the cosmos, and one quiet question. The heavy 3-D
+         engine + star catalogue prefetch behind it, ready to arrive on the shore. -->
     <div class="at-intro" id="at-intro">
-      <canvas class="at-land-stars" id="at-land-stars" aria-hidden="true"></canvas>
-      <div class="at-land-neb" aria-hidden="true"></div>
-      <div class="at-land-grain" aria-hidden="true"></div>
-      <div class="at-land-wrap">
-        <div class="at-land-copy">
-          <p class="at-intro-eyebrow"><span class="dot"></span>The Celestium Atlas</p>
-          <h1 class="at-intro-title">The known universe,<br>to scale, in one&nbsp;<em>flight.</em></h1>
-          <p class="at-intro-dek">Begin on the shore of your own sky and fall, in one unbroken motion, to the edge of the galaxy — every star, planet and world at its true place, tonight.</p>
-          <div class="at-land-cta">
-            <button class="at-intro-go" id="at-intro-go" type="button"><span class="lbl">Launch the Atlas</span><span class="ar" aria-hidden="true">&#8594;</span></button>
-            <span class="at-land-ready" id="at-land-ready">warming&nbsp;the&nbsp;engine&hellip;</span>
-          </div>
-          <div class="at-land-feats">
-            <div class="at-land-feat"><b>108,000+</b><span>real stars · true place</span></div>
-            <div class="at-land-feat"><b>real-time</b><span>planets where they are now</span></div>
-            <div class="at-land-feat"><b>one flight</b><span>your shore to the cosmic web</span></div>
-          </div>
-        </div>
-        <div class="at-land-gallery" id="at-land-gallery" aria-hidden="true">
-          <figure class="lg-shot s-bh"><img src="/img/landing/blackhole.jpg" alt="" loading="eager" decoding="async"><figcaption>Sagittarius A&ast; · lensed live</figcaption></figure>
-          <figure class="lg-shot s-sat"><img src="/img/landing/saturn.jpg" alt="" loading="eager" decoding="async"><figcaption>Saturn · tonight</figcaption></figure>
-          <figure class="lg-shot s-mars"><img src="/img/landing/mars.jpg" alt="" loading="lazy" decoding="async"><figcaption>Mars</figcaption></figure>
-          <figure class="lg-shot s-bet"><img src="/img/landing/betelgeuse.jpg" alt="" loading="lazy" decoding="async"><figcaption>Betelgeuse</figcaption></figure>
-        </div>
+      <canvas class="th-canvas" id="th-canvas" aria-hidden="true"></canvas>
+      <div class="th-veil" id="th-veil">
+        <p class="th-eyebrow" id="th-eyebrow">Celestium</p>
+        <p class="th-line" id="th-line">How should the universe<br>remember you?</p>
+        <form class="th-form" id="th-form" autocomplete="off">
+          <input class="th-name" id="th-name" type="text" maxlength="22" spellcheck="false" placeholder="your name" aria-label="Your name">
+          <button class="th-enter" id="th-enter" type="submit" aria-label="Enter Celestium"><span class="ar" aria-hidden="true">&#8594;</span></button>
+        </form>
+        <button class="th-skip" id="th-skip" type="button">slip in unnamed</button>
       </div>
       <div class="at-land-load" id="at-land-load" hidden aria-hidden="true">
         <div class="at-land-bar"><i id="at-land-prog"></i></div>
-        <p class="at-land-loadtxt" id="at-land-loadtxt">Entering lightspeed&hellip;</p>
+        <p class="at-land-loadtxt" id="at-land-loadtxt">Falling into the sky&hellip;</p>
       </div>
       <div class="at-land-flash" id="at-land-flash" aria-hidden="true"></div>
     </div>
+    <p class="th-welcome" id="th-welcome" aria-hidden="true"></p>
 
     <div class="at-stage" id="at-stage">
       <canvas id="at-canvas" aria-hidden="true"></canvas>
