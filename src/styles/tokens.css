@@ -290,16 +290,17 @@ nav.solid { padding: 14px 32px; box-shadow: var(--glass-bevel); }
   box-shadow: var(--glass-bevel), 0 10px 30px rgba(0,0,0,.35);
 }
 .btn:hover { border-color: rgba(255,255,255,.32); letter-spacing: .3em; box-shadow: var(--glass-shadow), var(--glass-bevel); }
-/* the primary CTA is the LUMINOUS jewel — same glass, lit from within */
+/* the primary CTA is the LUMINOUS gold jewel — same glass, lit from within.
+   One rule across the site: gold leads action & emotion, blue stays for live data. */
 .btn.fill {
-  color: var(--ink); border-color: rgba(255,255,255,.3);
+  color: var(--ink); border-color: rgba(236,212,154,.44);
   background:
-    radial-gradient(200px 160px at var(--gx, 26%) var(--gy, -12%), rgba(255,255,255,.14), transparent 74%),
-    linear-gradient(118deg, rgba(255,255,255,.16), rgba(255,255,255,.05) 38%, rgba(169,188,255,.1) 72%, rgba(255,255,255,.1)),
-    rgba(190, 204, 248, 0.13);
-  box-shadow: var(--glass-bevel), 0 10px 36px rgba(169,188,255,.2);
+    radial-gradient(200px 160px at var(--gx, 26%) var(--gy, -12%), rgba(255,255,255,.18), transparent 74%),
+    linear-gradient(118deg, rgba(255,245,222,.20), rgba(255,255,255,.05) 38%, rgba(236,201,138,.18) 72%, rgba(255,245,222,.12)),
+    rgba(58, 48, 26, 0.20);
+  box-shadow: var(--glass-bevel), 0 10px 36px rgba(236,201,138,.24);
 }
-.btn.fill:hover { border-color: rgba(255,255,255,.45); box-shadow: var(--glass-bevel), 0 14px 48px rgba(169,188,255,.32); }
+.btn.fill:hover { border-color: rgba(236,212,154,.62); box-shadow: var(--glass-bevel), 0 14px 48px rgba(236,201,138,.36); }
 
 /* mobile menu (used by both pages) */
 #menu {
