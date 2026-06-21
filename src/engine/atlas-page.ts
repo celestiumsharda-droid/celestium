@@ -26,30 +26,24 @@ const iw = window as IdleWindow;
 const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
 
-/* ===================== THE THRESHOLD =====================
-   Darkness, then particles gather into the Celestium mark and morph through
-   the forms of the cosmos — a star, a world, a cell, a tree, a whale, a human,
-   and back. One quiet question is asked. Then the field scatters upward into
-   stars and the visitor arrives on their shore. The heavy 3-D engine + the
-   108k-star catalogue prefetch behind it, so arrival is from warm cache. */
+/* ---- the launch page ----
+   The page paints instantly: a light canvas starfield and the hero, with NO
+   WebGL engine. The heavy 3-D engine + 108k-star catalogue PREFETCH in the
+   background while the visitor reads, so pressing "Launch the Atlas" boots from
+   warm cache — a fraction of the old cold-start. */
 const intro = document.getElementById("at-intro");
+const launchBtn = document.getElementById("at-intro-go");
+const readyEl = document.getElementById("at-land-ready");
 const loadWrap = document.getElementById("at-land-load");
 const progEl = document.getElementById("at-land-prog");
-const flash = document.getElementById("at-land-flash");
-const veil = document.getElementById("th-veil");
-const nameInput = document.getElementById("th-name") as HTMLInputElement | null;
-const thForm = document.getElementById("th-form") as HTMLFormElement | null;
-const thSkip = document.getElementById("th-skip");
-const welcomeEl = document.getElementById("th-welcome");
-const thCanvas = document.getElementById("th-canvas") as HTMLCanvasElement | null;
 const section = document.getElementById("atlas");
 const canvas = document.getElementById("at-canvas") as HTMLCanvasElement | null;
 const labels = document.getElementById("at-labels");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const NAME_KEY = "celestium:name";
-const known = (() => { try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; } })();
-if (nameInput && known) nameInput.value = known;
+const flash = document.getElementById("at-land-flash");
+const landCanvas = document.getElementById("at-land-stars") as HTMLCanvasElement | null;
+const starsApi = (landCanvas && !reduce) ? startLandingStars(landCanvas) : null;
 
 let enginePromise: Promise<typeof import("./atlas")> | null = null;
 let dataWarmed = false;
@@ -60,6 +54,7 @@ function prefetch(): void {
     ["bubble_pos.f32", "bubble_col.u8", "bubble_meta.bin", "bubble_meta.json", "constellations.f32"]
       .forEach(f => { fetch("/stars/" + f).catch(() => { /* best-effort warm-up */ }); });
   }
+  enginePromise.then(() => { if (readyEl) { readyEl.classList.add("go"); readyEl.textContent = "ready — press launch"; } }).catch(() => {});
 }
 if (iw.requestIdleCallback) iw.requestIdleCallback(prefetch, { timeout: 2500 }); else setTimeout(prefetch, 1400);
 
@@ -70,63 +65,45 @@ const ids = () => ({
   conSearch: $<HTMLInputElement>("at-con-search"), conClose: $("at-con-close"),
 });
 
-const _S = (inner: string): string => `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>${inner}</svg>`;
-const MARK_SVG = _S(`<g fill='none' stroke='#fff' stroke-width='3'><ellipse cx='50' cy='50' rx='40' ry='16'/><ellipse cx='50' cy='50' rx='40' ry='16' transform='rotate(60 50 50)'/><ellipse cx='50' cy='50' rx='40' ry='16' transform='rotate(120 50 50)'/></g><circle cx='50' cy='50' r='6' fill='#fff'/><path d='M76 16 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='#f2e6c4'/>`);
-const STAR_SVG = _S(`<path d='M50 6 L57 43 L94 50 L57 57 L50 94 L43 57 L6 50 L43 43Z' fill='#fff'/><circle cx='50' cy='50' r='9' fill='#f2e6c4'/>`);
-const EARTH_SVG = _S(`<circle cx='50' cy='50' r='35' fill='#fff'/><path d='M30 40 q12 -6 22 2 q-8 8 -22 -2Z M58 56 q14 -2 18 8 q-12 6 -18 -8Z' fill='#cdd9f0'/>`);
-const CELL_SVG = _S(`<ellipse cx='46' cy='52' rx='30' ry='15' fill='#fff'/><path d='M75 52 q9 -9 18 -4 q-9 5 -18 4' fill='#fff'/><circle cx='40' cy='50' r='5' fill='#f2e6c4'/>`);
-const TREE_SVG = _S(`<circle cx='50' cy='37' r='25' fill='#fff'/><rect x='46' y='55' width='8' height='38' fill='#fff'/>`);
-const WHALE_SVG = _S(`<path d='M6 54 C22 40 46 38 66 44 C78 47 88 41 94 33 C92 46 87 52 84 54 C88 58 90 63 90 69 C81 61 73 60 64 62 C46 66 22 66 6 54Z' fill='#fff'/>`);
-const HUMAN_SVG = _S(`<circle cx='50' cy='20' r='10' fill='#fff'/><path d='M50 31 C40 31 38 42 38 56 L40 92 L47 92 L49 62 L51 62 L53 92 L60 92 L62 56 C62 42 60 31 50 31Z' fill='#fff'/>`);
-
-// the threshold is complete darkness — hide the page chrome until we arrive
-const navEl = document.getElementById("nav");
-const progBar = document.getElementById("prog");
-if (navEl) navEl.style.opacity = "0";
-if (progBar) progBar.style.opacity = "0";
-
-const threshold = (thCanvas && !reduce) ? startThreshold(thCanvas) : null;
-// reveal the question once the mark has gathered (sooner for reduced motion)
-setTimeout(() => veil?.classList.add("show"), reduce ? 200 : 3000);
-setTimeout(() => { try { nameInput?.focus({ preventScroll: true }); } catch { /* ignore */ } }, reduce ? 400 : 3400);
-
-let entered = false;
-function enter(): void {
-  if (entered || !section || !canvas || !labels) return;
-  entered = true;
-  const nm = (nameInput?.value || "").trim().slice(0, 22);
-  try { if (nm) localStorage.setItem(NAME_KEY, nm); } catch { /* private mode */ }
-  veil?.classList.add("leaving");
+let launched = false;
+function launch(): void {
+  if (launched || !section || !canvas || !labels) return;
+  launched = true;
+  launchBtn?.classList.add("loading");
   if (loadWrap) loadWrap.hidden = false;
   prefetch();
-  let p = 14; const tick = window.setInterval(() => { p = Math.min(96, p + 9); if (progEl) progEl.style.width = p + "%"; }, 110);
-  const arrive = (): void => {
+  let p = 12; const tick = window.setInterval(() => { p = Math.min(96, p + 10); if (progEl) progEl.style.width = p + "%"; }, 110);
+  // at the peak of the lightspeed jump: flash white, mount Earth behind it, dissolve
+  const reveal = (): void => {
     flash?.classList.add("on");
     enginePromise!.then(m => {
       window.clearInterval(tick); if (progEl) progEl.style.width = "100%";
       section!.classList.add("live");
       document.body.style.overflow = "hidden";
       m.mountAtlas({ canvas: canvas!, labels: labels!, ...ids() });
-      if (welcomeEl) welcomeEl.textContent = nm ? `${known ? "Welcome back" : "Welcome"}, ${nm}.` : "Welcome home.";
       setTimeout(() => {
-        threshold?.stop();
-        if (intro) { intro.style.transition = "opacity .8s var(--ease)"; intro.classList.add("gone"); }
-        if (navEl) { navEl.style.transition = "opacity .9s ease"; navEl.style.opacity = ""; }
-        if (progBar) progBar.style.opacity = "";
-        welcomeEl?.classList.add("show");
-        setTimeout(() => intro?.remove(), 900);
-        setTimeout(() => welcomeEl?.classList.remove("show"), 5400);
-      }, 440);
+        starsApi?.stop();
+        if (intro) { intro.style.transition = "opacity .7s var(--ease)"; intro.classList.add("gone"); }
+        setTimeout(() => intro?.remove(), 820);
+      }, 380);
     }).catch(err => {
-      window.clearInterval(tick); entered = false;
-      if (loadWrap) loadWrap.hidden = true; flash?.classList.remove("on"); veil?.classList.remove("leaving");
+      window.clearInterval(tick); launched = false; launchBtn?.classList.remove("loading");
+      if (loadWrap) loadWrap.hidden = true; flash?.classList.remove("on");
       console.warn("The Atlas is unavailable; keeping the written summary.", err);
     });
   };
-  if (threshold) threshold.scatter(arrive); else arrive();
+  if (starsApi) starsApi.warp(reveal); else reveal();
 }
-thForm?.addEventListener("submit", e => { e.preventDefault(); enter(); });
-thSkip?.addEventListener("click", () => { if (nameInput) nameInput.value = ""; enter(); });
+launchBtn?.addEventListener("click", launch);
+
+/* parallax: the cinematic montage drifts gently with the pointer */
+const gallery = document.getElementById("at-land-gallery");
+if (gallery && matchMedia("(pointer: fine)").matches) {
+  addEventListener("pointermove", e => {
+    gallery.style.setProperty("--px", ((e.clientX / innerWidth - 0.5) * 2).toFixed(3));
+    gallery.style.setProperty("--py", ((e.clientY / innerHeight - 0.5) * 2).toFixed(3));
+  }, { passive: true });
+}
 
 /* the liquid-jewel cursor — a glass bead that lags the pointer and swells over
    anything you can touch. Desktop only; coarse pointers keep the native cursor. */
@@ -139,89 +116,70 @@ function initJewelCursor(): void {
   addEventListener("pointermove", e => {
     tx = e.clientX; ty = e.clientY; if (!shown) { shown = true; cur.classList.add("show"); }
     const el = e.target as Element | null;
-    cur.classList.toggle("hot", !!(el?.closest?.("a,button,input,.at-label,.at-con-item,.at-con-cat,.th-enter,.th-skip,.th-name,.at-more,.at-sheet-close,.at-con-close,.at-time button")));
+    cur.classList.toggle("hot", !!(el?.closest?.("a,button,input,.at-label,.at-con-item,.at-con-cat,.lg-shot,.at-more,.at-sheet-close,.at-con-close,.at-time button")));
   }, { passive: true });
   addEventListener("pointerdown", () => cur.classList.add("hot"));
   loop();
 }
 initJewelCursor();
 
-/* ---- the particle threshold ----
-   Each "form" is an SVG silhouette sampled to a cloud of points; the particles
-   spring between forms — materialising the mark, looping through life, then
-   scattering into the sky on entry. */
-type Pt = { x: number; y: number; gold: boolean };
-type TP = { x: number; y: number; vx: number; vy: number; ti: number; gold: boolean; tw: number; a: number };
-function startThreshold(cv: HTMLCanvasElement): { stop: () => void; scatter: (cb: () => void) => void } {
-  const ctx = cv.getContext("2d"); if (!ctx) return { stop: () => {}, scatter: cb => cb() };
+/* the launch-page starfield: ambient drift + the odd shooting star, with a
+   "jump to lightspeed" warp that streaks every star out of frame on launch. */
+type StarsApi = { stop: () => void; warp: (onPeak: () => void) => void };
+function startLandingStars(cv: HTMLCanvasElement): StarsApi {
+  const ctx = cv.getContext("2d"); if (!ctx) return { stop: () => {}, warp: cb => cb() };
   const c2 = ctx;
-  const FORMS: string[] = [MARK_SVG, STAR_SVG, EARTH_SVG, CELL_SVG, TREE_SVG, WHALE_SVG, HUMAN_SVG];
-  let W = 0, H = 0, dpr = 1, raf = 0, t = 0;
-  let clouds: Pt[][] = [];
-  let parts: TP[] = [];
-  let N = 1300, formI = 0, ready = false, lastMorph = 0;
-  let scattering = false, scatterT = 0, scattered = false, onScatter: (() => void) | null = null;
-  const scale = () => Math.min(W, H) * 0.3;
-  const target = (i: number): Pt => clouds[formI]![parts[i]!.ti % clouds[formI]!.length]!;
-
-  function resize(): void { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); cv.style.width = innerWidth + "px"; cv.style.height = innerHeight + "px"; }
+  const PAL = ["255,255,255", "200,216,255", "236,212,154", "206,222,255"];
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+  type S = { x: number; y: number; px: number; py: number; z: number; r: number; tw: number; sp: number; c: string; big: boolean };
+  type M = { x: number; y: number; vx: number; vy: number; life: number; len: number };
+  let W = 0, H = 0, dpr = 1, stars: S[] = [], shoots: M[] = [], t = 0, nextShoot = 2, raf = 0;
+  let warping = false, warpT = 0, peaked = false, onPeak: (() => void) | null = null;
+  function init(): void {
+    const n = Math.min(900, Math.round(innerWidth * innerHeight / 1600)); stars = [];
+    for (let i = 0; i < n; i++) { const z = Math.random() * Math.random(); const x = Math.random() * W, y = Math.random() * H; stars.push({ x, y, px: x, py: y, z, r: (0.4 + z * 1.6) * dpr, tw: Math.random() * 6.28, sp: rnd(0.3, 1), c: PAL[(Math.random() * PAL.length) | 0]!, big: Math.random() < 0.07 }); }
+  }
+  function resize(): void { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); cv.style.width = innerWidth + "px"; cv.style.height = innerHeight + "px"; init(); }
+  function stepWarp(): void {
+    warpT = Math.min(1, warpT + 0.016 / 1.05);
+    const cx = W / 2, cy = H / 2, sp = 0.012 + warpT * warpT * 0.5;
+    c2.fillStyle = "rgba(3,4,10,0.4)"; c2.fillRect(0, 0, W, H);     // motion-blur trail
+    c2.lineCap = "round";
+    for (const s of stars) {
+      s.px = s.x; s.py = s.y;
+      let dx = s.x - cx, dy = s.y - cy;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) { dx = rnd(-1, 1); dy = rnd(-1, 1); }
+      s.x += dx * sp; s.y += dy * sp;
+      if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) { const a = Math.random() * 6.28, r = rnd(2, 60); s.x = cx + Math.cos(a) * r; s.y = cy + Math.sin(a) * r; s.px = s.x; s.py = s.y; }
+      const a = Math.min(1, 0.5 + 0.5 * s.z + warpT * 0.4);
+      c2.strokeStyle = "rgba(" + s.c + "," + a + ")"; c2.lineWidth = (0.5 + s.z * 1.6 + warpT * 2.0) * dpr;
+      c2.beginPath(); c2.moveTo(s.px, s.py); c2.lineTo(s.x, s.y); c2.stroke();
+    }
+    if (!peaked && warpT >= 0.8) { peaked = true; onPeak?.(); }
+  }
   function frame(): void {
     raf = requestAnimationFrame(frame); t += 0.016;
+    if (warping) { stepWarp(); return; }
     c2.clearRect(0, 0, W, H);
-    if (!ready) return;
-    if (!scattering && t - lastMorph > 2.7 && t > 3.0) { formI = (formI + 1) % FORMS.length; lastMorph = t; }
-    const S = scale(), CX = W / 2, CY = H * 0.4;
-    if (scattering) scatterT = Math.min(1, scatterT + 0.02);
-    for (let i = 0; i < parts.length; i++) {
-      const p = parts[i]!;
-      if (scattering) {
-        p.vy -= 0.04 * dpr; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.vy *= 1.012; p.a *= 0.985;
-      } else {
-        const tg = target(i);
-        const tx = CX + tg.x * S, ty = CY + tg.y * S;
-        p.vx += (tx - p.x) * 0.012; p.vy += (ty - p.y) * 0.012; p.vx *= 0.82; p.vy *= 0.82;
-        p.x += p.vx + Math.sin(t * 0.7 + p.tw) * 0.18 * dpr; p.y += p.vy + Math.cos(t * 0.6 + p.tw) * 0.18 * dpr;
-        p.a += (1 - p.a) * 0.03;
-      }
-      const tw = 0.6 + 0.4 * Math.sin(t * 2 + p.tw);
-      const al = Math.max(0, Math.min(1, p.a)) * tw;
-      if (al < 0.02) continue;
-      c2.beginPath(); c2.arc(p.x, p.y, (p.gold ? 1.5 : 1.1) * dpr, 0, 6.283);
-      c2.fillStyle = p.gold ? `rgba(240,216,150,${al})` : `rgba(214,226,255,${al})`;
-      c2.fill();
-      if (p.gold) { const g = c2.createRadialGradient(p.x, p.y, 0, p.x, p.y, 7 * dpr); g.addColorStop(0, `rgba(240,216,150,${al * 0.5})`); g.addColorStop(1, "rgba(240,216,150,0)"); c2.fillStyle = g; c2.beginPath(); c2.arc(p.x, p.y, 7 * dpr, 0, 6.283); c2.fill(); }
+    for (const s of stars) {
+      s.x -= (0.02 + s.z * 0.07) * dpr; if (s.x < -4) { s.x = W + 4; s.y = Math.random() * H; }
+      const a = (0.4 + 0.6 * Math.abs(Math.sin(s.tw + t * s.sp))) * (0.5 + 0.5 * s.z);
+      c2.beginPath(); c2.arc(s.x, s.y, s.r, 0, 6.28); c2.fillStyle = "rgba(" + s.c + "," + a + ")"; c2.fill();
+      if (s.big) { const g = c2.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 7); g.addColorStop(0, "rgba(" + s.c + "," + (a * 0.4) + ")"); g.addColorStop(1, "rgba(" + s.c + ",0)"); c2.fillStyle = g; c2.beginPath(); c2.arc(s.x, s.y, s.r * 7, 0, 6.28); c2.fill(); }
     }
-    if (scattering && scatterT >= 0.45 && !scattered) { scattered = true; onScatter?.(); }
+    nextShoot -= 0.016;
+    if (nextShoot <= 0) { const sp = rnd(9, 15) * dpr; shoots.push({ x: rnd(W * 0.2, W * 0.9), y: rnd(-20, H * 0.4), vx: -sp, vy: sp * rnd(0.35, 0.5), life: 1, len: rnd(120, 220) * dpr }); nextShoot = rnd(3, 6.5); }
+    for (let i = shoots.length - 1; i >= 0; i--) {
+      const m = shoots[i]!; m.x += m.vx; m.y += m.vy; m.life -= 0.014; const hyp = Math.hypot(m.vx, m.vy);
+      const tx = m.x - m.vx / hyp * m.len, ty = m.y - m.vy / hyp * m.len;
+      const g = c2.createLinearGradient(m.x, m.y, tx, ty); g.addColorStop(0, "rgba(255,255,255," + (m.life * 0.9) + ")"); g.addColorStop(1, "rgba(255,255,255,0)");
+      c2.strokeStyle = g; c2.lineWidth = 1.6 * dpr; c2.lineCap = "round"; c2.beginPath(); c2.moveTo(m.x, m.y); c2.lineTo(tx, ty); c2.stroke();
+      if (m.life <= 0 || m.x < -50 || m.y > H + 50) shoots.splice(i, 1);
+    }
   }
-  // sample every form, then seed the field scattered and let it gather into the mark
-  Promise.all(FORMS.map(svg => svgToPoints(svg, N))).then(cl => {
-    clouds = cl; N = Math.min(N, ...cl.map(c => c.length || N));
-    parts = [];
-    for (let i = 0; i < N; i++) { const a = Math.random() * 6.283, r = Math.max(W, H) * (0.4 + Math.random() * 0.6); parts.push({ x: W / 2 + Math.cos(a) * r, y: H / 2 + Math.sin(a) * r, vx: 0, vy: 0, ti: i, gold: clouds[0]![i % clouds[0]!.length]!.gold, tw: Math.random() * 6.283, a: 0 }); }
-    ready = true; lastMorph = 0;
-  }).catch(() => { ready = false; });
   resize(); frame(); addEventListener("resize", resize);
   return {
     stop: () => cancelAnimationFrame(raf),
-    scatter: (cb: () => void) => { if (scattering) return; onScatter = cb; scattering = true; for (const p of parts) { const dx = p.x - W / 2, dy = p.y - H / 2, d = Math.hypot(dx, dy) || 1; const sp = (3 + Math.random() * 5) * dpr; p.vx = dx / d * sp; p.vy = dy / d * sp - 2 * dpr; } },
+    warp: (cb: () => void) => { if (warping) return; onPeak = cb; warpT = 0; peaked = false; for (const s of stars) { s.px = s.x; s.py = s.y; } warping = true; },
   };
-}
-
-/* sample an SVG silhouette (white on transparent) into a cloud of points */
-function svgToPoints(svg: string, n: number): Promise<Pt[]> {
-  return new Promise(resolve => {
-    const S = 220, off = document.createElement("canvas"); off.width = off.height = S;
-    const octx = off.getContext("2d"); if (!octx) { resolve([]); return; }
-    const img = new Image();
-    img.onload = () => {
-      octx.clearRect(0, 0, S, S); octx.drawImage(img, 0, 0, S, S);
-      const d = octx.getImageData(0, 0, S, S).data, pool: Pt[] = [];
-      for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) { const i = (y * S + x) * 4; if (d[i + 3]! > 90) { const r = d[i]!, g = d[i + 1]!, b = d[i + 2]!; pool.push({ x: (x / S - 0.5) * 2, y: (y / S - 0.5) * 2, gold: r > 200 && g > 165 && b < 175 }); } }
-      const out: Pt[] = [];
-      for (let k = 0; k < n; k++) out.push(pool.length ? pool[(Math.random() * pool.length) | 0]! : { x: 0, y: 0, gold: false });
-      resolve(out);
-    };
-    img.onerror = () => resolve([]);
-    img.src = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-  });
 }
