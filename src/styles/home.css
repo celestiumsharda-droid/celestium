@@ -567,64 +567,96 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 
 /* ---- THE ATLAS page ---- */
 /* the dive-in intro — a JWST deep field and a doorway into the Atlas */
-.at-intro { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; opacity: 1; transition: opacity 1.1s var(--ease); }
+/* ============================================================
+   THE ATLAS — LAUNCH PAGE  (a cinematic deep-space observatory)
+   Floating starfield over a black cosmic gradient; a Fraunces hero
+   beside a parallax montage of real Atlas captures; a liquid-jewel
+   cursor; and a jump to lightspeed on launch.
+   ============================================================ */
+.at-intro { position: fixed; inset: 0; z-index: 20; overflow: hidden; opacity: 1; transition: opacity 1.1s var(--ease);
+  background: radial-gradient(150% 120% at 74% 6%, #0b1128 0%, #06080f 44%, #020308 100%); }
 .at-intro.gone { opacity: 0; pointer-events: none; }
-.at-intro-bg {
-  position: absolute; inset: 0; z-index: -2;
-  background: #000 url(/img/atlas-hero.webp) center/cover no-repeat;
-  animation: atDrift 38s ease-in-out infinite alternate;
-}
-@keyframes atDrift { from { transform: scale(1.04); } to { transform: scale(1.14) translate(-2%, 1%); } }
-.at-intro::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(100deg, rgba(2,3,9,.92) 0%, rgba(2,3,9,.72) 38%, rgba(2,3,9,.35) 70%, rgba(2,3,9,.6) 100%);
-}
-.at-intro-inner { max-width: 640px; padding: clamp(28px, 7vw, 110px); }
-.at-intro-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: var(--accent); margin-bottom: 22px; opacity: 0; animation: rise .9s .15s forwards var(--ease); }
-.at-intro-title { font-family: var(--display); font-weight: 300; font-size: clamp(2.3rem, 5.6vw, 4.4rem); line-height: 1.02; letter-spacing: -.025em; margin-bottom: 26px; opacity: 0; animation: rise 1s .3s forwards var(--ease); }
-.at-intro-dek { color: var(--mut); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.7; max-width: 52ch; margin-bottom: 36px; opacity: 0; animation: rise 1s .5s forwards var(--ease); }
-.at-intro-go {
-  font-family: var(--mono); font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink);
-  padding: 18px 36px; border-radius: 999px; cursor: pointer; position: relative;
+.at-land-stars { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; }
+.at-land-neb { position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(200px 150px at var(--gx,28%) var(--gy,-14%), rgba(255,255,255,.16), transparent 72%),
-    var(--glass-sheen-face), rgba(190,204,248,.16);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255,255,255,.32);
-  box-shadow: var(--glass-bevel), 0 12px 40px rgba(169,188,255,.28);
-  opacity: 0; animation: rise 1s .7s forwards var(--ease);
-  transition: border-color .3s, box-shadow .3s, transform .3s;
-}
-.at-intro-go:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.5); box-shadow: var(--glass-bevel), 0 16px 52px rgba(169,188,255,.4); }
-.at-intro-stats { margin-top: 30px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); opacity: 0; animation: rise 1s .9s forwards var(--ease); }
-@media (max-width: 600px) { .at-intro { align-items: flex-end; } .at-intro-inner { padding-bottom: 12vh; } .at-intro::after { background: linear-gradient(180deg, rgba(2,3,9,.5), rgba(2,3,9,.55) 40%, rgba(2,3,9,.92)); } }
+    radial-gradient(880px 700px at 80% 14%, rgba(122,84,180,.20), transparent 60%),
+    radial-gradient(820px 680px at 8% 88%, rgba(44,92,176,.17), transparent 62%),
+    radial-gradient(560px 560px at 62% 62%, rgba(236,201,138,.07), transparent 70%); }
+.at-land-grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.at-intro::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 320px 70px rgba(2,3,8,.82); }
 
-/* ---- the launch page: a fast, light hero (the heavy engine prefetches behind it) ---- */
-.at-land-stars { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; }
-.at-intro-inner { position: relative; z-index: 1; }
-.at-land-cta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-.at-intro-go { display: inline-flex; align-items: center; gap: 6px; }
-.at-intro-go .ar { display: inline-block; transition: transform .3s var(--ease); }
-.at-intro-go:hover .ar { transform: translateX(4px); }
-.at-intro-go.loading { pointer-events: none; opacity: .65; }
-.at-land-ready { font-family: var(--mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); opacity: 0; animation: rise 1s 1.1s forwards var(--ease); display: inline-flex; align-items: center; gap: 8px; }
-.at-land-ready::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); transition: background .5s, box-shadow .5s; }
-.at-land-ready.go { color: var(--star); }
-.at-land-ready.go::before { background: #6ee29a; box-shadow: 0 0 10px #6ee29a; }
-.at-land-feats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 42px; opacity: 0; animation: rise 1s 1s forwards var(--ease); }
-.at-land-feat {
-  border: 1px solid var(--glass-edge); border-radius: 14px; padding: 13px 17px; min-width: 156px;
-  background: var(--glass-sheen-face), var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-bevel);
-}
-.at-land-feat b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.16rem; color: var(--ink); letter-spacing: -.01em; line-height: 1.1; }
-.at-land-feat span { font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
-.at-land-load { position: absolute; left: 0; right: 0; bottom: clamp(40px, 9vh, 90px); display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 2; }
+.at-land-wrap { position: absolute; inset: 0; z-index: 4; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: clamp(20px, 4vw, 64px);
+  padding: clamp(86px, 12vh, 150px) clamp(28px, 6vw, 96px) clamp(40px, 7vh, 80px); }
+.at-land-copy { max-width: 600px; }
+.at-intro-eyebrow { display: inline-flex; align-items: center; gap: 11px; font-family: var(--mono); font-size: 11px; letter-spacing: .34em; text-transform: uppercase; color: var(--gold-deep, #caa860); margin-bottom: 26px; opacity: 0; animation: rise .9s .1s forwards var(--ease); }
+.at-intro-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold, #ecd49a); box-shadow: 0 0 10px 1px rgba(236,212,154,.7); }
+.at-intro-title { font-family: var(--display); font-weight: 300; font-size: clamp(2.6rem, 6.2vw, 5.4rem); line-height: .98; letter-spacing: -.03em; color: var(--ink); margin-bottom: 26px; opacity: 0; animation: rise 1s .26s forwards var(--ease); }
+.at-intro-title em { font-style: italic; font-weight: 300; color: var(--gold, #ecd49a); }
+.at-intro-dek { color: var(--mut); font-family: var(--body); font-size: clamp(1.05rem, 1.5vw, 1.3rem); line-height: 1.62; max-width: 46ch; margin-bottom: 38px; opacity: 0; animation: rise 1s .42s forwards var(--ease); }
+.at-land-cta { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; opacity: 0; animation: rise 1s .58s forwards var(--ease); }
+.at-intro-go { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; position: relative;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: #0a0c14;
+  padding: 17px 32px; border-radius: 999px; border: 1px solid rgba(236,212,154,.6);
+  background: linear-gradient(180deg, #f7e8c1, #e2c481);
+  box-shadow: 0 12px 40px -6px rgba(236,212,154,.5), inset 0 1px 0 rgba(255,255,255,.6);
+  transition: transform .3s var(--ease), box-shadow .3s, filter .3s; }
+.at-intro-go:hover { transform: translateY(-2px); box-shadow: 0 18px 56px -6px rgba(236,212,154,.66), inset 0 1px 0 rgba(255,255,255,.6); filter: brightness(1.05); }
+.at-intro-go .ar { transition: transform .3s var(--ease); }
+.at-intro-go:hover .ar { transform: translateX(5px); }
+.at-intro-go.loading { pointer-events: none; opacity: .7; }
+.at-land-ready { font-family: var(--mono); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); display: inline-flex; align-items: center; gap: 9px; }
+.at-land-ready::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); animation: rdyPulse 1.6s ease-in-out infinite; transition: background .5s, box-shadow .5s; }
+.at-land-ready.go { color: var(--star, #9ec2ff); }
+.at-land-ready.go::before { background: #6ee29a; box-shadow: 0 0 10px #6ee29a; animation: none; }
+@keyframes rdyPulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
+.at-land-feats { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 48px; opacity: 0; animation: rise 1s .8s forwards var(--ease); }
+.at-land-feat b { display: block; font-family: var(--display); font-style: italic; font-weight: 400; font-size: 1.5rem; color: var(--gold, #ecd49a); letter-spacing: -.01em; line-height: 1; }
+.at-land-feat span { font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+
+/* the cinematic montage of real Atlas captures — parallax + slow float */
+.at-land-gallery { position: relative; height: min(74vh, 600px); opacity: 0; animation: rise 1.1s .5s forwards var(--ease); --px: 0; --py: 0; }
+.lg-shot { position: absolute; margin: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-edge);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.08); }
+.lg-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lg-shot::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 50px 6px rgba(3,4,10,.5); border-radius: inherit; pointer-events: none; }
+.lg-shot figcaption { position: absolute; left: 12px; bottom: 9px; font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.84); text-shadow: 0 1px 6px #000; }
+.s-bh   { width: 64%; aspect-ratio: 16/10; left: 16%; top: 7%;  z-index: 3; transform: translate(calc(var(--px) * -22px), calc(var(--py) * -16px)); animation: floatA 9s ease-in-out infinite; }
+.s-sat  { width: 38%; aspect-ratio: 1/1;   left: 0;   top: 42%; z-index: 4; transform: translate(calc(var(--px) * -34px), calc(var(--py) * -24px)); animation: floatB 11s ease-in-out infinite; }
+.s-mars { width: 32%; aspect-ratio: 1/1;   right: 2%; top: 55%; z-index: 4; transform: translate(calc(var(--px) * 30px), calc(var(--py) * 22px)); animation: floatA 12s ease-in-out infinite .6s; }
+.s-bet  { width: 30%; aspect-ratio: 4/3;   right: 5%; top: 5%;  z-index: 2; transform: translate(calc(var(--px) * 18px), calc(var(--py) * 13px)); animation: floatB 10s ease-in-out infinite .3s; }
+@keyframes floatA { 0%,100% { translate: 0 0 } 50% { translate: 0 -12px } }
+@keyframes floatB { 0%,100% { translate: 0 0 } 50% { translate: 0 10px } }
+
+/* launch progress + the lightspeed white flash */
+.at-land-load { position: absolute; left: 0; right: 0; bottom: clamp(40px, 9vh, 90px); display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 6; }
 .at-land-load[hidden] { display: none; }
 .at-land-bar { width: min(360px, 70vw); height: 2px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
-.at-land-bar i { display: block; height: 100%; width: 0%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), #fff); box-shadow: 0 0 14px var(--accent); transition: width .45s var(--ease); }
-.at-land-loadtxt { font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--mut); }
-@media (max-width: 600px) { .at-land-feats { gap: 10px; margin-top: 30px; } .at-land-feat { min-width: 132px; padding: 10px 13px; } }
+.at-land-bar i { display: block; height: 100%; width: 0%; border-radius: 2px; background: linear-gradient(90deg, var(--gold-deep, #caa860), #fff); box-shadow: 0 0 14px var(--gold, #ecd49a); transition: width .4s var(--ease); }
+.at-land-loadtxt { font-family: var(--mono); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--mut); }
+.at-land-flash { position: absolute; inset: 0; z-index: 9; background: radial-gradient(circle at 50% 50%, #fff, #eaf1ff 70%, #cfe0ff); opacity: 0; pointer-events: none; transition: opacity .14s ease; }
+.at-land-flash.on { opacity: 1; }
+
+@media (max-width: 920px) {
+  .at-land-wrap { grid-template-columns: 1fr; align-content: center; }
+  .at-land-gallery { display: none; }
+  .at-intro-dek { max-width: none; }
+}
+@media (max-width: 600px) { .at-land-feats { gap: 20px; margin-top: 34px; } .at-land-feat b { font-size: 1.3rem; } }
+
+/* ---- the liquid-jewel cursor (desktop, fine pointer only) ---- */
+.lj-cursor { position: fixed; top: 0; left: 0; z-index: 60; pointer-events: none; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; will-change: transform; opacity: 0;
+  border: 1px solid rgba(236,212,154,.55);
+  background: radial-gradient(circle at 38% 34%, rgba(255,255,255,.5), rgba(190,210,255,.12) 42%, transparent 64%);
+  box-shadow: 0 0 18px -2px rgba(236,212,154,.5), inset 0 0 10px rgba(190,210,255,.3);
+  transition: width .25s var(--ease), height .25s var(--ease), margin .25s var(--ease), border-color .25s, opacity .3s; }
+.lj-cursor.show { opacity: 1; }
+.lj-cursor i { position: absolute; inset: 0; margin: auto; width: 4px; height: 4px; border-radius: 50%; background: var(--gold, #ecd49a); box-shadow: 0 0 8px 1px rgba(236,212,154,.85); }
+.lj-cursor.hot { width: 54px; height: 54px; margin: -27px 0 0 -27px; border-color: rgba(236,212,154,.9); }
+@media (pointer: fine) and (hover: hover) {
+  #atlas, #atlas a, #atlas button, #at-canvas, #at-canvas:active, .at-intro, .at-intro button { cursor: none; }
+}
+@media (pointer: coarse) { .lj-cursor { display: none; } }
 
 .at-stage { display: none; }
 #atlas.live .at-stage { display: block; position: fixed; inset: 0; z-index: 1; overflow: hidden; background: #000; }

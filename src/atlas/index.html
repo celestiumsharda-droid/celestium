@@ -66,30 +66,39 @@
 
 <main id="top">
   <section id="atlas">
-    <!-- the launch page: a fast, light hero that loads instantly while the heavy
-         3-D engine + star catalogue prefetch in the background, ready to launch -->
+    <!-- the launch page: a light, cinematic hero (the heavy 3-D engine + star
+         catalogue prefetch in the background, ready to launch at lightspeed) -->
     <div class="at-intro" id="at-intro">
       <canvas class="at-land-stars" id="at-land-stars" aria-hidden="true"></canvas>
-      <div class="at-intro-bg" aria-hidden="true"></div>
-      <div class="at-intro-inner">
-        <p class="at-intro-eyebrow">The Celestium Atlas</p>
-        <h1 class="at-intro-title">The known universe,<br>to scale, in one&nbsp;flight.</h1>
-        <p class="at-intro-dek">Begin on the shore of your own sky and fly, in one unbroken motion, to the edge of the galaxy — every star, planet and world at its true place, tonight. The most advanced map of the universe ever put in a browser.</p>
-        <div class="at-land-cta">
-          <button class="at-intro-go" id="at-intro-go" type="button"><span class="lbl">Launch the Atlas</span><span class="ar">&#8594;</span></button>
-          <span class="at-land-ready" id="at-land-ready">preparing&nbsp;the&nbsp;engine&hellip;</span>
+      <div class="at-land-neb" aria-hidden="true"></div>
+      <div class="at-land-grain" aria-hidden="true"></div>
+      <div class="at-land-wrap">
+        <div class="at-land-copy">
+          <p class="at-intro-eyebrow"><span class="dot"></span>The Celestium Atlas</p>
+          <h1 class="at-intro-title">The known universe,<br>to scale, in one&nbsp;<em>flight.</em></h1>
+          <p class="at-intro-dek">Begin on the shore of your own sky and fall, in one unbroken motion, to the edge of the galaxy — every star, planet and world at its true place, tonight.</p>
+          <div class="at-land-cta">
+            <button class="at-intro-go" id="at-intro-go" type="button"><span class="lbl">Launch the Atlas</span><span class="ar" aria-hidden="true">&#8594;</span></button>
+            <span class="at-land-ready" id="at-land-ready">warming&nbsp;the&nbsp;engine&hellip;</span>
+          </div>
+          <div class="at-land-feats">
+            <div class="at-land-feat"><b>108,000+</b><span>real stars · true place</span></div>
+            <div class="at-land-feat"><b>real-time</b><span>planets where they are now</span></div>
+            <div class="at-land-feat"><b>one flight</b><span>your shore to the cosmic web</span></div>
+          </div>
         </div>
-        <div class="at-land-feats" aria-hidden="true">
-          <div class="at-land-feat"><b>108,000+</b><span>real stars · true positions</span></div>
-          <div class="at-land-feat"><b>Stand on Earth</b><span>your sky tonight, on the sea</span></div>
-          <div class="at-land-feat"><b>Sagittarius A*</b><span>a live, lensed black hole</span></div>
-          <div class="at-land-feat"><b>Real-time</b><span>the planets where they are now</span></div>
+        <div class="at-land-gallery" id="at-land-gallery" aria-hidden="true">
+          <figure class="lg-shot s-bh"><img src="/img/landing/blackhole.jpg" alt="" loading="eager" decoding="async"><figcaption>Sagittarius A&ast; · lensed live</figcaption></figure>
+          <figure class="lg-shot s-sat"><img src="/img/landing/saturn.jpg" alt="" loading="eager" decoding="async"><figcaption>Saturn · tonight</figcaption></figure>
+          <figure class="lg-shot s-mars"><img src="/img/landing/mars.jpg" alt="" loading="lazy" decoding="async"><figcaption>Mars</figcaption></figure>
+          <figure class="lg-shot s-bet"><img src="/img/landing/betelgeuse.jpg" alt="" loading="lazy" decoding="async"><figcaption>Betelgeuse</figcaption></figure>
         </div>
       </div>
       <div class="at-land-load" id="at-land-load" hidden aria-hidden="true">
         <div class="at-land-bar"><i id="at-land-prog"></i></div>
-        <p class="at-land-loadtxt" id="at-land-loadtxt">Charting the universe&hellip;</p>
+        <p class="at-land-loadtxt" id="at-land-loadtxt">Entering lightspeed&hellip;</p>
       </div>
+      <div class="at-land-flash" id="at-land-flash" aria-hidden="true"></div>
     </div>
 
     <div class="at-stage" id="at-stage">

@@ -36,15 +36,14 @@ const launchBtn = document.getElementById("at-intro-go");
 const readyEl = document.getElementById("at-land-ready");
 const loadWrap = document.getElementById("at-land-load");
 const progEl = document.getElementById("at-land-prog");
-const loadTxt = document.getElementById("at-land-loadtxt");
 const section = document.getElementById("atlas");
 const canvas = document.getElementById("at-canvas") as HTMLCanvasElement | null;
 const labels = document.getElementById("at-labels");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let stopStars: (() => void) | null = null;
+const flash = document.getElementById("at-land-flash");
 const landCanvas = document.getElementById("at-land-stars") as HTMLCanvasElement | null;
-if (landCanvas && !reduce) stopStars = startLandingStars(landCanvas);
+const starsApi = (landCanvas && !reduce) ? startLandingStars(landCanvas) : null;
 
 let enginePromise: Promise<typeof import("./atlas")> | null = null;
 let dataWarmed = false;
@@ -59,64 +58,128 @@ function prefetch(): void {
 }
 if (iw.requestIdleCallback) iw.requestIdleCallback(prefetch, { timeout: 2500 }); else setTimeout(prefetch, 1400);
 
+const ids = () => ({
+  name: $("at-name"), dist: $("at-dist"), line: $("at-line"),
+  more: $("at-more"), sheet: $("at-sheet"), time: $("at-time"), date: $("at-date"),
+  nav: $("at-nav"), consoleEl: $("at-console"), conList: $("at-con-list"),
+  conSearch: $<HTMLInputElement>("at-con-search"), conClose: $("at-con-close"),
+});
+
 let launched = false;
 function launch(): void {
   if (launched || !section || !canvas || !labels) return;
   launched = true;
   launchBtn?.classList.add("loading");
   if (loadWrap) loadWrap.hidden = false;
-  let p = 10; const tick = window.setInterval(() => { p = Math.min(92, p + Math.random() * 15); if (progEl) progEl.style.width = p + "%"; }, 200);
   prefetch();
-  enginePromise!.then(m => {
-    if (progEl) progEl.style.width = "100%";
-    if (loadTxt) loadTxt.textContent = "Entering…";
-    section.classList.add("live");
-    document.body.style.overflow = "hidden";                 // the Atlas is a fixed, full-screen instrument
-    m.mountAtlas({
-      canvas, labels,
-      name: $("at-name"), dist: $("at-dist"), line: $("at-line"),
-      more: $("at-more"), sheet: $("at-sheet"), time: $("at-time"), date: $("at-date"),
-      nav: $("at-nav"), consoleEl: $("at-console"), conList: $("at-con-list"),
-      conSearch: $<HTMLInputElement>("at-con-search"), conClose: $("at-con-close"),
+  let p = 12; const tick = window.setInterval(() => { p = Math.min(96, p + 10); if (progEl) progEl.style.width = p + "%"; }, 110);
+  // at the peak of the lightspeed jump: flash white, mount Earth behind it, dissolve
+  const reveal = (): void => {
+    flash?.classList.add("on");
+    enginePromise!.then(m => {
+      window.clearInterval(tick); if (progEl) progEl.style.width = "100%";
+      section!.classList.add("live");
+      document.body.style.overflow = "hidden";
+      m.mountAtlas({ canvas: canvas!, labels: labels!, ...ids() });
+      setTimeout(() => {
+        starsApi?.stop();
+        if (intro) { intro.style.transition = "opacity .7s var(--ease)"; intro.classList.add("gone"); }
+        setTimeout(() => intro?.remove(), 820);
+      }, 380);
+    }).catch(err => {
+      window.clearInterval(tick); launched = false; launchBtn?.classList.remove("loading");
+      if (loadWrap) loadWrap.hidden = true; flash?.classList.remove("on");
+      console.warn("The Atlas is unavailable; keeping the written summary.", err);
     });
-    window.clearInterval(tick);
-    setTimeout(() => { stopStars?.(); intro?.classList.add("gone"); setTimeout(() => intro?.remove(), 1100); }, 360);
-  }).catch(err => { window.clearInterval(tick); launched = false; launchBtn?.classList.remove("loading"); if (loadWrap) loadWrap.hidden = true; console.warn("The Atlas is unavailable; keeping the written summary.", err); });
+  };
+  if (starsApi) starsApi.warp(reveal); else reveal();
 }
 launchBtn?.addEventListener("click", launch);
 
-/* a cheap, lovely starfield for the launch page — drift, twinkle, the odd
-   shooting star. A 2-D canvas, nothing like the cost of the WebGL Atlas. */
-function startLandingStars(cv: HTMLCanvasElement): () => void {
-  const ctx = cv.getContext("2d"); if (!ctx) return () => {};
-  const PAL = ["255,255,255", "200,216,255", "255,236,212", "206,222,255"];
+/* parallax: the cinematic montage drifts gently with the pointer */
+const gallery = document.getElementById("at-land-gallery");
+if (gallery && matchMedia("(pointer: fine)").matches) {
+  addEventListener("pointermove", e => {
+    gallery.style.setProperty("--px", ((e.clientX / innerWidth - 0.5) * 2).toFixed(3));
+    gallery.style.setProperty("--py", ((e.clientY / innerHeight - 0.5) * 2).toFixed(3));
+  }, { passive: true });
+}
+
+/* the liquid-jewel cursor — a glass bead that lags the pointer and swells over
+   anything you can touch. Desktop only; coarse pointers keep the native cursor. */
+function initJewelCursor(): void {
+  if (!matchMedia("(pointer: fine) and (hover: hover)").matches) return;
+  const cur = document.createElement("div"); cur.className = "lj-cursor"; cur.innerHTML = "<i></i>";
+  document.body.appendChild(cur);
+  let tx = innerWidth / 2, ty = innerHeight / 2, x = tx, y = ty, shown = false;
+  const loop = (): void => { x += (tx - x) * 0.3; y += (ty - y) * 0.3; cur.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; requestAnimationFrame(loop); };
+  addEventListener("pointermove", e => {
+    tx = e.clientX; ty = e.clientY; if (!shown) { shown = true; cur.classList.add("show"); }
+    const el = e.target as Element | null;
+    cur.classList.toggle("hot", !!(el?.closest?.("a,button,input,.at-label,.at-con-item,.at-con-cat,.lg-shot,.at-more,.at-sheet-close,.at-con-close,.at-time button")));
+  }, { passive: true });
+  addEventListener("pointerdown", () => cur.classList.add("hot"));
+  loop();
+}
+initJewelCursor();
+
+/* the launch-page starfield: ambient drift + the odd shooting star, with a
+   "jump to lightspeed" warp that streaks every star out of frame on launch. */
+type StarsApi = { stop: () => void; warp: (onPeak: () => void) => void };
+function startLandingStars(cv: HTMLCanvasElement): StarsApi {
+  const ctx = cv.getContext("2d"); if (!ctx) return { stop: () => {}, warp: cb => cb() };
+  const c2 = ctx;
+  const PAL = ["255,255,255", "200,216,255", "236,212,154", "206,222,255"];
   const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-  type S = { x: number; y: number; z: number; r: number; tw: number; sp: number; c: string; big: boolean };
+  type S = { x: number; y: number; px: number; py: number; z: number; r: number; tw: number; sp: number; c: string; big: boolean };
   type M = { x: number; y: number; vx: number; vy: number; life: number; len: number };
   let W = 0, H = 0, dpr = 1, stars: S[] = [], shoots: M[] = [], t = 0, nextShoot = 2, raf = 0;
+  let warping = false, warpT = 0, peaked = false, onPeak: (() => void) | null = null;
   function init(): void {
     const n = Math.min(900, Math.round(innerWidth * innerHeight / 1600)); stars = [];
-    for (let i = 0; i < n; i++) { const z = Math.random() * Math.random(); stars.push({ x: Math.random() * W, y: Math.random() * H, z, r: (0.4 + z * 1.6) * dpr, tw: Math.random() * 6.28, sp: rnd(0.3, 1), c: PAL[(Math.random() * PAL.length) | 0]!, big: Math.random() < 0.07 }); }
+    for (let i = 0; i < n; i++) { const z = Math.random() * Math.random(); const x = Math.random() * W, y = Math.random() * H; stars.push({ x, y, px: x, py: y, z, r: (0.4 + z * 1.6) * dpr, tw: Math.random() * 6.28, sp: rnd(0.3, 1), c: PAL[(Math.random() * PAL.length) | 0]!, big: Math.random() < 0.07 }); }
   }
   function resize(): void { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); cv.style.width = innerWidth + "px"; cv.style.height = innerHeight + "px"; init(); }
+  function stepWarp(): void {
+    warpT = Math.min(1, warpT + 0.016 / 1.05);
+    const cx = W / 2, cy = H / 2, sp = 0.012 + warpT * warpT * 0.5;
+    c2.fillStyle = "rgba(3,4,10,0.4)"; c2.fillRect(0, 0, W, H);     // motion-blur trail
+    c2.lineCap = "round";
+    for (const s of stars) {
+      s.px = s.x; s.py = s.y;
+      let dx = s.x - cx, dy = s.y - cy;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) { dx = rnd(-1, 1); dy = rnd(-1, 1); }
+      s.x += dx * sp; s.y += dy * sp;
+      if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) { const a = Math.random() * 6.28, r = rnd(2, 60); s.x = cx + Math.cos(a) * r; s.y = cy + Math.sin(a) * r; s.px = s.x; s.py = s.y; }
+      const a = Math.min(1, 0.5 + 0.5 * s.z + warpT * 0.4);
+      c2.strokeStyle = "rgba(" + s.c + "," + a + ")"; c2.lineWidth = (0.5 + s.z * 1.6 + warpT * 2.0) * dpr;
+      c2.beginPath(); c2.moveTo(s.px, s.py); c2.lineTo(s.x, s.y); c2.stroke();
+    }
+    if (!peaked && warpT >= 0.8) { peaked = true; onPeak?.(); }
+  }
   function frame(): void {
-    raf = requestAnimationFrame(frame); t += 0.016; ctx!.clearRect(0, 0, W, H);
+    raf = requestAnimationFrame(frame); t += 0.016;
+    if (warping) { stepWarp(); return; }
+    c2.clearRect(0, 0, W, H);
     for (const s of stars) {
       s.x -= (0.02 + s.z * 0.07) * dpr; if (s.x < -4) { s.x = W + 4; s.y = Math.random() * H; }
       const a = (0.4 + 0.6 * Math.abs(Math.sin(s.tw + t * s.sp))) * (0.5 + 0.5 * s.z);
-      ctx!.beginPath(); ctx!.arc(s.x, s.y, s.r, 0, 6.28); ctx!.fillStyle = "rgba(" + s.c + "," + a + ")"; ctx!.fill();
-      if (s.big) { const g = ctx!.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 7); g.addColorStop(0, "rgba(" + s.c + "," + (a * 0.4) + ")"); g.addColorStop(1, "rgba(" + s.c + ",0)"); ctx!.fillStyle = g; ctx!.beginPath(); ctx!.arc(s.x, s.y, s.r * 7, 0, 6.28); ctx!.fill(); }
+      c2.beginPath(); c2.arc(s.x, s.y, s.r, 0, 6.28); c2.fillStyle = "rgba(" + s.c + "," + a + ")"; c2.fill();
+      if (s.big) { const g = c2.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 7); g.addColorStop(0, "rgba(" + s.c + "," + (a * 0.4) + ")"); g.addColorStop(1, "rgba(" + s.c + ",0)"); c2.fillStyle = g; c2.beginPath(); c2.arc(s.x, s.y, s.r * 7, 0, 6.28); c2.fill(); }
     }
     nextShoot -= 0.016;
     if (nextShoot <= 0) { const sp = rnd(9, 15) * dpr; shoots.push({ x: rnd(W * 0.2, W * 0.9), y: rnd(-20, H * 0.4), vx: -sp, vy: sp * rnd(0.35, 0.5), life: 1, len: rnd(120, 220) * dpr }); nextShoot = rnd(3, 6.5); }
     for (let i = shoots.length - 1; i >= 0; i--) {
       const m = shoots[i]!; m.x += m.vx; m.y += m.vy; m.life -= 0.014; const hyp = Math.hypot(m.vx, m.vy);
       const tx = m.x - m.vx / hyp * m.len, ty = m.y - m.vy / hyp * m.len;
-      const g = ctx!.createLinearGradient(m.x, m.y, tx, ty); g.addColorStop(0, "rgba(255,255,255," + (m.life * 0.9) + ")"); g.addColorStop(1, "rgba(255,255,255,0)");
-      ctx!.strokeStyle = g; ctx!.lineWidth = 1.6 * dpr; ctx!.lineCap = "round"; ctx!.beginPath(); ctx!.moveTo(m.x, m.y); ctx!.lineTo(tx, ty); ctx!.stroke();
+      const g = c2.createLinearGradient(m.x, m.y, tx, ty); g.addColorStop(0, "rgba(255,255,255," + (m.life * 0.9) + ")"); g.addColorStop(1, "rgba(255,255,255,0)");
+      c2.strokeStyle = g; c2.lineWidth = 1.6 * dpr; c2.lineCap = "round"; c2.beginPath(); c2.moveTo(m.x, m.y); c2.lineTo(tx, ty); c2.stroke();
       if (m.life <= 0 || m.x < -50 || m.y > H + 50) shoots.splice(i, 1);
     }
   }
   resize(); frame(); addEventListener("resize", resize);
-  return () => cancelAnimationFrame(raf);
+  return {
+    stop: () => cancelAnimationFrame(raf),
+    warp: (cb: () => void) => { if (warping) return; onPeak = cb; warpT = 0; peaked = false; for (const s of stars) { s.px = s.x; s.py = s.y; } warping = true; },
+  };
 }
