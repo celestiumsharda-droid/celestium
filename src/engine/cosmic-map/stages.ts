@@ -11,7 +11,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { glowSprite, glowTexture, ringSprite } from "./glow";
-import { tex, normalTex, dataTex } from "./textures";
+import { tex } from "./textures";
 import { buildBlackHole } from "./blackhole";
 import { PLANET_STYLES, NEAR_STARS, LOCAL_GROUP, raDecToXYZ } from "./data";
 import { helio, julianCenturies, type PlanetName } from "../ephemeris";

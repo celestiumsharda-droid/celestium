@@ -371,6 +371,13 @@ nav.solid { padding: 14px 32px; box-shadow: var(--glass-bevel); }
   margin-top: clamp(60px, 12vh, 140px);
   border-radius: var(--radius);
   overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  background:
+    radial-gradient(420px 240px at var(--gx, 30%) var(--gy, -12%), var(--glass-hi), transparent 72%),
+    var(--glass-sheen-face),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), var(--glass-bevel);
   transform: translateY(-10px) scale(.98); opacity: 0;
   transition: transform .28s cubic-bezier(.2,.7,.2,1), opacity .28s;
 }

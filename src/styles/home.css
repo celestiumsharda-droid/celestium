@@ -1249,15 +1249,17 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   position: relative; overflow: hidden;
   border-radius: var(--radius);
   background:
-    linear-gradient(157deg, rgba(255,255,255,.05), rgba(255,255,255,.01) 46%),
+    radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
     var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-edge);
-  box-shadow: var(--glass-bevel);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), var(--glass-bevel);
   transition: transform .5s cubic-bezier(.2,.7,.2,1), border-color .5s, box-shadow .5s;
 }
 .cell::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
-  background: radial-gradient(110% 80% at 75% -10%, rgba(169,188,255,.16), transparent 52%);
+  background: radial-gradient(110% 80% at 75% -10%, rgba(236,201,138,.16), transparent 52%);
   opacity: 0; transition: .6s;
 }
 .cell:hover {
@@ -1278,7 +1280,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .cell::after {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   border-radius: inherit; mix-blend-mode: screen;
-  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(169,188,255,.18), transparent 60%);
+  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(236,201,138,.18), transparent 60%);
   opacity: 0; transition: opacity .4s;
 }
 .cell:hover::after { opacity: 1; }

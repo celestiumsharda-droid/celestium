@@ -245,7 +245,7 @@ article strong { color: var(--ink); font-weight: 500; }
 .pull {
   margin: 54px 0;
   padding: 0 0 0 30px;
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--star);
   font-family: var(--display);
   font-size: clamp(1.45rem, 3vw, 2rem);
   font-weight: 300; font-style: italic;
@@ -259,9 +259,15 @@ article strong { color: var(--ink); font-weight: 500; }
   color: var(--dim); margin-top: 20px;
 }
 .know {
+  position: relative;
   margin: 52px 0;
-  border: 1px solid var(--line-soft); border-radius: 4px;
-  background: rgba(16,19,28,.5);
+  border: 1px solid var(--glass-edge); border-radius: var(--radius);
+  background:
+    radial-gradient(240px 200px at 18% -10%, var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), var(--glass-bevel);
   padding: 32px 34px;
 }
 .know .kh {
@@ -398,6 +404,13 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 .cat-card {
   display: flex; flex-direction: column; position: relative; overflow: hidden;
   border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--glass-edge);
+  background:
+    radial-gradient(240px 200px at var(--gx, 24%) var(--gy, -10%), var(--glass-hi), transparent 74%),
+    var(--glass-sheen-face),
+    var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), var(--glass-bevel);
   transition: transform .5s cubic-bezier(.2,.7,.2,1), border-color .5s, box-shadow .5s;
 }
 .cat-card[hidden] { display: none; }
@@ -405,7 +418,7 @@ figcaption .credit { display: block; margin-top: 6px; color: var(--faint); }
 .cat-card::after {
   content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
   border-radius: inherit; mix-blend-mode: screen;
-  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(169,188,255,.16), transparent 60%);
+  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(236,201,138,.16), transparent 60%);
   opacity: 0; transition: opacity .4s;
 }
 .cat-card:hover::after { opacity: 1; }
