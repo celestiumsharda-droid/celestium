@@ -147,34 +147,39 @@ a { color: inherit; text-decoration: none; }
 .lj-cursor { position: fixed; top: 0; left: 0; pointer-events: none; border-radius: 50%; will-change: transform; opacity: 0;
   transition: width .2s var(--ease, cubic-bezier(.2,.7,.2,1)), height .2s var(--ease, cubic-bezier(.2,.7,.2,1)), margin .2s var(--ease, cubic-bezier(.2,.7,.2,1)), opacity .35s ease; }
 .lj-cursor.show { opacity: 1; }
-/* the jewel body — a clear cut stone that refracts the page, cross-lit by facets
-   that slowly turn (the shimmer) and ringed with dispersion fire. Never dark. */
-.lj-lens { z-index: 2147483645; width: 26px; height: 26px; margin: -13px 0 0 -13px; overflow: visible;
-  -webkit-backdrop-filter: blur(.5px) saturate(2.3) brightness(1.14); backdrop-filter: blur(.5px) saturate(2.3) brightness(1.14);
-  border: 0.5px solid rgba(255,255,255,.42);
-  box-shadow: 0 0 13px -2px rgba(184,216,255,.6), inset 0 0 6px rgba(255,255,255,.22);
-  background: radial-gradient(circle at 37% 31%, rgba(255,255,255,.42), rgba(255,255,255,.06) 44%, rgba(255,255,255,0) 68%); }
-.lj-lens::after {                                   /* the brilliant-cut facets, slowly turning */
+/* the diamond body — a clear cut stone that refracts the page; its brilliance is
+   sharp white facet-flashes (scintillation) that slowly turn, with fire kept to
+   a whisper at the girdle, the way a real stone reads — mostly white light. */
+.lj-lens { z-index: 2147483645; width: 25px; height: 25px; margin: -12.5px 0 0 -12.5px; overflow: visible;
+  -webkit-backdrop-filter: blur(.4px) saturate(1.35) brightness(1.2) contrast(1.08); backdrop-filter: blur(.4px) saturate(1.35) brightness(1.2) contrast(1.08);
+  border: 0.6px solid rgba(255,255,255,.6);
+  box-shadow: 0 0 8px -1px rgba(205,228,255,.4), inset 0 0 5px rgba(255,255,255,.3);
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.12), rgba(255,255,255,0) 60%); }
+.lj-lens::after {                                   /* brilliant-cut scintillation — sharp white spokes, slowly turning */
   content: ""; position: absolute; inset: 0; border-radius: 50%; mix-blend-mode: screen;
   background: conic-gradient(from 0deg,
-    rgba(255,255,255,0) 0deg, rgba(255,255,255,.5) 12deg, rgba(255,255,255,0) 33deg,
-    rgba(255,255,255,.3) 60deg, rgba(255,255,255,0) 86deg,
-    rgba(255,255,255,.48) 122deg, rgba(255,255,255,0) 150deg,
-    rgba(255,255,255,.26) 196deg, rgba(255,255,255,0) 226deg,
-    rgba(255,255,255,.42) 284deg, rgba(255,255,255,0) 316deg, rgba(255,255,255,0) 360deg);
-  animation: ljSpin 7s linear infinite; }
-.lj-lens::before {                                  /* dispersion — the rainbow fire, counter-turning */
-  content: ""; position: absolute; inset: -1.5px; border-radius: 50%; padding: 1.5px; mix-blend-mode: screen; opacity: .8;
-  background: conic-gradient(from 30deg, #ff6b8a, #ffd36e, #7dffc6, #6ea8ff, #c98bff, #ff6b8a);
+    rgba(255,255,255,.92) 0deg, rgba(255,255,255,.1) 9deg, rgba(255,255,255,0) 22deg, rgba(255,255,255,0) 38deg,
+    rgba(255,255,255,.55) 45deg, rgba(255,255,255,.06) 53deg, rgba(255,255,255,0) 66deg, rgba(255,255,255,0) 83deg,
+    rgba(255,255,255,.98) 90deg, rgba(255,255,255,.1) 99deg, rgba(255,255,255,0) 112deg, rgba(255,255,255,0) 128deg,
+    rgba(255,255,255,.5) 135deg, rgba(255,255,255,.06) 143deg, rgba(255,255,255,0) 156deg, rgba(255,255,255,0) 173deg,
+    rgba(255,255,255,.92) 180deg, rgba(255,255,255,.1) 189deg, rgba(255,255,255,0) 202deg, rgba(255,255,255,0) 218deg,
+    rgba(255,255,255,.55) 225deg, rgba(255,255,255,.06) 233deg, rgba(255,255,255,0) 246deg, rgba(255,255,255,0) 263deg,
+    rgba(255,255,255,.98) 270deg, rgba(255,255,255,.1) 279deg, rgba(255,255,255,0) 292deg, rgba(255,255,255,0) 308deg,
+    rgba(255,255,255,.5) 315deg, rgba(255,255,255,.06) 323deg, rgba(255,255,255,0) 336deg, rgba(255,255,255,0) 353deg,
+    rgba(255,255,255,.92) 360deg);
+  animation: ljSpin 9s linear infinite; }
+.lj-lens::before {                                  /* fire — a faint iridescent girdle, just a hint, counter-turning */
+  content: ""; position: absolute; inset: -0.5px; border-radius: 50%; padding: 1px; mix-blend-mode: screen; opacity: .32;
+  background: conic-gradient(from 50deg, #ff9bb0, #ffe6a0, #a8ffd8, #a8c8ff, #d9a8ff, #ff9bb0);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
-  animation: ljSpin 13s linear infinite reverse; }
-.lj-lens.hot { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
-.lj-lens.down { width: 21px; height: 21px; margin: -10.5px 0 0 -10.5px; }
+  animation: ljSpin 17s linear infinite reverse; }
+.lj-lens.hot { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+.lj-lens.down { width: 20px; height: 20px; margin: -10px 0 0 -10px; }
 @keyframes ljSpin { to { transform: rotate(1turn); } }
-/* the adaptive heart — a soft glow that brightens on dark, darkens on light */
-.lj-bead { z-index: 2147483646; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; mix-blend-mode: difference;
-  background: radial-gradient(circle, rgba(255,255,255,.92) 0%, rgba(255,255,255,.4) 36%, rgba(255,255,255,0) 72%); }
-.lj-bead.hot { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+/* the adaptive heart — a small crisp brilliance that glows on dark, darkens on light */
+.lj-bead { z-index: 2147483646; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; mix-blend-mode: difference;
+  background: radial-gradient(circle, #fff 0%, rgba(255,255,255,.6) 42%, rgba(255,255,255,0) 78%); }
+.lj-bead.hot { width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; }
 @media (pointer: fine) and (hover: hover) { * { cursor: none !important; } }
 @media (pointer: coarse), (hover: none) { .lj-cursor { display: none !important; } }
 
