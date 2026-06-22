@@ -579,6 +579,18 @@ export function mountAtlas(opts: Opts): () => void {
   const sunLight = new THREE.PointLight(0xfff2dc, 2.6, 0, 0);
   scene.add(sunLight);
 
+  // Precompile shader programs so flying to a new world never stutters on a
+  // first-frame compile. compileAsync uses the driver's parallel-shader-compile
+  // when available (non-blocking); we fall back to the blocking compile only
+  // where it isn't. Called once at mount and again after the deferred build.
+  function compileSceneAsync(): void {
+    try {
+      const rc = renderer as THREE.WebGLRenderer & { compileAsync?: (s: THREE.Object3D, c: THREE.Camera) => Promise<unknown> };
+      if (typeof rc.compileAsync === "function") void rc.compileAsync(scene, camera);
+      else renderer.compile(scene, camera);
+    } catch (_e) { /* compile is best-effort */ }
+  }
+
   // Textures decode OFF the main thread via createImageBitmap, so a heavy map
   // streaming in mid-flight can never freeze a frame — the synchronous JPEG
   // decode was the cause of the big stutters. The bitmap is pre-flipped (WebGL
@@ -1037,9 +1049,13 @@ export function mountAtlas(opts: Opts): () => void {
   outerGroup.add(beltPoints(2600, 2.1, 3.3, 0.18, 0xb9ad96, 1.5, 0.5));    // main asteroid belt
   outerGroup.add(beltPoints(2000, 30, 50, 1.4, 0xa8b8d0, 1.4, 0.42));      // Kuiper belt
 
-  /* ---------- the stellar neighbourhood: real stars at their true places ---------- */
-  for (const s of STARS) {
-    if (s.n === "TRAPPIST-1") continue;     // built as a full textured system below
+  /* ---------- the stellar neighbourhood: real stars at their true places ----------
+     Each hero star is a full living body (LOD fbm-surface shaders) — ~50 of them.
+     They are light-years away, invisible specks the instant you launch into the
+     Solar System, so they are NOT built synchronously at mount (that was a large
+     slice of the launch stall). buildFarUniverse() streams them in afterwards. */
+  function buildHeroStar(s: StarRow): void {
+    if (s.n === "TRAPPIST-1") return;       // built as a full textured system below
     const p = starPos(s);
     const rKm = s.r * 696340;
     // every star is ALIVE: granulation scaled to its class — supergiants
@@ -1133,7 +1149,7 @@ export function mountAtlas(opts: Opts): () => void {
      appear only once you're in the system (labelMax). Adding a system later
      is just another row in src/data/exo.ts — nothing here changes. */
   const exoCentres: Record<string, Vec3> = {};
-  for (const sys of EXO_SYSTEMS) {
+  function buildExoSystem(sys: (typeof EXO_SYSTEMS)[number]): void {
     const C = skyPos(sys.ra, sys.dec, sys.ly);
     exoCentres[sys.pack] = C;
     const starR = Math.max(sys.rSun * 696340, sys.pulsar ? 1.4e4 : 0);   // pulsars are tiny — give a visible minimum
@@ -1171,6 +1187,22 @@ export function mountAtlas(opts: Opts): () => void {
         info: exoPlanetInfo(p, sys, lyTxt),
       });
     });
+  }
+
+  // Stream the far universe (~50 hero stars + 22 exoplanet systems) in across
+  // frames AFTER launch, never synchronously at mount. Each slice does ≤8ms of
+  // work then yields to the renderer, so there is never a long task — the distant
+  // specks simply fade in over a second while you're still arriving at Earth.
+  function buildFarUniverse(): void {
+    let hi = 0, xi = 0;
+    const slice = (): void => {
+      const t0 = performance.now();
+      while (hi < STARS.length && performance.now() - t0 < 8) buildHeroStar(STARS[hi++]!);
+      while (xi < EXO_SYSTEMS.length && performance.now() - t0 < 8) buildExoSystem(EXO_SYSTEMS[xi++]!);
+      if (hi < STARS.length || xi < EXO_SYSTEMS.length) requestAnimationFrame(slice);
+      else { compileSceneAsync(); farBuilt = true; scheduleIndices(); }   // warm new programs; release the index pass
+    };
+    requestAnimationFrame(slice);
   }
 
   /* ---------- comets: true elements, tails that wake near the Sun ---------- */
@@ -1928,6 +1960,18 @@ void main(){
   }
   let heroByCloudIdx: Map<number, string> | null = null;
   let nameToCloud: Int32Array | null = null;     // names-table index → cloud star index, for search
+  // the catalogue index pass needs BOTH the star data loaded AND the hero stars
+  // built (it matches one to the other), and each arrives asynchronously now —
+  // so a tiny gate runs it exactly once, when the second of the two is ready.
+  let starDataReady = false, farBuilt = false, indicesBuilt = false;
+  let runStarIndices: (() => void) | null = null;
+  function scheduleIndices(): void {
+    if (!starDataReady || !farBuilt || indicesBuilt || !runStarIndices) return;
+    indicesBuilt = true;
+    const fn = runStarIndices;
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(fn, { timeout: 3000 }); else setTimeout(fn, 300);
+  }
 
   // shared with the picker so any of the 108k stars can be studied (positions
   // and metadata are index-aligned, built from the same catalogue pass)
@@ -1946,32 +1990,9 @@ void main(){
   ]).then(([pb, cb, mb, mj]) => {
     const positions = new Float32Array(pb), colU8 = new Uint8Array(cb);
     bubblePos = positions; bubbleCol = colU8; starMeta = new DataView(mb as ArrayBuffer); starJson = mj as typeof starJson; starN = positions.length / 3;
-    // map each detailed hero star to its catalogue point, so tapping that point
-    // flies to the real body (its true surface) rather than a generic fly-star
-    heroByCloudIdx = new Map();
-    for (const b of bodies) {
-      if (b.kind !== "star" || b.adhoc || b.name === "Sagittarius A*" || b.name === "Sun") continue;
-      const bl = Math.hypot(b.pos.x, b.pos.y, b.pos.z); if (bl < 1) continue;
-      const bx = b.pos.x / bl, by = b.pos.y / bl, bz = b.pos.z / bl;
-      // a hero and its catalogue twin share a DIRECTION (same RA/Dec) even when
-      // the two catalogues disagree on distance — so match the brightest cloud
-      // star within ~0.6° of the hero's line of sight, not the nearest in 3D.
-      let bi = -1, bestMag = 99;
-      for (let i = 0; i < starN; i++) {
-        const px = positions[i * 3]!, py = positions[i * 3 + 1]!, pz = positions[i * 3 + 2]!;
-        const pl = Math.hypot(px, py, pz) || 1;
-        if ((px * bx + py * by + pz * bz) / pl < 0.99994) continue;     // outside the cone
-        const mag = starMeta!.getInt16(i * 16 + 4, true) / 100;
-        if (mag < bestMag) { bestMag = mag; bi = i; }
-      }
-      if (bi >= 0) heroByCloudIdx.set(bi, b.name);
-    }
-    // index every NAMED star so search can find it among the 108k
-    nameToCloud = new Int32Array((mj as typeof starJson)!.names.length).fill(-1);
-    for (let i = 0; i < starN; i++) {
-      const ni = (starMeta as DataView).getUint16(i * 16 + 12, true);
-      if (ni !== 65535) nameToCloud[ni] = i;
-    }
+
+    // build and SHOW the point cloud first, so the sky lights up the instant the
+    // catalogue arrives — the heavy index-building below is deferred off the frame
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const ib = new THREE.InterleavedBuffer(colU8, 4);
@@ -1986,6 +2007,42 @@ void main(){
     cloud.renderOrder = -1;                            // over the band, under everything solid
     scene.add(cloud);
     onFrame(({ camKm }) => cloud.position.set(-camKm.x, -camKm.y, -camKm.z));
+
+    // The catalogue indices are an O(heroes × 108k) pass that used to run right
+    // here — a ~2s main-thread stall landing exactly on the launch. Defer it to
+    // idle so it never blocks a frame; the worst case before it finishes is that
+    // tapping a hero's catalogue point briefly flies to a generic star.
+    const buildStarIndices = (): void => {
+      // map each detailed hero star to its catalogue point, so tapping that point
+      // flies to the real body (its true surface) rather than a generic fly-star.
+      // A hero and its twin share a DIRECTION (RA/Dec); match the brightest cloud
+      // star within ~0.6° of the line of sight, comparing cosines WITHOUT a sqrt:
+      // dot/|p| ≥ c  ⇔  dot ≥ 0 and dot² ≥ c²·|p|².
+      heroByCloudIdx = new Map();
+      const c2 = 0.99994 * 0.99994;
+      for (const b of bodies) {
+        if (b.kind !== "star" || b.adhoc || b.name === "Sagittarius A*" || b.name === "Sun") continue;
+        const bl = Math.sqrt(b.pos.x * b.pos.x + b.pos.y * b.pos.y + b.pos.z * b.pos.z); if (bl < 1) continue;
+        const bx = b.pos.x / bl, by = b.pos.y / bl, bz = b.pos.z / bl;
+        let bi = -1, bestMag = 99;
+        for (let i = 0; i < starN; i++) {
+          const px = positions[i * 3]!, py = positions[i * 3 + 1]!, pz = positions[i * 3 + 2]!;
+          const dot = px * bx + py * by + pz * bz;
+          if (dot <= 0 || dot * dot < c2 * (px * px + py * py + pz * pz)) continue;   // outside the cone (sqrt-free)
+          const mag = starMeta!.getInt16(i * 16 + 4, true) / 100;
+          if (mag < bestMag) { bestMag = mag; bi = i; }
+        }
+        if (bi >= 0) heroByCloudIdx.set(bi, b.name);
+      }
+      // index every NAMED star so search can find it among the 108k
+      nameToCloud = new Int32Array(starJson!.names.length).fill(-1);
+      for (let i = 0; i < starN; i++) {
+        const ni = starMeta!.getUint16(i * 16 + 12, true);
+        if (ni !== 65535) nameToCloud[ni] = i;
+      }
+    };
+    // the star data is here; run the index pass once the hero stars are also built
+    runStarIndices = buildStarIndices; starDataReady = true; scheduleIndices();
   }).catch(() => { /* the sky simply stays dark if the catalogue can't load */ });
 
   // ---- the constellation figures: the 88 patterns humans drew on this sky ----
@@ -2183,7 +2240,9 @@ void main(){
     }`;
   const oceanUniforms = { uTime: { value: 0 }, uCam: { value: new THREE.Vector3(0, 0, WATER_H) }, uMoon: { value: new THREE.Vector3(0.55, 0.22, 0.30).normalize() } };
   const oceanMat = new THREE.ShaderMaterial({ uniforms: oceanUniforms, vertexShader: OCEAN_VERT, fragmentShader: OCEAN_FRAG, side: THREE.DoubleSide });
-  const oceanMesh = new THREE.Mesh(buildOceanGeo(2600, 184, 264), oceanMat);
+  // tessellation tuned to the device — the Gerstner sum runs per vertex, so the
+  // sea is the planetarium's heaviest mesh; phones get a lighter grid
+  const oceanMesh = new THREE.Mesh(small ? buildOceanGeo(2200, 120, 168) : buildOceanGeo(2600, 160, 224), oceanMat);
   oceanMesh.frustumCulled = false; oceanMesh.visible = false; oceanMesh.renderOrder = 0;
   scene.add(oceanMesh);
 
@@ -2198,7 +2257,7 @@ void main(){
     g.rotateX(Math.PI / 2);                                  // cylinder axis Y → Z (so the flat top faces local +Z = up)
     return g;
   }
-  const cubeRT = new THREE.WebGLCubeRenderTarget(160, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+  const cubeRT = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
   const cubeCam = new THREE.CubeCamera(0.05, 2e19, cubeRT);
   scene.add(cubeCam);
   const lensMat = new THREE.MeshPhysicalMaterial({
@@ -2270,6 +2329,7 @@ void main(){
       focusOn(earth, false);
       tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.04;          // a natural standing gaze: the sea, the waterline and the sky
       oceanMesh.visible = true; lensGroup.visible = true;
+      cubeCaptures = 2;                                      // refresh the static reflection for this visit
       earth.mesh.visible = false;                            // we're standing on it — the sea takes its place
       stageEl.classList.add("in-sky");                       // hide the orbit readout + travel hint
       skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
@@ -2312,7 +2372,12 @@ void main(){
   // per-frame: orient the sea + lens to the live horizon, place the tags, run the HUD clock
   const _p = new THREE.Vector3();
   let lastClock = "";
-  let cubeTick = 0;
+  // the platform sits at a FIXED point relative to the camera (the planetarium
+  // only rotates the gaze, never moves the observer), so a cube env map captured
+  // once is correct for the whole visit — re-rendering the whole scene 6× every
+  // few frames for a subtle glass disk below the eyeline was the planetarium's
+  // single biggest cost. We capture a few frames after entering, then freeze.
+  let cubeCaptures = 0;
   onFrame(({ nowMs, dt }) => {
     // the doorway shows whenever you're resting at Earth and not already inside
     groundBtn.style.display = (!earthView && focus === earth) ? "" : "none";
@@ -2338,17 +2403,19 @@ void main(){
     oceanMesh.quaternion.copy(qUp); oceanMesh.position.set(-zenith.x * WATER_H, -zenith.y * WATER_H, -zenith.z * WATER_H);
     lensGroup.quaternion.copy(qUp); lensGroup.position.set(-zenith.x * PLAT_H, -zenith.y * PLAT_H, -zenith.z * PLAT_H);
     oceanUniforms.uTime.value = nowMs * 0.001;
-    // live reflection: capture the sea + sky into the platform's env map (the glass
-    // is hidden during the grab so it never mirrors itself). Throttled for cost.
-    cubeTick = (cubeTick + 1) % 3;
-    if (cubeTick === 0) {
+    // one-time reflection: capture the sea + sky into the platform's env map for
+    // the first few frames after entering (so the ocean shader has populated),
+    // then freeze it. The glass is hidden during the grab so it never mirrors
+    // itself. The observer never moves, so this static map stays correct.
+    if (cubeCaptures > 0) {
+      cubeCaptures--;
       lensGroup.visible = false;
       cubeCam.position.set(-zenith.x * PLAT_H, -zenith.y * PLAT_H, -zenith.z * PLAT_H);
       cubeCam.update(renderer, scene);
       lensGroup.visible = true;
     }
 
-    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const w = cw, h = ch;
     const place = (dir: THREE.Vector3, el: HTMLElement, minAlt: number, base: number): void => {
       const alt = dir.dot(zenith);
       _p.copy(dir).multiplyScalar(1e9); _p.project(camera);
@@ -3029,10 +3096,15 @@ void main(){
 
   name.textContent = focus.name;
   line.textContent = focus.line;
-  // pre-compile every material now, in one upfront cost, so flying to a new
-  // world or system never stutters on a first-frame shader compile
-  try { renderer.compile(scene, camera); } catch (_e) { /* compile is best-effort */ }
+  // pre-compile every material so flying to a new world never stutters on a
+  // first-frame shader compile — but do it ASYNCHRONOUSLY (parallel shader
+  // compile via the GPU driver), so it never blocks the launch with a ~2s
+  // synchronous stall. Falls back to the blocking compile where unsupported.
+  compileSceneAsync();
   raf = requestAnimationFrame(frame);
+  // the Solar System is up and the first frame is painting; now stream the
+  // distant stars and exoplanet systems in across the following frames
+  buildFarUniverse();
 
   return () => {
     cancelAnimationFrame(raf);

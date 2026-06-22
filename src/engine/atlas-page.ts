@@ -121,10 +121,12 @@ function startLandingStars(cv: HTMLCanvasElement): StarsApi {
   let W = 0, H = 0, dpr = 1, stars: S[] = [], shoots: M[] = [], t = 0, nextShoot = 2, raf = 0;
   let warping = false, warpT = 0, peaked = false, onPeak: (() => void) | null = null;
   function init(): void {
-    const n = Math.min(900, Math.round(innerWidth * innerHeight / 1600)); stars = [];
+    const n = Math.min(560, Math.round(innerWidth * innerHeight / 2600)); stars = [];
     for (let i = 0; i < n; i++) { const z = Math.random() * Math.random(); const x = Math.random() * W, y = Math.random() * H; stars.push({ x, y, px: x, py: y, z, r: (0.4 + z * 1.6) * dpr, tw: Math.random() * 6.28, sp: rnd(0.3, 1), c: PAL[(Math.random() * PAL.length) | 0]!, big: Math.random() < 0.07 }); }
   }
-  function resize(): void { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); cv.style.width = innerWidth + "px"; cv.style.height = innerHeight + "px"; init(); }
+  // cap the backing store at 1.5× — the warp is motion-blurred, so extra pixels
+  // are invisible but the full-canvas alpha fillRect each frame is fill-bound
+  function resize(): void { dpr = Math.min(devicePixelRatio || 1, 1.5); W = cv.width = Math.floor(innerWidth * dpr); H = cv.height = Math.floor(innerHeight * dpr); cv.style.width = innerWidth + "px"; cv.style.height = innerHeight + "px"; init(); }
   function stepWarp(): void {
     warpT = Math.min(1, warpT + 0.016 / 1.05);
     const cx = W / 2, cy = H / 2, sp = 0.012 + warpT * warpT * 0.5;
