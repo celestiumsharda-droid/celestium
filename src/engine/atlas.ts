@@ -568,7 +568,16 @@ export function mountAtlas(opts: Opts): () => void {
   const maxDpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.6);
   const minDpr = small ? 0.9 : 1.0;
   let curDpr = maxDpr;
-  renderer.setPixelRatio(maxDpr);
+  // upfront GPU-tier probe: software / known-weak renderers start at the floor so
+  // they're smooth from the very first frame instead of waiting for the adaptive
+  // governor to notice the struggle. Capable GPUs are unaffected.
+  try {
+    const gl = renderer.getContext();
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    const r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)).toLowerCase() : "";
+    if (/swiftshader|software|llvmpipe|basic render|microsoft basic/.test(r)) curDpr = minDpr;
+  } catch (_e) { /* probing is best-effort */ }
+  renderer.setPixelRatio(curDpr);
   renderer.setClearColor(0x000000, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -1836,7 +1845,7 @@ export function mountAtlas(opts: Opts): () => void {
     bhUpdate = (cx, cy, cz) => {
       quad.quaternion.copy(camera.quaternion);                 // billboard
       const dx = cx - GAL_C.x, dy = cy - GAL_C.y, dz = cz - GAL_C.z;
-      const len = Math.hypot(dx, dy, dz) || 1;
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
       (bhMat.uniforms["uViewDir"]!.value as THREE.Vector3).set(dx / len, dy / len, dz / len);
       // only render when reasonably close — invisible (and uncomputed) far away
       const show = len < QUAD * 60;
@@ -2193,13 +2202,16 @@ void main(){
       #include <logdepthbuf_fragment>
       vec3 N = normalize(vN);
       // fine ripple detail: a fragment-space normal bump from drifting noise, so
-      // the surface stays crisp and alive between the larger Gerstner waves
-      {
+      // the surface stays crisp and alive between the larger Gerstner waves.
+      // Its contribution is multiplied by dFade, which is ~0 past the near field,
+      // so the whole far ocean (most of the screen toward the horizon) can skip
+      // these 12 noise taps entirely — identical result, a large fragment saving.
+      float dFade = 1.0 - smoothstep(70.0, 280.0, vR);
+      if (dFade > 0.01) {
         float e = 0.6; vec2 q = vPos.xy + vec2(uTime*0.05, -uTime*0.04);
         float n0 = fbm(q*0.7);
         float nx = fbm((q + vec2(e,0.0))*0.7) - n0;
         float ny = fbm((q + vec2(0.0,e))*0.7) - n0;
-        float dFade = 1.0 - smoothstep(70.0, 280.0, vR);
         N = normalize(N + vec3(-nx, -ny, 0.0) * 1.8 * dFade);
       }
       vec3 V = normalize(uCam - vPos);
