@@ -561,16 +561,14 @@ export function mountAtlas(opts: Opts): () => void {
       logarithmicDepthBuffer: true, powerPreference: "high-performance",
     });
   } catch (_e) { return () => {}; }
-  // Pixel ratio is governed adaptively (see the frame loop): it starts at this
-  // sensible cap and only ever steps DOWN a notch — and at most once a second,
-  // never per-frame — when the GPU can't hold the budget. That keeps it smooth
-  // on weak hardware without the resize jitter that per-frame scaling caused.
+  // A single, FIXED pixel ratio chosen once at startup — never changed at
+  // runtime. Reallocating the drawing buffer mid-session (the old adaptive
+  // governor) caused stutter and instability on some GPUs, so we don't: we set a
+  // sensible cap here, drop it once up front on software/known-weak renderers,
+  // and leave it alone for the rest of the session.
   const maxDpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 1.6);
   const minDpr = small ? 0.9 : 1.0;
   let curDpr = maxDpr;
-  // upfront GPU-tier probe: software / known-weak renderers start at the floor so
-  // they're smooth from the very first frame instead of waiting for the adaptive
-  // governor to notice the struggle. Capable GPUs are unaffected.
   try {
     const gl = renderer.getContext();
     const dbg = gl.getExtension("WEBGL_debug_renderer_info");
@@ -2341,7 +2339,7 @@ void main(){
       focusOn(earth, false);
       tgtYaw = yaw = 0.0; tgtPitch = pitch = 0.04;          // a natural standing gaze: the sea, the waterline and the sky
       oceanMesh.visible = true; lensGroup.visible = true;
-      cubeCaptures = 2;                                      // refresh the static reflection for this visit
+      cubeCaptures = 1;                                      // refresh the static reflection for this visit
       earth.mesh.visible = false;                            // we're standing on it — the sea takes its place
       stageEl.classList.add("in-sky");                       // hide the orbit readout + travel hint
       skyHud.hidden = false; leaveBtn.hidden = false; groundBtn.style.display = "none";
@@ -2492,8 +2490,6 @@ void main(){
   // At real-time or paused the worlds move sub-pixel between frames, so we
   // recompute it at ~7 Hz; only an active fast-forward needs every-frame motion.
   let lastEphemAt = -1e15, lastEphemSimMs = NaN;
-  // adaptive-resolution governor state (evaluated at ~1 Hz, see the frame loop)
-  let govAccumMs = 0, govFrames = 0, lastGovAt = 0;
   function bindTime() {
     time.querySelectorAll<HTMLButtonElement>("button").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -2919,23 +2915,6 @@ void main(){
     if (dist.textContent !== txt) dist.textContent = txt;
 
     renderer.render(scene, camera);
-
-    // adaptive-resolution governor — evaluate the running frame budget once a
-    // second (never more), so reallocating the drawing buffer can't stutter the
-    // animation. Sustained sub-45fps drops the pixel ratio a notch; genuine
-    // headroom (only detectable on >60Hz panels past vsync) climbs it back.
-    govAccumMs += dt * 1000; govFrames++;
-    if (nowMs - lastGovAt >= 1000) {
-      const avg = govAccumMs / govFrames;
-      if (govFrames >= 12) {                                   // ignore tab-switch / stall intervals
-        if (avg > 22 && curDpr > minDpr) {
-          curDpr = Math.max(minDpr, curDpr - 0.15); renderer.setPixelRatio(curDpr); renderer.setSize(cw, ch, false);
-        } else if (avg < 12 && curDpr < maxDpr) {
-          curDpr = Math.min(maxDpr, curDpr + 0.15); renderer.setPixelRatio(curDpr); renderer.setSize(cw, ch, false);
-        }
-      }
-      lastGovAt = nowMs; govAccumMs = 0; govFrames = 0;
-    }
   }
 
   /* ---------- controls: scroll/pinch = travel, drag = orbit ---------- */
