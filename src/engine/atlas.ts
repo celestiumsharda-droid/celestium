@@ -756,23 +756,34 @@ export function mountAtlas(opts: Opts): () => void {
   const TILT: Record<string, number> = { Mercury: 0.03, Venus: 177.4, Earth: 23.4, Mars: 25.2, Jupiter: 3.1, Saturn: 26.7, Uranus: 97.8, Neptune: 28.3 };
   let earthMat: THREE.ShaderMaterial | null = null;
   let earthBody: Body | null = null;
+  // Earth's day/night maps in two resolutions: a 1K placeholder that shows
+  // instantly (no black ball), and the 4K detail that streams in — and is freed
+  // from GPU memory when you fly away (see the LOD hook below), so the detailed
+  // Earth never inflates the zoomed-out texture budget that was crashing weak GPUs.
+  let eDayLo: THREE.Texture | null = null, eDayHi: THREE.Texture | null = null;
+  let eNightLo: THREE.Texture | null = null, eNightHi: THREE.Texture | null = null;
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
     const p = planetPosition(pn, now);
     const km = E2T({ x: p.x * AU, y: p.y * AU, z: p.z * AU });
-    const mat: THREE.Material = pn === "Earth"
-      ? (earthMat = new THREE.ShaderMaterial({
-          vertexShader: EARTH_VERT, fragmentShader: EARTH_FRAG,
-          uniforms: {
-            dayMap: { value: T("earth_day.jpg") },
-            nightMap: { value: T("earth_night.jpg") },
-            sunDir: { value: new THREE.Vector3(1, 0, 0) },
-          },
-        }))
-      : new THREE.MeshStandardMaterial({
-          map: T(PLANET_TEX[pn]!),
-          roughness: (pn === "Jupiter" || pn === "Saturn") ? 0.75 : 0.95,
-          metalness: 0,
-        });
+    let mat: THREE.Material;
+    if (pn === "Earth") {
+      eDayLo = T("earth_day_lo.jpg"); eDayHi = T("earth_day.jpg");
+      eNightLo = T("earth_night_lo.jpg"); eNightHi = T("earth_night.jpg");
+      earthMat = new THREE.ShaderMaterial({
+        vertexShader: EARTH_VERT, fragmentShader: EARTH_FRAG,
+        uniforms: {
+          dayMap: { value: eDayLo }, nightMap: { value: eNightLo },
+          sunDir: { value: new THREE.Vector3(1, 0, 0) },
+        },
+      });
+      mat = earthMat;
+    } else {
+      mat = new THREE.MeshStandardMaterial({
+        map: T(PLANET_TEX[pn]!),
+        roughness: (pn === "Jupiter" || pn === "Saturn") ? 0.75 : 0.95,
+        metalness: 0,
+      });
+    }
     const nrmFile = PLANET_NORMALS[pn];
     if (nrmFile && mat instanceof THREE.MeshStandardMaterial) {
       const nm = T(nrmFile); // reuse loader (it sets SRGB but we'll override below)
@@ -834,7 +845,24 @@ export function mountAtlas(opts: Opts): () => void {
     };
     const rotH = ROT_H[pn]!;
     const pb = addBody(pn, km, m, 0);   // rotation handled in update, not the generic spin
-    if (pn === "Earth") earthBody = pb;
+    if (pn === "Earth") {
+      earthBody = pb;
+      // Stream the 4K detail in when you're near Earth; free it when you leave.
+      // Hysteresis (110× radius in, 220× out) prevents any swap thrash.
+      let hiOn = false;
+      onFrame(({ camKm }) => {
+        if (!earthMat || !eDayHi || !eNightHi) return;
+        const dx = pb.pos.x - camKm.x, dy = pb.pos.y - camKm.y, dz = pb.pos.z - camKm.z;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (!hiOn && d < RADII["Earth"]! * 110 && eDayHi.image && eNightHi.image) {
+          earthMat.uniforms["dayMap"]!.value = eDayHi; earthMat.uniforms["nightMap"]!.value = eNightHi;
+          eDayHi.needsUpdate = true; eNightHi.needsUpdate = true; hiOn = true;
+        } else if (hiOn && d > RADII["Earth"]! * 220) {
+          earthMat.uniforms["dayMap"]!.value = eDayLo; earthMat.uniforms["nightMap"]!.value = eNightLo;
+          eDayHi.dispose(); eNightHi.dispose(); hiOn = false;        // free 4K maps from VRAM
+        }
+      });
+    }
     if (pn === "Saturn") { pb.arriveK = 8; pb.arrivePitch = 0.62; }   // frame the rings, looking down on them
     // a planet spins about its OWN tilted axis, fixed in space (never the world
     // vertical — that would cone the pole). Earth is special-cased to genuine
