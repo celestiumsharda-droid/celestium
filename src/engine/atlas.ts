@@ -2612,19 +2612,20 @@ void main(){
   // a destination 'world' that condenses onto the depth-line; the focused one
   // (rendered first → nearest the thumb) opens with its line + Fly, the rest
   // stay luminous whispers until you reach for them.
-  interface WOpt { n: string; col: string; dist: string; type: string; line?: string; foc: boolean; attr: string; }
-  const worldRow = (o: WOpt): string => o.foc
-    ? `<button type="button" class="nv-world nv-foc" ${o.attr}>` +
+  interface WOpt { n: string; col: string; dist: string; type: string; line?: string; foc: boolean; attr: string; i?: number; }
+  let searchHL: Body[] = [];   // the bodies a live query matches — ignited in the real sky
+  const worldRow = (o: WOpt): string => { const d = `style="--d:${(o.i ?? 0) * 30}ms"`; return o.foc
+    ? `<button type="button" class="nv-world nv-foc" ${o.attr} ${d}>` +
         `<span class="nv-bead" style="--c:${o.col}"></span>` +
         `<span class="nv-disc" style="--c:${o.col}"></span>` +
         `<span class="nv-body"><span class="nv-name">${o.n}</span>` +
         `<span class="nv-meta">${o.type} · ${o.dist}</span>` +
         (o.line ? `<span class="nv-line">${o.line}</span>` : "") + `</span>` +
         `<span class="nv-fly">Fly <span aria-hidden="true">&#8599;</span></span></button>`
-    : `<button type="button" class="nv-world" ${o.attr}>` +
+    : `<button type="button" class="nv-world" ${o.attr} ${d}>` +
         `<span class="nv-bead" style="--c:${o.col}"></span>` +
-        `<span class="nv-name">${o.n}</span><span class="nv-dist">${o.dist}</span></button>`;
-  const bodyOpt = (b: Body, foc: boolean): WOpt => ({ n: b.name, col: dotColorOf(b), dist: conDistance(b), type: typeOf(b), line: b.line, foc, attr: `data-n="${b.name}"` });
+        `<span class="nv-name">${o.n}</span><span class="nv-dist">${o.dist}</span></button>`; };
+  const bodyOpt = (b: Body, foc: boolean, i: number): WOpt => ({ n: b.name, col: dotColorOf(b), dist: conDistance(b), type: typeOf(b), line: b.line, foc, attr: `data-n="${b.name}"`, i });
 
   function wireWorlds() {
     conList.querySelectorAll<HTMLButtonElement>(".nv-world[data-n]").forEach(btn =>
@@ -2642,14 +2643,16 @@ void main(){
     if (!q) {
       const near = bodies.filter(b => !b.adhoc && b !== focus && b.name !== "Sun")
         .map(b => ({ b, d: d3(b) })).sort((a, b) => a.d - b.d).slice(0, 6);
-      rows = near.map((x, i) => worldRow(bodyOpt(x.b, i === 0)));
+      rows = near.map((x, i) => worldRow(bodyOpt(x.b, i === 0, i)));
+      searchHL = [];
       count = "AROUND YOU";
     } else {
       const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) => {
         const as = a.name.toLowerCase().indexOf(q) === 0 ? 0 : 1, bs = b.name.toLowerCase().indexOf(q) === 0 ? 0 : 1;
         return as - bs || d3(a) - d3(b);
       }).slice(0, 6);
-      rows = hits.map((b, i) => worldRow(bodyOpt(b, i === 0)));
+      rows = hits.map((b, i) => worldRow(bodyOpt(b, i === 0, i)));
+      searchHL = hits.filter(b => !!b.dot);   // ignite the matching destinations in the sky
       // the 108k catalogue: every NAMED star is findable by name
       if (nameToCloud && starJson && starMeta && q.length >= 2) {
         const names = starJson.names;
@@ -2657,7 +2660,7 @@ void main(){
           if (!names[ni]!.toLowerCase().includes(q)) continue;
           const ci = nameToCloud[ni]!; if (ci < 0 || heroByCloudIdx?.has(ci)) continue;
           const distLy = starMeta.getUint16(ci * 16 + 6, true) / 10;
-          rows.push(worldRow({ n: names[ni]!, col: "#cfe0ff", dist: `${distLy.toFixed(0)} ly`, type: "catalogue star", foc: rows.length === 0, attr: `data-star="${ci}"` }));
+          rows.push(worldRow({ n: names[ni]!, col: "#cfe0ff", dist: `${distLy.toFixed(0)} ly`, type: "catalogue star", foc: rows.length === 0, attr: `data-star="${ci}"`, i: rows.length }));
         }
       }
       const tot = (starJson?.names.length ?? 108000).toLocaleString();
@@ -2685,6 +2688,31 @@ void main(){
   conClose.addEventListener("click", closeConsole);
   conSearch.addEventListener("input", buildConsole);
   canvas.addEventListener("pointerdown", closeConsole);
+
+  // ===== SKY-IGNITE — the matching destinations bloom in the real 3-D sky =====
+  const igniteLayer = document.createElement("div");
+  igniteLayer.className = "at-ignite"; igniteLayer.setAttribute("aria-hidden", "true");
+  stageEl.appendChild(igniteLayer);
+  const igRings: HTMLElement[] = [];
+  for (let i = 0; i < 8; i++) { const r = document.createElement("div"); r.className = "ig-ring"; igniteLayer.appendChild(r); igRings.push(r); }
+  const igV = new THREE.Vector3();
+  onFrame(({ camKm }) => {
+    const active = searchHL.length > 0 && consoleEl.classList.contains("open");
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    for (let i = 0; i < igRings.length; i++) {
+      const ring = igRings[i]!;
+      const b = active ? searchHL[i] : undefined;
+      const off = () => { if (ring.classList.contains("on")) { ring.classList.remove("on"); ring.style.opacity = "0"; } };
+      if (!b || !b.dot) { off(); continue; }
+      igV.set(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z).project(camera);
+      if (igV.z > 1 || igV.x < -1.1 || igV.x > 1.1 || igV.y < -1.1 || igV.y > 1.1) { off(); continue; }
+      ring.style.left = `${(igV.x * 0.5 + 0.5) * W}px`;
+      ring.style.top = `${(-igV.y * 0.5 + 0.5) * H}px`;
+      ring.style.setProperty("--c", dotColorOf(b));
+      ring.classList.toggle("lead", i === 0);
+      if (!ring.classList.contains("on")) { ring.classList.add("on"); ring.style.opacity = ""; }
+    }
+  });
 
   // the shared context object passed to every frame hook (mutated in place
   // each frame to avoid per-frame allocation)
