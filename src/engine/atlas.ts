@@ -13,6 +13,7 @@
    ===================================================================== */
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { planetPosition, PLANETS, kepler, rad, norm360, julianCenturies, type PlanetName } from "./ephemeris";
 import EXO_SYSTEMS from "../data/exo";
 import { playClick } from "./sound";
@@ -441,19 +442,27 @@ void main(){ vUv = uv; vWN = normalize(mat3(modelMatrix) * normal);
 }`;
 const EARTH_FRAG = `#include <common>
 #include <logdepthbuf_pars_fragment>
-uniform sampler2D dayMap; uniform sampler2D nightMap; uniform vec3 sunDir;
+uniform sampler2D dayMap; uniform sampler2D nightMap; uniform sampler2D specMap; uniform sampler2D normalMap; uniform vec3 sunDir;
 varying vec2 vUv; varying vec3 vWN; varying vec3 vWP;
 void main(){
 #include <logdepthbuf_fragment>
   vec3 N = normalize(vWN);
+  // tangent-space relief from the normal map — coastlines, mountains and ranges
+  // catch the light. Tangent basis from screen-space derivatives (no attribute).
+  vec3 q0 = dFdx(vWP), q1 = dFdy(vWP);
+  vec2 t0 = dFdx(vUv), t1 = dFdy(vUv);
+  vec3 T = normalize(q0 * t1.y - q1 * t0.y);
+  vec3 B = normalize(cross(N, T));
+  vec3 mapN = texture2D(normalMap, vUv).xyz * 2.0 - 1.0; mapN.xy *= 0.75;
+  N = normalize(mat3(T, B, N) * mapN);
   float lam = dot(N, sunDir);                       // -1 night .. 1 noon
   float day = smoothstep(-0.12, 0.22, lam);         // soft terminator
   vec3 dayCol = texture2D(dayMap, vUv).rgb;
   vec3 night = texture2D(nightMap, vUv).rgb;
-  float ocean = smoothstep(0.015, 0.10, dayCol.b - dayCol.r * 0.9);   // blue → water
+  float ocean = texture2D(specMap, vUv).r;          // real water mask
   vec3 V = normalize(cameraPosition - vWP);
   vec3 H = normalize(sunDir + V);
-  float spec = pow(max(dot(N, H), 0.0), 80.0) * ocean * smoothstep(0.0, 0.2, lam);
+  float spec = pow(max(dot(N, H), 0.0), 90.0) * ocean * smoothstep(0.0, 0.2, lam);
   vec3 lit = dayCol * (0.05 + 1.05 * max(lam, 0.0));
   vec3 col = mix(night * 1.6, lit, day);            // city lights on the night side
   col += vec3(1.0, 0.95, 0.82) * spec * 1.7;        // the ocean sun-glint
@@ -619,6 +628,54 @@ export function mountAtlas(opts: Opts): () => void {
     const tl = texLoader.load(`/textures/${f}`); tl.colorSpace = THREE.SRGBColorSpace; tl.anisotropy = 4; return tl;
   };
 
+  // GPU-compressed (KTX2/Basis) loader for the detailed PBR model packs. The
+  // transcoder runs in a worker; the texture stays compressed in VRAM (4-8x
+  // smaller than JPG), which is what lets us ship true 4K to phones.
+  const ktx2Loader = new KTX2Loader().setTranscoderPath("/basis/").detectSupport(renderer);
+  // assign a texture into a material slot. KTX2 (compressed, GPU-resident, 4-8x
+  // smaller VRAM) is delivered ONLY via callback, so it's applied when it lands
+  // (a brief base-colour flash first — the progressive part); JPG/PNG is set
+  // synchronously. `srgb` picks colour vs data (normal/roughness). Compressed
+  // maps were baked GL-bottom-up at encode time (they can't flip at runtime).
+  type MatSlot = "map" | "normalMap" | "roughnessMap" | "metalnessMap" | "emissiveMap";
+  interface TexSpec { mat: THREE.Material; slot: MatSlot; path: string; srgb: boolean; }
+  // Streaming LOD: while a collector is active (set around an exoplanet system's
+  // construction), applyTex only RECORDS what each map should be — it doesn't
+  // load anything. The system's textures are then loaded on entry and freed on
+  // exit, so only the system you're actually visiting ever sits in VRAM.
+  let texCollector: TexSpec[] | null = null;
+  function applyTex(mat: THREE.Material, slot: MatSlot, path: string, srgb: boolean): void {
+    if (texCollector) { texCollector.push({ mat, slot, path, srgb }); return; }
+    const set = (t: THREE.Texture) => { (mat as unknown as Record<string, THREE.Texture>)[slot] = t; };
+    if (path.endsWith(".ktx2")) {
+      ktx2Loader.load(`/textures/${path}`, tex => {
+        tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; tex.anisotropy = 8;
+        set(tex); mat.needsUpdate = true;
+      }, undefined, () => { /* missing → stays base colour */ });
+    } else {
+      const t = T(path); t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; set(t);
+    }
+  }
+  const exoStreams = new Map<string, { specs: TexSpec[]; loaded: boolean }>();
+  function loadExoSystem(pack: string): void {
+    const s = exoStreams.get(pack); if (!s || s.loaded) return;
+    s.loaded = true;
+    const prev = texCollector; texCollector = null;            // force a real load
+    for (const sp of s.specs) applyTex(sp.mat, sp.slot, sp.path, sp.srgb);
+    texCollector = prev;
+  }
+  function unloadExoSystem(pack: string): void {
+    const s = exoStreams.get(pack); if (!s || !s.loaded) return;
+    s.loaded = false;
+    const mats = new Set<THREE.Material>();
+    for (const sp of s.specs) {
+      const m = sp.mat as unknown as Record<string, THREE.Texture | null>;
+      const t = m[sp.slot]; if (t) t.dispose();               // free the GPU texture
+      m[sp.slot] = null; mats.add(sp.mat);
+    }
+    for (const m of mats) m.needsUpdate = true;                // recompile without the maps
+  }
+
   /* ---------- the engine core ----------
      Two registries make the Atlas extensible: `bodies` (everything the
      camera can fly to) and `frameHooks` (each subsystem's per-frame update).
@@ -678,7 +735,7 @@ export function mountAtlas(opts: Opts): () => void {
   type Vec3 = { x: number; y: number; z: number };
   interface WorldDef {
     name: string; radiusKm: number; map: string; normal?: string;
-    roughMap?: string; specMap?: string; clouds?: string; cloudOpacity?: number;
+    roughMap?: string; specMap?: string; emit?: string; clouds?: string; cloudOpacity?: number;
     segments?: number; tiltDeg?: number; spin?: number; roughness?: number;
     orbit?: { center: () => Vec3; radiusKm: number; periodDays: number; phase?: number; incDeg?: number; ringGroup?: THREE.Group; ringMat?: THREE.Material };
     fixedPos?: Vec3;
@@ -688,13 +745,15 @@ export function mountAtlas(opts: Opts): () => void {
   }
   function defineWorld(def: WorldDef): Body {
     const seg = def.segments ?? segMain;
-    const mat = new THREE.MeshStandardMaterial({ map: T(def.map), roughness: def.roughness ?? 0.92, metalness: 0 });
-    if (def.normal) { const nm = T(def.normal); nm.colorSpace = THREE.NoColorSpace; mat.normalMap = nm; mat.normalScale = new THREE.Vector2(1.1, 1.1); }
+    const mat = new THREE.MeshStandardMaterial({ roughness: def.roughness ?? 0.92, metalness: 0 });
+    applyTex(mat, "map", def.map, true);
+    if (def.normal) { applyTex(mat, "normalMap", def.normal, false); mat.normalScale = new THREE.Vector2(1.1, 1.1); }
     // PBR surface detail from the full texture pack: a roughness map (smooth on
     // ice/water → a wet glint under the star) and a faint specular→metalness
     // map (capped low so water sheens but land stays dielectric).
-    if (def.roughMap) { const rm = T(def.roughMap); rm.colorSpace = THREE.NoColorSpace; mat.roughnessMap = rm; mat.roughness = 1; }
-    if (def.specMap)  { const sm = T(def.specMap);  sm.colorSpace = THREE.NoColorSpace; mat.metalnessMap = sm; mat.metalness = 0.2; }
+    if (def.roughMap) { applyTex(mat, "roughnessMap", def.roughMap, false); mat.roughness = 1; }
+    if (def.specMap)  { applyTex(mat, "metalnessMap", def.specMap, false); mat.metalness = 0.2; }
+    if (def.emit)     { applyTex(mat, "emissiveMap", def.emit, true); mat.emissive = new THREE.Color(0xffffff); mat.emissiveIntensity = 1; }
     const m = new THREE.Mesh(new THREE.SphereGeometry(def.radiusKm, seg, Math.max(8, seg / 2)), mat);
     if (def.tiltDeg) m.rotation.z = def.tiltDeg * D2R;
     // a thin drifting cloud shell (the loop at the bottom rotates userData.clouds)
@@ -760,22 +819,28 @@ export function mountAtlas(opts: Opts): () => void {
   // instantly (no black ball), and the 4K detail that streams in — and is freed
   // from GPU memory when you fly away (see the LOD hook below), so the detailed
   // Earth never inflates the zoomed-out texture budget that was crashing weak GPUs.
-  let eDayLo: THREE.Texture | null = null, eDayHi: THREE.Texture | null = null;
-  let eNightLo: THREE.Texture | null = null, eNightHi: THREE.Texture | null = null;
+  let eDayLo: THREE.Texture | null = null, eNightLo: THREE.Texture | null = null;   // 1K JPG placeholders (resident)
+  let eDayHiTex: THREE.Texture | null = null, eNightHiTex: THREE.Texture | null = null;   // 8K KTX2 — streamed on enter, freed on exit
+  let earthHiState = 0;                                                              // 0 = lo, 1 = loading, 2 = hi
   for (const pn of Object.keys(PLANETS) as PlanetName[]) {
     const p = planetPosition(pn, now);
     const km = E2T({ x: p.x * AU, y: p.y * AU, z: p.z * AU });
     let mat: THREE.Material;
     if (pn === "Earth") {
-      eDayLo = T("earth_day_lo.jpg"); eDayHi = T("earth_day.jpg");
-      eNightLo = T("earth_night_lo.jpg"); eNightHi = T("earth_night.jpg");
+      eDayLo = T("earth_day_lo.jpg"); eNightLo = T("earth_night_lo.jpg");
+      const whitePx = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); whitePx.needsUpdate = true;
+      const flatNrm = new THREE.DataTexture(new Uint8Array([128, 128, 255, 255]), 1, 1); flatNrm.needsUpdate = true;
       earthMat = new THREE.ShaderMaterial({
         vertexShader: EARTH_VERT, fragmentShader: EARTH_FRAG,
         uniforms: {
           dayMap: { value: eDayLo }, nightMap: { value: eNightLo },
+          specMap: { value: whitePx }, normalMap: { value: flatNrm },
           sunDir: { value: new THREE.Vector3(1, 0, 0) },
         },
       });
+      // the small data maps (ocean mask + relief) load once and stay resident
+      ktx2Loader.load("/textures/earth_spec.ktx2", t => { t.colorSpace = THREE.NoColorSpace; earthMat!.uniforms["specMap"]!.value = t; }, undefined, () => { /* keep white */ });
+      ktx2Loader.load("/textures/earth_normal.ktx2", t => { t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8; earthMat!.uniforms["normalMap"]!.value = t; }, undefined, () => { /* keep flat */ });
       mat = earthMat;
     } else {
       mat = new THREE.MeshStandardMaterial({
@@ -801,9 +866,11 @@ export function mountAtlas(opts: Opts): () => void {
     // pole stays FIXED in space (a plain rotation.z + rotation.y would cone)
     if (pn === "Earth") {
       // a living Earth: drifting cloud shell + the blue limb of an atmosphere (reverted Earth core to original behavior)
+      const cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+      applyTex(cloudMat, "map", "earth_clouds.ktx2", true);   // 4K KTX2
       const clouds = new THREE.Mesh(
         new THREE.SphereGeometry(RADII["Earth"]! * 1.012, segMain, segMain / 2),
-        new THREE.MeshPhongMaterial({ map: T("earth_clouds.jpg"), transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }),
+        cloudMat,
       );
       m.add(clouds);
       (m as THREE.Mesh & { userData: { clouds?: THREE.Mesh } }).userData["clouds"] = clouds;
@@ -847,19 +914,20 @@ export function mountAtlas(opts: Opts): () => void {
     const pb = addBody(pn, km, m, 0);   // rotation handled in update, not the generic spin
     if (pn === "Earth") {
       earthBody = pb;
-      // Stream the 4K detail in when you're near Earth; free it when you leave.
-      // Hysteresis (110× radius in, 220× out) prevents any swap thrash.
-      let hiOn = false;
+      // Stream the 8K day/night detail in when you're near Earth; free it when
+      // you leave. Hysteresis (110× radius in, 220× out) prevents swap thrash.
       onFrame(({ camKm }) => {
-        if (!earthMat || !eDayHi || !eNightHi) return;
+        if (!earthMat) return;
         const dx = pb.pos.x - camKm.x, dy = pb.pos.y - camKm.y, dz = pb.pos.z - camKm.z;
         const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (!hiOn && d < RADII["Earth"]! * 110 && eDayHi.image && eNightHi.image) {
-          earthMat.uniforms["dayMap"]!.value = eDayHi; earthMat.uniforms["nightMap"]!.value = eNightHi;
-          eDayHi.needsUpdate = true; eNightHi.needsUpdate = true; hiOn = true;
-        } else if (hiOn && d > RADII["Earth"]! * 220) {
+        if (earthHiState === 0 && d < RADII["Earth"]! * 110) {
+          earthHiState = 1;
+          let n = 0; const fin = () => { if (++n === 2) earthHiState = 2; };
+          ktx2Loader.load("/textures/earth_day.ktx2", t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; eDayHiTex = t; earthMat!.uniforms["dayMap"]!.value = t; fin(); }, undefined, () => { earthHiState = 0; });
+          ktx2Loader.load("/textures/earth_night.ktx2", t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; eNightHiTex = t; earthMat!.uniforms["nightMap"]!.value = t; fin(); }, undefined, () => { earthHiState = 0; });
+        } else if (earthHiState === 2 && d > RADII["Earth"]! * 220) {
           earthMat.uniforms["dayMap"]!.value = eDayLo; earthMat.uniforms["nightMap"]!.value = eNightLo;
-          eDayHi.dispose(); eNightHi.dispose(); hiOn = false;        // free 4K maps from VRAM
+          eDayHiTex?.dispose(); eNightHiTex?.dispose(); eDayHiTex = null; eNightHiTex = null; earthHiState = 0;
         }
       });
     }
@@ -1119,7 +1187,7 @@ export function mountAtlas(opts: Opts): () => void {
   // every foreign sun (TRAPPIST + the exoplanet hosts) registers here; one
   // shared light follows whichever system the camera is currently inside,
   // so the scene is always lit by exactly the right star, at any scale.
-  const foreignSuns: { pos: Vec3; col: number; span: number; orbits?: THREE.Group }[] = [];
+  const foreignSuns: { pos: Vec3; col: number; span: number; orbits?: THREE.Group; pack?: string }[] = [];
   let trLight: THREE.PointLight | null = null;
   const trOrbitGroup = new THREE.Group(); scene.add(trOrbitGroup);
   const trOrbitMat = new THREE.LineBasicMaterial({ color: 0xff9a6a, transparent: true, opacity: 0.22 });
@@ -1185,12 +1253,15 @@ export function mountAtlas(opts: Opts): () => void {
      is just another row in src/data/exo.ts — nothing here changes. */
   const exoCentres: Record<string, Vec3> = {};
   function buildExoSystem(sys: (typeof EXO_SYSTEMS)[number]): void {
+    const specs: TexSpec[] = []; const prevTC = texCollector; texCollector = specs;   // defer this system's textures (streaming LOD)
     const C = skyPos(sys.ra, sys.dec, sys.ly);
     exoCentres[sys.pack] = C;
     const starR = Math.max(sys.rSun * 696340, sys.pulsar ? 1.4e4 : 0);   // pulsars are tiny — give a visible minimum
     const r = sys.pulsar ? 2.2e4 : starR;
     const sg = new THREE.Group();
-    sg.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24), new THREE.MeshBasicMaterial({ map: T(`exo/${sys.pack}/star.jpg`) })));
+    const starMat = new THREE.MeshBasicMaterial();
+    applyTex(starMat, "map", sys.pbr ? `exo/${sys.pack}/star_albedo.ktx2` : `exo/${sys.pack}/star.jpg`, true);
+    sg.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 24), starMat));
     const glowCol = sys.pulsar ? 0xbcd2ff : sys.col;
     const sglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: glowCol, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     sglow.scale.setScalar(r * 7); sglow.frustumCulled = false; sg.add(sglow);
@@ -1209,19 +1280,26 @@ export function mountAtlas(opts: Opts): () => void {
     const outerAU = sys.planets.reduce((m, p) => Math.max(m, p.au), 0);
     const sysOrbits = new THREE.Group(); sysOrbits.visible = false; scene.add(sysOrbits);
     const sysOrbitMat = new THREE.LineBasicMaterial({ color: glowCol, transparent: true, opacity: 0.2 });
-    foreignSuns.push({ pos: C, col: glowCol, span: Math.max(2e9, outerAU * AU * 2.5), orbits: sysOrbits });
+    foreignSuns.push({ pos: C, col: glowCol, span: Math.max(2e9, outerAU * AU * 2.5), orbits: sysOrbits, pack: sys.pack });
 
     sys.planets.forEach((p, i) => {
       const span = p.au * AU;
+      const base = `exo/${sys.pack}/${p.key}`;
       defineWorld({
-        name: p.name, radiusKm: Math.max(p.rE * ER, 600), map: `exo/${sys.pack}/${p.key}.jpg`,
-        segments: 40, foreign: true, system: sys.star, minDk: 3, dotK: 0.006,
+        name: p.name, radiusKm: Math.max(p.rE * ER, 600),
+        map: sys.pbr ? `${base}_albedo.ktx2` : `${base}.jpg`,
+        normal: sys.pbr ? `${base}_normal.ktx2` : undefined,
+        roughMap: sys.pbr ? `${base}_rough.ktx2` : undefined,
+        emit: sys.pbr ? `${base}_emit.ktx2` : undefined,
+        segments: sys.pbr ? 64 : 40, foreign: true, system: sys.star, minDk: 3, dotK: 0.006,
         labelMax: Math.max(3e9, span * 6), tiltDeg: ((i % 2) ? 1 : -1) * (1.5 + i * 1.5),
         orbit: { center: () => C, radiusKm: span, periodDays: p.per, incDeg: (i - (sys.planets.length - 1) / 2) * 1.6, ringGroup: sysOrbits, ringMat: sysOrbitMat },
         line: `${cap(p.kind)} · ${describeExo(p, sys)}`,
         info: exoPlanetInfo(p, sys, lyTxt),
       });
     });
+    texCollector = prevTC;                                     // stop deferring
+    exoStreams.set(sys.pack, { specs, loaded: false });        // register for load-on-enter / free-on-leave
   }
 
   // Stream the far universe (~50 hero stars + 22 exoplanet systems) in across
@@ -2751,12 +2829,13 @@ void main(){
   // its own worlds and shows its own orbit rings, and only ONE star lights the
   // scene at a time (our point lights have no inverse-square falloff)
   let shownOrbits: THREE.Group | null = null;
+  let streamPack: string | null = null;
   onFrame(({ camKm }) => {
     if (!trLight) return;
     // find the nearest foreign sun (TRAPPIST or any exoplanet host); if the
     // camera is inside that system, the shared light becomes that star —
     // right colour, right place — and our Sun stands down
-    let best: { pos: Vec3; col: number; span: number; orbits?: THREE.Group } | null = null, bestD = Infinity;
+    let best: { pos: Vec3; col: number; span: number; orbits?: THREE.Group; pack?: string } | null = null, bestD = Infinity;
     for (const fs of foreignSuns) {
       const fdx = camKm.x - fs.pos.x, fdy = camKm.y - fs.pos.y, fdz = camKm.z - fs.pos.z;
       const d = fdx * fdx + fdy * fdy + fdz * fdz;     // squared — we only compare, never use the magnitude
@@ -2776,6 +2855,15 @@ void main(){
     const want = inForeign && best ? best.orbits ?? null : null;
     if (want !== shownOrbits) { if (shownOrbits) shownOrbits.visible = false; shownOrbits = want; }
     if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
+
+    // STREAMING LOD: the nearest system loads its (up to 4K) textures when you
+    // come within ~1.5× its span and frees them once you've left past ~2.5× — so
+    // only the one system you're visiting ever holds textures in VRAM; everything
+    // else is a point of light. This is what makes 46 detailed systems run on a
+    // phone and ends the zoom-out memory crash for good.
+    const sp2 = best ? best.span * best.span : 0;
+    if (streamPack && (!best || best.pack !== streamPack || bestD > sp2 * 6.25)) { unloadExoSystem(streamPack); streamPack = null; }
+    if (best && best.pack && best.pack !== streamPack && bestD < sp2 * 2.25) { loadExoSystem(best.pack); streamPack = best.pack; }
   });
 
   // hide a body's label, touching the DOM only when it was previously shown
@@ -3124,6 +3212,7 @@ void main(){
   // the Solar System is up and the first frame is painting; now stream the
   // distant stars and exoplanet systems in across the following frames
   buildFarUniverse();
+  (window as unknown as { __atlasFly?: (n: string) => void }).__atlasFly = (n) => focusBody(n);   // QA hook
 
   return () => {
     cancelAnimationFrame(raf);
