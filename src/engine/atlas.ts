@@ -527,6 +527,40 @@ void main(){
   float a = rim * tongue * 1.6;
   gl_FragColor = vec4(mix(uCol, uHot, tongue) * 1.4, a);
 }`;
+/* ---- GALAXY STARS ---- millions of size-attenuated additive points. Far away
+   they fall sub-pixel and overlap into the smooth glow of unresolved starlight;
+   up close they bloom into individual stars you fly between. A per-point size
+   gives the bright supergiants their presence. */
+const GAL_VERT = `#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute vec3 aColor; attribute float aSize;
+uniform float uPix; uniform float uOpacity;
+varying vec3 vColor; varying float vBright;
+void main(){
+  vColor = aColor;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  float dist = max(-mv.z, 1.0);
+  float s = uPix * aSize / dist;
+  // sub-pixel points keep their light but concentrate it (so the far disk reads
+  // as smooth glow, not aliased speckle); the size is capped LOW — galaxy disk
+  // stars are distant points, structure comes from density, not bloom (and a low
+  // cap keeps the fill bounded even when you fly through the dense bulge)
+  vBright = (s < 1.0) ? s : 1.0;
+  gl_PointSize = clamp(s, 1.0, 4.0);
+  gl_Position = projectionMatrix * mv;
+#include <logdepthbuf_vertex>
+}`;
+const GAL_FRAG = `#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform float uOpacity;
+varying vec3 vColor; varying float vBright;
+void main(){
+#include <logdepthbuf_fragment>
+  float d = length(gl_PointCoord - 0.5);
+  float a = smoothstep(0.5, 0.0, d); a *= a;     // a bright core with a soft halo
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(vColor, a * vBright * uOpacity * 0.6);   // dim per-point; density builds the glow without blow-out
+}`;
 const starMats: THREE.ShaderMaterial[] = [];
 function livingStar(radiusKm: number, color: number, granScale: number, seg = 64): THREE.Group {
   const base = new THREE.Color(color);
@@ -1814,72 +1848,115 @@ export function mountAtlas(opts: Opts): () => void {
   }
   const galFadeMats: { m: THREE.Material & { opacity: number }; max: number; core?: boolean }[] = [];
   {
-    // the painted disk is the HERO — the photoreal galaxy itself. An additive
-    // copy underneath makes it glow like the real thing; the texture on top
-    // carries the structure.
+    // a FAINT painted haze underneath — only the diffuse unresolved glow, kept
+    // dim; the stars themselves are the hero now, not a flat plane.
     const galTex = galaxyTexture();
-    const diskGeo = new THREE.CircleGeometry(52000 * LY, 96);
-    const glowDisk = new THREE.Mesh(diskGeo, new THREE.MeshBasicMaterial({
+    const glowDisk = new THREE.Mesh(new THREE.CircleGeometry(52000 * LY, 96), new THREE.MeshBasicMaterial({
       map: galTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
     }));
     galaxy.add(glowDisk);
-    galFadeMats.push({ m: glowDisk.material as THREE.MeshBasicMaterial, max: 0.85, core: true });
-    const disk = new THREE.Mesh(diskGeo, new THREE.MeshBasicMaterial({
-      map: galTex, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
-    }));
-    galaxy.add(disk);
-    galFadeMats.push({ m: disk.material as THREE.MeshBasicMaterial, max: 1, core: true });
-    // 3D grain: a faint stellar haze that gives the disk THICKNESS at angles —
-    // deliberately dim and tiny so it never speckles over the painted structure
-    const N = small ? 18000 : 30000;
-    const pos = new Float32Array(N * 3);
-    const col = new Float32Array(N * 3);
-    const cWarm = new THREE.Color(0xffe2bb), cBlue = new THREE.Color(0xb8ccff), cWhite = new THREE.Color(0xeae6f4), tmp = new THREE.Color();
-    // grain placed ALONG the same spiral arms as the painted texture (in true
-    // light-year scale), so the 3D sparkle reinforces the structure instead of
-    // forming a fuzzy halo — plus a tight bulge. Disk radius ~50,000 ly.
-    const DISK = 50000 * LY, GC = G_RC, GE = 940;
+    galFadeMats.push({ m: glowDisk.material as THREE.MeshBasicMaterial, max: 0.28, core: true });
+
+    // ---- THE GALAXY AS STARS: a dense 3-D particle disk in true galactic scale.
+    // Smooth exponential disk + spiral-arm overdensity (the real log-spiral) + a
+    // barred bulge + pink HII knots. Size-attenuated: a sub-pixel smear of light
+    // from across intergalactic space, individual blooming stars as you fly in.
+    // Generation is DEFERRED off the launch frame (1.1M points ≈ 200ms of math) so
+    // the lightspeed entry never hitches; the galaxy isn't visible until you climb out.
+    let galStars: THREE.Points | null = null;
+    let galStarsMat: THREE.ShaderMaterial | null = null;
+    const N = small ? 380000 : 1100000;
+    const buildGalaxyStars = () => {
+    const pos = new Float32Array(N * 3), col = new Uint8Array(N * 3), siz = new Float32Array(N);
+    const DISK = 50000 * LY, GC = G_RC, GE = 940, SCALE_H = 230 * LY;
+    const rnd = Math.random, g3 = () => rnd() + rnd() + rnd() - 1.5;   // ~gaussian
+    // value noise for patchy dust obscuration across the disk
+    const h2 = (x: number, y: number) => { const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return n - Math.floor(n); };
+    const noise2 = (x: number, y: number) => {
+      const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+      const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+      return h2(ix, iy) * (1 - u) * (1 - v) + h2(ix + 1, iy) * u * (1 - v) + h2(ix, iy + 1) * (1 - u) * v + h2(ix + 1, iy + 1) * u * v;
+    };
+    const DN = 1 / (3800 * LY);                            // dust patch scale
     for (let i = 0; i < N; i++) {
-      const kind = Math.random();
-      let gx = 0, gy = 0, gz = 0;
-      if (kind < 0.16) {           // tight bulge/bar
-        const r = Math.pow(Math.random(), 1.8) * 5000 * LY;
-        const u = Math.random() * 2 - 1, th2 = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
-        gx = r * rr * Math.cos(th2) * 1.9; gy = r * rr * Math.sin(th2); gz = r * u * 0.5;
-        tmp.copy(cWarm);
-      } else {                     // on an arm: sample the shared log-spiral
-        const arm = G_ARMS[(Math.random() * 4) | 0]!;
-        const t = Math.pow(Math.random(), 0.8);
+      let gx = 0, gy = 0, gz = 0, R = 255, G = 240, B = 220, sz = 1;
+      const kind = rnd();
+      if (kind < 0.22) {                                  // barred bulge — old, warm, DENSE golden core
+        const r = Math.pow(rnd(), 2.7) * 9000 * LY;        // steeper falloff → brighter core
+        const u = rnd() * 2 - 1, ph = rnd() * 6.2832, rr = Math.sqrt(1 - u * u);
+        gx = r * rr * Math.cos(ph) * 1.7; gy = r * rr * Math.sin(ph); gz = r * u * 0.42;
+        const w = 1 - r / (9000 * LY);
+        R = 255; G = 206 - w * 6; B = 146 + w * 18; sz = 0.9 + rnd() * (0.6 + w);
+      } else if (kind < 0.82) {                           // spiral-arm stars — young, blue-white, TIGHT arms
+        const arm = G_ARMS[(rnd() * 4) | 0]!;
+        const t = Math.pow(rnd(), 0.7);
         const th = arm + t * G_SWEEP;
-        const rTex = GC * Math.exp(G_K * t * G_SWEEP);     // texture-space radius
-        const r = (rTex / GE) * DISK;                       // → light-years
-        const spread = r * (0.03 + t * 0.08);
-        gx = Math.cos(th) * r + (Math.random() - 0.5) * 2 * spread;
-        gy = Math.sin(th) * r + (Math.random() - 0.5) * 2 * spread;
-        gz = (Math.random() + Math.random() + Math.random() - 1.5) * (260 + 600 * Math.exp(-r / (9000 * LY))) * LY * 0.7;
-        tmp.copy(cWarm).lerp(cBlue, Math.min(1, t * 1.4)).lerp(cWhite, 0.25);
-        if (Math.random() < 0.05) tmp.setRGB(1, 0.5, 0.62);  // a few pink HII sparks
+        const r = (GC * Math.exp(G_K * t * G_SWEEP) / GE) * DISK;
+        const spread = r * (0.034 + t * 0.04);
+        const dr = g3() * spread * 1.7;                    // radial offset across the arm
+        const rr = r + dr, tt = th + g3() * (spread / Math.max(r, 1)) * 1.3;
+        gx = Math.cos(tt) * rr; gy = Math.sin(tt) * rr;
+        gz = g3() * (SCALE_H + 700 * LY * Math.exp(-r / (9000 * LY)));
+        // DUST: a dark lane on the inner (trailing) edge of every arm + patchy obscuration
+        const edge = dr / spread;
+        let dust = 1;
+        if (edge < -0.05 && edge > -1.05) dust = 0.08 + 0.92 * Math.min(1, (Math.abs(edge + 0.55) / 0.5));  // darkest mid-lane
+        dust *= 0.42 + 0.58 * noise2(gx * DN, gy * DN);    // mottled dust clouds
+        const blue = Math.min(1, t * 1.25);
+        R = 190 - blue * 30 + rnd() * 45; G = 205 + rnd() * 32; B = 218 + blue * 37;
+        if (rnd() < 0.045) { R = 255; G = 140 + rnd() * 45; B = 158 + rnd() * 28; sz = 1.8 + rnd() * 2.6; dust = Math.max(dust, 0.6); }  // HII pink knot, mostly punches through dust
+        else sz = 0.6 + rnd() * rnd() * 2.4;
+        // apply dust: darken + tint the survivors slightly amber (reddened starlight)
+        R *= dust; G *= dust * 0.97; B *= dust * 0.9;
+      } else {                                            // smooth inter-arm disk — dim, sparse, warm
+        let r = -Math.log(rnd() + 1e-4) * 8500 * LY; if (r > DISK) r = rnd() * DISK;
+        const th = rnd() * 6.2832;
+        gx = Math.cos(th) * r; gy = Math.sin(th) * r;
+        gz = g3() * (SCALE_H + 700 * LY * Math.exp(-r / (9000 * LY)));
+        const dust = 0.5 + 0.5 * noise2(gx * DN, gy * DN);
+        R = (200 + rnd() * 30) * dust; G = (188 + rnd() * 26) * dust; B = (176 + rnd() * 36) * dust; sz = 0.5 + rnd() * rnd() * 1.3;
       }
-      tmp.multiplyScalar(0.7);
       pos[i * 3] = gx; pos[i * 3 + 1] = gy; pos[i * 3 + 2] = gz;
-      col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+      col[i * 3] = Math.min(255, R) | 0; col[i * 3 + 1] = Math.min(255, G) | 0; col[i * 3 + 2] = Math.min(255, B) | 0;
+      siz[i] = sz;
     }
     const gg = new THREE.BufferGeometry();
     gg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    gg.setAttribute("color", new THREE.BufferAttribute(col, 3));
-    const grain = new THREE.Points(gg, new THREE.PointsMaterial({
-      size: 1.1, sizeAttenuation: false, vertexColors: true,
-      transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
-    }));
-    galaxy.add(grain);
-    galFadeMats.push({ m: grain.material as THREE.PointsMaterial, max: 0.32 });
-    // the core's vertical glow (a galaxy glows brightest where it is deepest)
+    gg.setAttribute("aColor", new THREE.BufferAttribute(col, 3, true));
+    gg.setAttribute("aSize", new THREE.BufferAttribute(siz, 1));
+    gg.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), DISK * 1.3);
+      galStarsMat = new THREE.ShaderMaterial({
+        vertexShader: GAL_VERT, fragmentShader: GAL_FRAG,
+        uniforms: { uPix: { value: 28000 * LY }, uOpacity: { value: 0 } },
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      });
+      galStars = new THREE.Points(gg, galStarsMat);
+      galStars.frustumCulled = false; galStars.renderOrder = -2;
+      galaxy.add(galStars);
+    };
+    // build on the first idle slot after launch (never blocks the entry animation)
+    const ric = (window as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+    if (ric) ric(buildGalaxyStars, { timeout: 2500 }); else setTimeout(buildGalaxyStars, 900);
+    // the core's deep glow — a galaxy burns brightest where the bulge is thickest
     const core = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glowTexture(), color: 0xffe9c4, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
+      map: glowTexture(), color: 0xffe6bc, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0,
     }));
-    core.scale.setScalar(9000 * LY);
+    core.scale.setScalar(11000 * LY);
     galaxy.add(core);
-    galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.75, core: true });
+    galFadeMats.push({ m: core.material as THREE.SpriteMaterial, max: 0.7, core: true });
+    // the star disk fades in as you rise out of the neighbourhood (same curve as galFade)
+    // and sheds points by apparent size: a distant smudge needs a fraction of the 1.1M,
+    // full density only when it fills the view. The buffer is kind-randomised, so any
+    // prefix is a fair statistical sample of bulge+arms+disk — no banding from the cut.
+    onFrame(({ camDist }) => {
+      if (!galStarsMat || !galStars) return;
+      const g01 = Math.min(1, Math.max(0, (camDist - 6e15) / 7.4e16));
+      galStarsMat.uniforms["uOpacity"]!.value = g01 * g01 * (3 - 2 * g01);
+      if (g01 <= 0) { galStars.geometry.setDrawRange(0, 0); return; }   // invisible near home → skip the whole disk
+      const apparent = (50000 * LY) / Math.max(camDist, 1e14);   // ~radians subtended
+      const frac = Math.min(1, Math.max(0.16, apparent * 2));
+      galStars.geometry.setDrawRange(0, (N * frac) | 0);
+    });
   }
 
   // Sagittarius A* — a REAL raymarched, gravitationally-lensed black hole.
@@ -2901,7 +2978,11 @@ void main(){
     // eased camera state
     yaw += (tgtYaw - yaw) * Math.min(1, dt * 7);
     pitch += (tgtPitch - pitch) * Math.min(1, dt * 7);
-    distKm += (tgtDist - distKm) * Math.min(1, dt * 5);
+    // LOG-SPACE easing: perceptually-uniform zoom. A planet hop settles as before,
+    // but a galactic pull-out now unfolds at a constant felt rate through every decade
+    // of scale — you actually watch the camera rise out of the disk into the face-on
+    // spiral, instead of the linear ease flashing across the far distance then crawling.
+    { const lk = Math.log(distKm || 1), lt = Math.log(Math.max(tgtDist, 1)); distKm = Math.exp(lk + (lt - lk) * Math.min(1, dt * 4)); }
     if (focusBlend < 1) focusBlend = Math.min(1, focusBlend + dt * 0.9);
     const s = focusBlend * focusBlend * (3 - 2 * focusBlend);
     const fx = prevFocus.pos.x + (focus.pos.x - prevFocus.pos.x) * s;
@@ -3213,6 +3294,12 @@ void main(){
   // distant stars and exoplanet systems in across the following frames
   buildFarUniverse();
   (window as unknown as { __atlasFly?: (n: string) => void }).__atlasFly = (n) => focusBody(n);   // QA hook
+  (window as unknown as { __atlasDist?: (d: number) => void }).__atlasDist = (d) => { tgtDist = d; clampDist(); };   // QA hook
+  (window as unknown as { __atlasGalView?: () => void }).__atlasGalView = () => {   // QA: face-on, down the galactic pole
+    focusBody("Sagittarius A*");
+    const pl = new THREE.Vector3(poleK.x, poleK.y, poleK.z).normalize();
+    tgtPitch = Math.asin(Math.max(-1, Math.min(1, pl.y))); tgtYaw = Math.atan2(pl.x, pl.z); tgtDist = 9e17; clampDist();
+  };
 
   return () => {
     cancelAnimationFrame(raf);

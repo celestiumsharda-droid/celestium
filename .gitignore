@@ -9,3 +9,7 @@ dist
 
 # local audit/debug scripts
 _audit.cjs
+
+# local render/debug output
+.shots/
+.nebtmp/
