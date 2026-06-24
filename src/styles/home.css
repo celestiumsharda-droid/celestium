@@ -776,7 +776,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   text-shadow: 0 1px 8px rgba(0,0,0,.9); transition: opacity .5s; transform-origin: left center;
 }
 @media (max-width: 760px) {
-  .at-ground { font-size: 10px; padding: 11px 18px; bottom: 66px; }   /* its own band, clear of READ MORE (above) and the control row (below) */
+  .at-ground { font-size: 10px; padding: 11px 18px; bottom: calc(66px + env(safe-area-inset-bottom)); }   /* its own band, clear of READ MORE (above) and the control row (below) */
   .at-sky { bottom: 84px; }
   .at-con-label { font-size: 11px; }
 }
@@ -979,16 +979,20 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-date { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
 .at-fallback { max-width: 760px; margin: 0 auto; padding: clamp(120px,18vh,200px) 32px 90px; }
 .at-fallback h1 { font-family: var(--display); font-weight: 300; font-size: clamp(2.4rem, 7vw, 4.6rem); letter-spacing: -.025em; margin: 16px 0 20px; }
-/* panels own the stage: while the sheet is open, the HUD and controls bow out */
-.at-readout, .at-nav, .at-timewrap { transition: opacity .35s var(--ease); }
+/* panels own the stage: while the sheet OR the console is open, every other HUD
+   element bows fully out — nothing shows through behind the open panel */
+.at-readout, .at-nav, .at-timewrap, .at-ground { transition: opacity .35s var(--ease); }
 .at-stage:has(.at-sheet.open) .at-readout,
 .at-stage:has(.at-sheet.open) .at-nav,
 .at-stage:has(.at-sheet.open) .at-timewrap,
-.at-stage:has(.at-console.open) .at-timewrap { opacity: 0; pointer-events: none; }
+.at-stage:has(.at-sheet.open) .at-ground,
+.at-stage:has(.at-console.open) .at-readout,
+.at-stage:has(.at-console.open) .at-timewrap,
+.at-stage:has(.at-console.open) .at-ground { opacity: 0; pointer-events: none; }
 
 @media (max-width: 760px) {
   .at-hint { display: none; }
-  .at-hud { padding-bottom: 126px; }
+  .at-hud { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
   /* a scrim so the readout is always legible over the bright planet, and so the
      eye reads a clean dark base instead of text scattered across the globe */
   .at-hud::after {
@@ -1012,10 +1016,11 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .at-sheet.open { transform: none; }
   /* one clean control row: time chips scroll in a single line on the left,
      Navigate holds the right — nothing stacks, nothing collides */
-  .at-timewrap { left: 14px; right: auto; bottom: 14px; align-items: flex-start; gap: 6px; }
+  .at-timewrap { left: 14px; right: auto; bottom: calc(14px + env(safe-area-inset-bottom)); align-items: flex-start; gap: 6px; }
+  .at-time button { padding: 9px 14px; font-size: 10px; }   /* a clearer tap target on phones */
   .at-time { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100vw - 168px); scrollbar-width: none; padding-bottom: 2px; }
   .at-time::-webkit-scrollbar { display: none; }
-  .at-nav { top: auto; bottom: 16px; right: 14px; padding: 11px 16px; }
+  .at-nav { top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); right: 14px; padding: 11px 16px; }
 }
 
 /* ---- short viewports (landscape phones, short windows): a compact HUD so the
