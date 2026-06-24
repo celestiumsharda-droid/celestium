@@ -2626,14 +2626,27 @@ void main(){
   const conDistance = (b: Body): string => fmtDist(Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
   const dotColorOf = (b: Body): string => b.dot ? `#${(b.dot.material as THREE.SpriteMaterial).color.getHexString()}` : "#f2e6c4";
   const sysDist = (b: Body): number => Math.hypot(b.pos.x, b.pos.y, b.pos.z);
-  const itemRow = (b: Body, sub?: string): string =>
-    `<button type="button" class="at-con-item${b === focus ? " on" : ""}" data-n="${b.name}">` +
-    `<i style="--c:${dotColorOf(b)}"></i><span>${b.name}</span><b>${sub ?? conDistance(b)}</b></button>`;
-  const catRow = (label: string, sub: string, attr: string): string =>
-    `<button type="button" class="at-con-cat" ${attr}><span class="at-cat-txt"><span class="at-cat-l">${label}</span><span class="at-cat-s">${sub}</span></span><span class="at-cat-chev">&#8250;</span></button>`;
+  const cardLine = (b: Body): string =>
+    b.line ? b.line : (b.system && b.system !== b.name ? `in ${b.system}` : "");
+  const itemCard = (b: Body, sub?: string): string =>
+    `<button type="button" class="at-dst${b === focus ? " on" : ""}" data-n="${b.name}">` +
+    `<span class="at-disc" style="--c:${dotColorOf(b)}"></span>` +
+    `<span class="at-card-main"><span class="at-card-name">${b.name}${b === focus ? ` <em class="at-here">you are here</em>` : ""}</span>` +
+    `<span class="at-card-line">${cardLine(b)}</span></span>` +
+    `<span class="at-card-dist">${sub ?? conDistance(b)}</span></button>`;
+  const starCard = (ci: number, name: string, dist: string): string =>
+    `<button type="button" class="at-dst" data-star="${ci}">` +
+    `<span class="at-disc" style="--c:#cfe0ff"></span>` +
+    `<span class="at-card-main"><span class="at-card-name">${name}</span><span class="at-card-line">catalogue star</span></span>` +
+    `<span class="at-card-dist">${dist}</span></button>`;
+  const browseCard = (label: string, sub: string, attr: string): string =>
+    `<button type="button" class="at-dst at-browse" ${attr}>` +
+    `<span class="at-disc at-disc-grp"></span>` +
+    `<span class="at-card-main"><span class="at-card-name">${label}</span><span class="at-card-line">${sub}</span></span>` +
+    `<span class="at-card-chev">&#8250;</span></button>`;
 
   function wireRows() {
-    conList.querySelectorAll<HTMLButtonElement>(".at-con-item").forEach(btn =>
+    conList.querySelectorAll<HTMLButtonElement>(".at-dst[data-n], .at-dst[data-star]").forEach(btn =>
       btn.addEventListener("click", () => {
         if (btn.dataset["star"] !== undefined) { flyToStar(+btn.dataset["star"]!); closeConsole(); }   // a catalogue-star search hit
         else {
@@ -2642,11 +2655,11 @@ void main(){
           renderConsole();
         }
       }));
-    conList.querySelectorAll<HTMLButtonElement>(".at-con-cat").forEach(btn =>
+    conList.querySelectorAll<HTMLButtonElement>(".at-dst[data-cat], .at-dst[data-sys]").forEach(btn =>
       btn.addEventListener("click", () => {
         try { playClick(); } catch (_e) { /* off */ }
         if (btn.dataset["cat"]) cnav = { kind: "cat", i: +btn.dataset["cat"]! };
-        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : 7 };
+        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : EXO_CAT };
         renderConsole();
       }));
   }
@@ -2660,7 +2673,7 @@ void main(){
     if (q) {                                   // search flattens across planets, systems AND the star catalogue
       const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) =>
         Math.hypot(a.pos.x - camKm.x, a.pos.y - camKm.y, a.pos.z - camKm.z) - Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
-      let html = hits.slice(0, 30).map(b => itemRow(b, b.system && b.system !== b.name ? b.system : undefined)).join("");
+      let html = hits.slice(0, 30).map(b => itemCard(b, b.system && b.system !== b.name ? b.system : undefined)).join("");
       // the 108k catalogue: every NAMED star is findable by name
       if (nameToCloud && starJson && starMeta && q.length >= 2) {
         const names = starJson.names; let n = 0;
@@ -2668,7 +2681,7 @@ void main(){
           if (!names[ni]!.toLowerCase().includes(q)) continue;
           const ci = nameToCloud[ni]!; if (ci < 0 || heroByCloudIdx?.has(ci)) continue;   // skip those already shown as bodies
           const distLy = starMeta.getUint16(ci * 16 + 6, true) / 10;
-          html += `<button type="button" class="at-con-item" data-star="${ci}"><i style="--c:#cfe0ff"></i><span>${names[ni]}</span><b>${distLy.toFixed(0)} ly</b></button>`;
+          html += starCard(ci, names[ni]!, `${distLy.toFixed(0)} ly`);
           n++;
         }
       }
@@ -2676,7 +2689,21 @@ void main(){
       setHead("Search", null); wireRows(); return;
     }
     if (cnav.kind === "root") {
-      conList.innerHTML = CATS.map((c, i) => bodies.some(c.match) ? catRow(c.label, c.sub, `data-cat="${i}"`) : "").join("");
+      // the COSMIC LADDER: destinations ordered by scale, you-are-here marked.
+      // Small groups bloom into cards inline; the crowded ones (the stars, the
+      // exoplanet systems) collapse to a single card you tap to explore.
+      let html = "";
+      CATS.forEach((c, i) => {
+        const members = bodies.filter(c.match);
+        if (!members.length) return;
+        if (c.systems || members.length > 9) {
+          html += browseCard(c.label, `${members.length} ${c.systems ? "systems" : "destinations"} · explore`, `data-cat="${i}"`);
+        } else {
+          if (c.sort === "dist") members.sort((a, b) => sysDist(a) - sysDist(b));
+          html += `<div class="at-ladder-h">${c.label}</div>` + members.map(b => itemCard(b)).join("");
+        }
+      });
+      conList.innerHTML = html;
       setHead("Destinations", null); wireRows(); return;
     }
     if (cnav.kind === "cat") {
@@ -2689,13 +2716,13 @@ void main(){
         }
         conList.innerHTML = stars.map(s => {
           const np = bodies.filter(b => b.system === s.name && b !== s).length;
-          return catRow(s.name, `${np} planet${np !== 1 ? "s" : ""} · ${conDistance(s)}`, `data-sys="${s.name}"`);
+          return browseCard(s.name, `${np} planet${np !== 1 ? "s" : ""} · ${conDistance(s)}`, `data-sys="${s.name}"`);
         }).join("");
         setHead(c.label, back); wireRows(); return;
       }
       const members = bodies.filter(c.match);
       if (c.sort === "dist") members.sort((a, b) => sysDist(a) - sysDist(b));
-      conList.innerHTML = members.map(b => itemRow(b)).join("");
+      conList.innerHTML = members.map(b => itemCard(b)).join("");
       setHead(c.label, back); wireRows(); return;
     }
     // system view: the star, then its planets by orbit
@@ -2704,7 +2731,7 @@ void main(){
     const star = bodies.find(b => b.name === v.star);
     const planets = bodies.filter(b => b.system === v.star && b !== star);
     const list = star ? [star, ...planets] : planets;
-    conList.innerHTML = list.map(b => itemRow(b, b === star ? "the star" : conDistance(b))).join("");
+    conList.innerHTML = list.map(b => itemCard(b, b === star ? "the star" : conDistance(b))).join("");
     setHead(v.star, () => { cnav = { kind: "cat", i: v.from }; renderConsole(); });
     wireRows();
   }

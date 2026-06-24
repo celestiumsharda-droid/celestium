@@ -938,7 +938,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 }
 .at-con-search:focus { border-color: var(--accent); }
 .at-con-search::placeholder { color: var(--dim); }
-.at-con-list { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px 14px; }
+.at-con-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px 14px; }
 .at-con-group {
   font-family: var(--mono); font-size: 9px; letter-spacing: .26em; text-transform: uppercase;
   color: var(--dim); padding: 14px 10px 7px;
@@ -958,9 +958,55 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-con-item span { flex: 1; font-family: var(--display); font-size: 1rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .at-con-item b { font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; color: var(--dim); font-weight: 400; white-space: nowrap; }
 .at-con-none { padding: 20px 12px; color: var(--mut); font-size: .95rem; }
+
+/* ===== the cosmic-ladder cards ===== */
+.at-ladder-h {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--dim); padding: 17px 10px 7px;
+}
+.at-con-list > .at-ladder-h:first-child { padding-top: 6px; }
+.at-dst {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 9px 11px; border: 1px solid transparent; border-radius: 13px;
+  background: none; cursor: pointer; text-align: left;
+  transition: background .22s, border-color .22s, transform .12s;
+}
+.at-dst:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.09); }
+.at-dst:active { transform: scale(.985); }
+.at-dst.on { background: rgba(169,188,255,.13); border-color: rgba(169,188,255,.28); }
+.at-disc {
+  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+  background:
+    radial-gradient(circle at 33% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 50% 50%, var(--c, #cfe0ff), color-mix(in srgb, var(--c, #cfe0ff) 52%, #000) 100%);
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,.45), 0 0 12px -3px var(--c, #cfe0ff);
+}
+.at-disc-grp {
+  background:
+    radial-gradient(circle at 33% 28%, rgba(255,255,255,.3), rgba(255,255,255,0) 44%),
+    conic-gradient(from 210deg, #2a3f6b, #5a4a7a, #6b4a5a, #2a3f6b);
+  box-shadow: inset -3px -3px 7px rgba(0,0,0,.5), 0 0 10px -4px rgba(150,170,255,.55);
+}
+.at-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.at-card-name {
+  font-family: var(--display); font-size: 1.04rem; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 8px;
+}
+.at-here {
+  font-family: var(--mono); font-style: normal; font-size: 7.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: #0a0e1a; background: var(--accent); padding: 2px 6px; border-radius: 20px; flex: none;
+}
+.at-card-line {
+  font-family: var(--display); font-size: .82rem; color: var(--mut);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-card-dist { font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; color: var(--dim); white-space: nowrap; flex: none; }
+.at-card-chev { font-size: 20px; color: var(--dim); flex: none; transition: transform .22s, color .22s; }
+.at-dst.at-browse:hover .at-card-chev { color: var(--accent); transform: translateX(3px); }
 @media (max-width: 760px) {
   .at-nav { top: auto; bottom: 76px; right: clamp(14px, 4vw, 24px); padding: 11px 16px; }
-  .at-console { top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 72vh; border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99); }
+  .at-console { top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 74vh; border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99); }
   .at-console.open { transform: none; }
 }
 
