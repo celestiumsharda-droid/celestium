@@ -706,7 +706,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 /* ============ the Earth planetarium ============ */
 /* the doorway: step from orbit onto the real ground */
 .at-ground {
-  position: absolute; z-index: 7; left: 50%; bottom: clamp(92px, 15vh, 140px); transform: translateX(-50%);
+  position: absolute; z-index: 7; left: 50%; bottom: clamp(116px, 17vh, 164px); transform: translateX(-50%);
   pointer-events: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink);
   background:
     radial-gradient(200px 140px at var(--gx,28%) var(--gy,-14%), var(--glass-hi), transparent 74%),
@@ -776,7 +776,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   text-shadow: 0 1px 8px rgba(0,0,0,.9); transition: opacity .5s; transform-origin: left center;
 }
 @media (max-width: 760px) {
-  .at-ground { font-size: 10px; padding: 11px 18px; bottom: calc(66px + env(safe-area-inset-bottom)); }   /* its own band, clear of READ MORE (above) and the control row (below) */
+  .at-ground { font-size: 10px; padding: 11px 18px; bottom: calc(112px + env(safe-area-inset-bottom)); }   /* its own band, clear of the beacon below */
   .at-sky { bottom: 84px; }
   .at-con-label { font-size: 11px; }
 }
@@ -841,177 +841,144 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
 .at-sheet-prose p + p { margin-top: 14px; }
 
 /* the navigation console — the Atlas's destination chart */
+/* ===== THE BEACON — the Atlas's whole navigation, one lens of light ===== */
 .at-nav {
   position: absolute; z-index: 5;
-  top: clamp(78px, 11vh, 110px); right: clamp(18px, 3vw, 44px);
-  display: inline-flex; align-items: center; gap: 9px;
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--ink); cursor: pointer;
-  background:
-    radial-gradient(160px 120px at var(--gx, 26%) var(--gy, -12%), var(--glass-hi), transparent 74%),
-    var(--glass-sheen-face),
-    var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge); border-radius: 999px;
-  padding: 12px 20px;
-  box-shadow: var(--glass-bevel), 0 8px 26px rgba(0,0,0,.35);
-  transition: border-color .3s, color .3s, box-shadow .3s;
+  left: 50%; bottom: clamp(24px, 4.2vh, 44px); transform: translateX(-50%);
+  width: 58px; height: 58px; padding: 0; border: none; background: none; cursor: pointer;
+  display: grid; place-items: center;
+  transition: transform .45s var(--ease), opacity .4s var(--ease);
 }
-.at-nav svg { width: 16px; height: 16px; }
-.at-nav:hover { border-color: rgba(255,255,255,.35); color: var(--accent); box-shadow: var(--glass-shadow), var(--glass-bevel); }
+.at-nav:active { transform: translateX(-50%) scale(.92); }
+.bk-glow {
+  position: absolute; width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(150,180,255,.5), rgba(120,150,255,0) 66%);
+  filter: blur(5px); animation: bkBreath 3.8s ease-in-out infinite;
+}
+.bk-core {
+  position: relative; width: 19px; height: 19px; border-radius: 50%;
+  background: radial-gradient(circle at 42% 36%, #ffffff, #bcd4ff 42%, #5e7ad0 76%, #232e58 100%);
+  box-shadow: 0 0 0 1px rgba(220,232,255,.4), 0 0 22px -2px rgba(150,180,255,.85);
+}
+.bk-spec { position: absolute; width: 5px; height: 3.2px; border-radius: 50%; background: #fff; opacity: .85; transform: translate(-3px, -4px); }
+@keyframes bkBreath { 0%, 100% { opacity: .45; transform: scale(.9); } 50% { opacity: .85; transform: scale(1.1); } }
+.at-nav:hover .bk-core { box-shadow: 0 0 0 1px rgba(220,232,255,.6), 0 0 28px 0 rgba(150,180,255,1); }
+.at-stage:has(.at-console.open) .at-nav { opacity: 0; pointer-events: none; }
+
+/* ===== THE NAV SURFACE — depth-line of worlds rising from the dark ===== */
 .at-console {
   position: absolute; z-index: 6;
-  top: clamp(78px, 11vh, 110px); right: clamp(18px, 3vw, 44px); bottom: clamp(18px, 5vh, 44px);
-  width: min(360px, calc(100vw - 36px));
+  left: 50%; bottom: 0; transform: translateX(-50%) translateY(26px);
+  width: min(460px, calc(100vw - 20px));
+  max-height: 78vh;
   display: flex; flex-direction: column;
-  border-radius: var(--radius);
+  padding: 0 0 clamp(18px, 3.2vh, 30px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s var(--ease), transform .55s var(--ease);
+}
+.at-console::before {                                   /* a breath of dark so worlds read over a bright planet */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 130%;
+  background: linear-gradient(to top, rgba(4,6,12,.82) 8%, rgba(4,6,12,.4) 46%, transparent 100%);
+  pointer-events: none; z-index: -1;
+}
+.at-console.open { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+.at-console[hidden] { display: flex; }
+
+.at-con-list {
+  flex: 1 1 auto; min-height: 0; position: relative;
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  display: flex; flex-direction: column-reverse;
+  padding: 8px clamp(14px,4vw,22px) 12px calc(clamp(14px,4vw,22px) + 20px);
+  margin-bottom: 12px;
+}
+.at-con-list::-webkit-scrollbar { display: none; }
+.nv-spine {                                             /* the depth-line: near at the thumb, far rising into the dark */
+  position: absolute; left: clamp(14px,4vw,22px); top: 10px; bottom: 12px; width: 1px;
+  background: linear-gradient(to top, rgba(175,195,245,.55), rgba(175,195,245,.03));
+  pointer-events: none;
+}
+.nv-count { font-family: var(--mono); font-size: 8.5px; letter-spacing: .2em; color: var(--dim); text-align: center; padding: 4px 0 10px; }
+.nv-none { padding: 24px 12px; text-align: center; color: var(--mut); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; }
+
+/* a whisper — name + distance, a bead on the depth-line */
+.nv-world {
+  position: relative; width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 7px 12px; border: 1px solid transparent; border-radius: 12px;
+  background: none; cursor: pointer; text-align: left;
+  transition: background .2s, border-color .2s;
+  animation: nvRise .4s var(--ease) both;
+}
+@keyframes nvRise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.nv-world:hover { background: rgba(255,255,255,.05); }
+.nv-bead {
+  position: absolute; left: -20px; top: 50%; transform: translateY(-50%);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--c, #cfe0ff); box-shadow: 0 0 9px -1px var(--c, #cfe0ff);
+}
+.nv-world > .nv-name { flex: 1; font-family: var(--display); font-size: 1.06rem; color: #d8def0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-dist { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--dim); white-space: nowrap; flex: none; }
+
+/* the focused world — opens with its line + Fly, the nearest to the thumb */
+.nv-foc {
+  padding: 13px 15px; border-radius: 18px; gap: 13px;
+  border: 1px solid rgba(175,195,245,.3);
+  background:
+    radial-gradient(200px 110px at var(--gx,30%) var(--gy,-12%), var(--glass-hi), transparent 72%),
+    var(--glass-sheen-face),
+    rgba(13,17,30,.6);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+  box-shadow: 0 12px 34px -10px rgba(0,0,0,.65), var(--glass-bevel);
+}
+.nv-foc .nv-bead { width: 11px; height: 11px; box-shadow: 0 0 15px 0 var(--c); }
+.nv-disc {
+  width: 40px; height: 40px; border-radius: 50%; flex: none;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.72), rgba(255,255,255,0) 44%),
+    radial-gradient(circle at 50% 50%, var(--c, #cfe0ff), color-mix(in srgb, var(--c, #cfe0ff) 48%, #000) 100%);
+  box-shadow: inset -5px -5px 10px rgba(0,0,0,.45), 0 0 22px -4px var(--c, #cfe0ff);
+}
+.nv-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nv-foc .nv-name { font-family: var(--display); font-size: 1.42rem; color: var(--ink); line-height: 1.04; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-meta { font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-top: 2px; }
+.nv-line { font-family: var(--display); font-size: .85rem; color: var(--mut); margin-top: 5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nv-fly { flex: none; align-self: flex-start; font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #ffe6bc; white-space: nowrap; padding-top: 2px; }
+
+/* the glass meniscus — the search bar, liquid obsidian refracting the sky */
+.nv-bar {
+  margin: 0 clamp(14px,4vw,22px);
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 20px;
   border: 1px solid var(--glass-edge);
   background:
-    radial-gradient(280px 220px at var(--gx, 30%) var(--gy, -8%), var(--glass-hi), transparent 74%),
+    radial-gradient(220px 130px at var(--gx,30%) var(--gy,-10%), var(--glass-hi), transparent 72%),
     var(--glass-sheen-face),
-    rgba(10, 13, 21, 0.4);
-  -webkit-backdrop-filter: saturate(170%) brightness(1.1) blur(8px);
-  backdrop-filter: saturate(170%) brightness(1.1) blur(8px);
+    rgba(8,10,18,.46);
+  -webkit-backdrop-filter: saturate(160%) brightness(1.06) blur(10px);
+  backdrop-filter: saturate(160%) brightness(1.06) blur(10px);
   box-shadow: var(--glass-shadow), var(--glass-bevel);
-  text-shadow: var(--glass-textscrim);
-  opacity: 0; transform: translateX(40px) scale(.985); pointer-events: none;
-  transition: opacity .5s var(--ease), transform .5s var(--ease);
-  overflow: hidden;
 }
-.at-console.open { opacity: 1; transform: none; pointer-events: auto; }
-.at-console[hidden] { display: flex; }
 @supports (backdrop-filter: url(#lg-refract)) {
-  .at-console { backdrop-filter: url(#lg-refract) saturate(170%) brightness(1.1) blur(5px); }
+  .nv-bar { backdrop-filter: url(#lg-refract) saturate(160%) brightness(1.06) blur(6px); }
 }
-.at-console::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit;
-  padding: 2px; pointer-events: none; z-index: 4;
-  background: conic-gradient(from var(--ga, 240deg),
-    transparent 0deg,
-    rgba(185,200,255,.7) 16deg, rgba(255,255,255,1) 34deg, rgba(255,232,190,.65) 54deg,
-    rgba(255,255,255,.18) 84deg, transparent 128deg,
-    transparent 175deg,
-    rgba(255,232,190,.45) 206deg, rgba(255,255,255,.92) 226deg, rgba(185,200,255,.5) 248deg,
-    transparent 288deg, transparent 360deg);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: .95;
+.nv-bar-ic { flex: none; color: var(--accent); display: grid; place-items: center; }
+.nv-bar-ic svg { width: 18px; height: 18px; }
+.at-con-search {
+  flex: 1; min-width: 0; background: none; border: none; outline: none;
+  color: var(--ink); font-family: var(--display); font-size: 1.12rem;
 }
-.at-con-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 10px; }
-.at-con-title { flex: 1; font-family: var(--mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.at-con-back {
-  width: 30px; height: 30px; flex: none; border-radius: 50%;
-  background: rgba(255,255,255,.06); border: 1px solid var(--glass-edge);
-  color: var(--ink); font-size: 17px; line-height: 1; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: border-color .3s, background .3s;
-}
-.at-con-back[hidden] { display: none; }
-.at-con-back:hover { border-color: var(--accent); background: rgba(255,255,255,.1); }
-/* a category / system row that drills one level deeper */
-.at-con-cat {
-  width: 100%; display: flex; align-items: center; gap: 11px;
-  padding: 13px 12px; border: none; border-radius: 12px;
-  background: none; cursor: pointer; text-align: left;
-  transition: background .25s;
-}
-.at-con-cat:hover { background: rgba(255,255,255,.07); }
-.at-cat-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.at-cat-l { font-family: var(--display); font-size: 1.06rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.at-cat-s { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
-.at-cat-chev { font-size: 20px; color: var(--dim); transition: transform .25s, color .25s; }
-.at-con-cat:hover .at-cat-chev { color: var(--accent); transform: translateX(3px); }
+.at-con-search::placeholder { color: var(--dim); }
 .at-con-close {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(255,255,255,.06); border: 1px solid var(--glass-edge);
-  color: var(--mut); font-size: 12px; cursor: pointer;
-  transition: color .3s, border-color .3s;
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,.05); border: 1px solid var(--glass-edge);
+  color: var(--mut); font-size: 11px; cursor: pointer; transition: color .3s, border-color .3s;
 }
 .at-con-close:hover { color: var(--ink); border-color: rgba(255,255,255,.3); }
-.at-con-search {
-  margin: 0 16px 12px; padding: 11px 15px;
-  background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 12px;
-  color: var(--ink); font-family: var(--body); font-size: .95rem; outline: none;
-  transition: border-color .3s;
-}
-.at-con-search:focus { border-color: var(--accent); }
-.at-con-search::placeholder { color: var(--dim); }
-.at-con-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px 14px; }
-.at-con-group {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .26em; text-transform: uppercase;
-  color: var(--dim); padding: 14px 10px 7px;
-}
-.at-con-item {
-  width: 100%; display: flex; align-items: center; gap: 11px;
-  padding: 9px 10px; border: none; border-radius: 10px;
-  background: none; cursor: pointer; text-align: left;
-  transition: background .25s;
-}
-.at-con-item:hover { background: rgba(255,255,255,.07); }
-.at-con-item.on { background: rgba(169,188,255,.12); }
-.at-con-item i {
-  width: 8px; height: 8px; border-radius: 50%; flex: none;
-  background: var(--c, #fff); box-shadow: 0 0 8px var(--c, #fff);
-}
-.at-con-item span { flex: 1; font-family: var(--display); font-size: 1rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.at-con-item b { font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; color: var(--dim); font-weight: 400; white-space: nowrap; }
-.at-con-none { padding: 20px 12px; color: var(--mut); font-size: .95rem; }
 
-/* ===== the cosmic-ladder cards ===== */
-.at-ladder-h {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .24em; text-transform: uppercase;
-  color: var(--dim); padding: 17px 10px 7px;
-}
-.at-con-list > .at-ladder-h:first-child { padding-top: 6px; }
-.at-dst {
-  width: 100%; display: flex; align-items: center; gap: 12px;
-  padding: 9px 11px; border: 1px solid transparent; border-radius: 13px;
-  background: none; cursor: pointer; text-align: left;
-  transition: background .22s, border-color .22s, transform .12s;
-}
-.at-dst:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.09); }
-.at-dst:active { transform: scale(.985); }
-.at-dst.on { background: rgba(169,188,255,.13); border-color: rgba(169,188,255,.28); }
-.at-disc {
-  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
-  background:
-    radial-gradient(circle at 33% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 40%),
-    radial-gradient(circle at 50% 50%, var(--c, #cfe0ff), color-mix(in srgb, var(--c, #cfe0ff) 52%, #000) 100%);
-  box-shadow: inset -4px -4px 8px rgba(0,0,0,.45), 0 0 12px -3px var(--c, #cfe0ff);
-}
-.at-disc-grp {
-  background:
-    radial-gradient(circle at 33% 28%, rgba(255,255,255,.3), rgba(255,255,255,0) 44%),
-    conic-gradient(from 210deg, #2a3f6b, #5a4a7a, #6b4a5a, #2a3f6b);
-  box-shadow: inset -3px -3px 7px rgba(0,0,0,.5), 0 0 10px -4px rgba(150,170,255,.55);
-}
-.at-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.at-card-name {
-  font-family: var(--display); font-size: 1.04rem; color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: flex; align-items: center; gap: 8px;
-}
-.at-here {
-  font-family: var(--mono); font-style: normal; font-size: 7.5px; letter-spacing: .13em; text-transform: uppercase;
-  color: #0a0e1a; background: var(--accent); padding: 2px 6px; border-radius: 20px; flex: none;
-}
-.at-card-line {
-  font-family: var(--display); font-size: .82rem; color: var(--mut);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.at-card-dist { font-family: var(--mono); font-size: 9.5px; letter-spacing: .04em; color: var(--dim); white-space: nowrap; flex: none; }
-.at-card-chev { font-size: 20px; color: var(--dim); flex: none; transition: transform .22s, color .22s; }
-.at-dst.at-browse:hover .at-card-chev { color: var(--accent); transform: translateX(3px); }
-@media (max-width: 760px) {
-  .at-nav { top: auto; bottom: 76px; right: clamp(14px, 4vw, 24px); padding: 11px 16px; }
-  .at-console { top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 74vh; border-radius: var(--radius) var(--radius) 0 0; transform: translateY(60px) scale(.99); }
-  .at-console.open { transform: none; }
-}
+/* radical-minimal HUD: the universe gets the screen; only name + distance remain */
+.at-readout .et-eyebrow, .at-readout .et-kicker, .at-hint, .at-line, .at-more { display: none; }
 
 /* time controls — the system runs at the visitor's pace */
-.at-timewrap { position: absolute; right: clamp(18px, 3vw, 44px); bottom: clamp(20px, 4vh, 36px); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+.at-timewrap { position: absolute; right: clamp(18px, 3vw, 44px); bottom: clamp(20px, 4vh, 36px); display: none; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
 .at-time { display: flex; gap: 6px; pointer-events: auto; }
 .at-time button {
   font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
@@ -1050,7 +1017,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .at-readout .et-eyebrow, .at-readout .et-kicker { display: none; }  /* declutter — the name + distance carry it */
   .at-name { font-size: clamp(2rem, 9vw, 2.8rem); }
   .at-stage.in-sky .at-hud::after { display: none; }   /* no scrim over the planetarium sea */
-  .at-line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .at-line { display: none; }
   /* the sheet becomes a bottom sheet — stronger tint so prose reads clean */
   .at-sheet {
     top: auto; left: 10px; right: 10px; bottom: 0; width: auto; max-height: 68vh;
@@ -1066,7 +1033,9 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .at-time button { padding: 9px 14px; font-size: 10px; }   /* a clearer tap target on phones */
   .at-time { flex-wrap: nowrap; overflow-x: auto; max-width: calc(100vw - 168px); scrollbar-width: none; padding-bottom: 2px; }
   .at-time::-webkit-scrollbar { display: none; }
-  .at-nav { top: auto; bottom: calc(16px + env(safe-area-inset-bottom)); right: 14px; padding: 11px 16px; }
+  .at-console { width: auto; left: 8px; right: 8px; max-height: 80vh; transform: translateY(26px); }
+  .at-console.open { transform: none; }
+  .at-name { font-size: clamp(1.9rem, 8vw, 2.6rem); }
 }
 
 /* ---- short viewports (landscape phones, short windows): a compact HUD so the
@@ -1078,10 +1047,7 @@ section { position: relative; padding: clamp(68px, 9.5vw, 150px) 0; }
   .at-dist { font-size: 11px; margin-bottom: 5px; }
   .at-line, .at-hint { display: none; }                 /* free the view */
   .at-more { margin-top: 8px; padding: 7px 15px; font-size: 9px; }
-  /* clear the site header (it stays at the very top), then fill the right column */
-  .at-nav { top: 60px; bottom: auto; right: 10px; padding: 8px 13px; }
-  .at-console { top: 60px; bottom: 10px; left: auto; right: 10px; width: min(330px, 46vw); max-height: none; border-radius: var(--radius); transform: translateX(40px) scale(.99); }
-  .at-console.open { transform: none; }
+  .at-console { max-height: 84vh; }
   .at-sheet { top: 60px; bottom: 10px; left: auto; right: 10px; width: min(340px, 48vw); max-height: none; border-radius: var(--radius); transform: translateX(40px) scale(.99); padding: 16px 18px; }
   .at-sheet.open { transform: none; }
   /* time controls stay bottom-RIGHT (opposite the readout, no collision) and

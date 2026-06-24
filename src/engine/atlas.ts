@@ -2595,162 +2595,95 @@ void main(){
      becoming an endless scroll. Search flattens across everything. */
   const DWARFS = ["Ceres", "Vesta", "Pluto", "Haumea", "Makemake", "Eris"];
   const MOON_NAMES = ["Moon", "Io", "Europa", "Ganymede", "Callisto", "Enceladus", "Tethys", "Dione", "Rhea", "Titan", "Iapetus", "Triton", "Charon"];
-  interface Cat { label: string; sub: string; match: (b: Body) => boolean; systems?: boolean; sort?: "dist" | "orbit"; }
-  const CATS: Cat[] = [
-    { label: "The Sun & its planets", sub: "Sol — eight worlds", match: b => !b.kind && ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(b.name) },
-    { label: "Moons", sub: "of Earth, the giants & Pluto", match: b => MOON_NAMES.includes(b.name) },
-    { label: "Dwarf planets & asteroids", sub: "Ceres, Vesta, the far dwarfs", match: b => DWARFS.includes(b.name) },
-    { label: "Near-Earth asteroids", sub: "the rocks we've flown to", match: b => ["Bennu", "Ryugu", "Eros", "Itokawa"].includes(b.name) },
-    { label: "The machines", sub: "humanity's emissaries", match: b => ["Hubble", "JWST", "New Horizons", "Voyager 2", "Voyager 1"].includes(b.name) },
-    { label: "The wanderers", sub: "comets, drifting in", match: b => b.name.includes("Comet") || b.name.includes("Bopp") },
-    { label: "TRAPPIST-1", sub: "a second sun, seven worlds", match: b => b.system === "TRAPPIST-1", systems: true },
-    { label: "Exoplanet systems", sub: "worlds around other suns", match: b => b.kind === "star" && !!b.foreign && b.system !== "TRAPPIST-1", systems: true, sort: "dist" },
-    { label: "The stars", sub: "the solar neighbourhood", match: b => b.kind === "star" && !b.foreign && !b.adhoc && b.name !== "Sagittarius A*", sort: "dist" },
-    { label: "The galaxy", sub: "the heart of the Milky Way", match: b => b.name === "Sagittarius A*" },
-  ];
-  type NavView = { kind: "root" } | { kind: "cat"; i: number } | { kind: "sys"; star: string; from: number };
-  const TRAPPIST_CAT = CATS.findIndex(c => c.label === "TRAPPIST-1");
-  const EXO_CAT = CATS.findIndex(c => c.label === "Exoplanet systems");
-  // open the console where you ALREADY are — inside a system it shows that
-  // system's worlds, so you can hop between siblings without restarting at the top.
-  const contextView = (): NavView => {
-    const sys = focus.system;
-    if (sys) return { kind: "sys", star: sys, from: sys === "TRAPPIST-1" ? TRAPPIST_CAT : EXO_CAT };
-    const ci = CATS.findIndex(c => !c.systems && c.match(focus));
-    return ci >= 0 ? { kind: "cat", i: ci } : { kind: "root" };
-  };
-  let cnav: NavView = { kind: "root" };
-  const conBack = consoleEl.querySelector<HTMLElement>(".at-con-back")!;
-  const conTitle = consoleEl.querySelector<HTMLElement>(".at-con-title")!;
+  // (navigation is search-led now — THE BEACON, below)
 
   const conDistance = (b: Body): string => fmtDist(Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
   const dotColorOf = (b: Body): string => b.dot ? `#${(b.dot.material as THREE.SpriteMaterial).color.getHexString()}` : "#f2e6c4";
-  const sysDist = (b: Body): number => Math.hypot(b.pos.x, b.pos.y, b.pos.z);
-  const cardLine = (b: Body): string =>
-    b.line ? b.line : (b.system && b.system !== b.name ? `in ${b.system}` : "");
-  const itemCard = (b: Body, sub?: string): string =>
-    `<button type="button" class="at-dst${b === focus ? " on" : ""}" data-n="${b.name}">` +
-    `<span class="at-disc" style="--c:${dotColorOf(b)}"></span>` +
-    `<span class="at-card-main"><span class="at-card-name">${b.name}${b === focus ? ` <em class="at-here">you are here</em>` : ""}</span>` +
-    `<span class="at-card-line">${cardLine(b)}</span></span>` +
-    `<span class="at-card-dist">${sub ?? conDistance(b)}</span></button>`;
-  const starCard = (ci: number, name: string, dist: string): string =>
-    `<button type="button" class="at-dst" data-star="${ci}">` +
-    `<span class="at-disc" style="--c:#cfe0ff"></span>` +
-    `<span class="at-card-main"><span class="at-card-name">${name}</span><span class="at-card-line">catalogue star</span></span>` +
-    `<span class="at-card-dist">${dist}</span></button>`;
-  const browseCard = (label: string, sub: string, attr: string): string =>
-    `<button type="button" class="at-dst at-browse" ${attr}>` +
-    `<span class="at-disc at-disc-grp"></span>` +
-    `<span class="at-card-main"><span class="at-card-name">${label}</span><span class="at-card-line">${sub}</span></span>` +
-    `<span class="at-card-chev">&#8250;</span></button>`;
+  const d3 = (b: Body): number => Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z);
+  const typeOf = (b: Body): string => {
+    if (b.name === "Sagittarius A*") return "black hole";
+    if (b.name === "Milky Way") return "our galaxy";
+    if (b.kind === "star") return b.foreign && b.system && b.system !== b.name ? "another sun" : "star";
+    if (MOON_NAMES.includes(b.name)) return "moon";
+    if (DWARFS.includes(b.name)) return "dwarf planet";
+    if (b.system && b.system !== b.name) return b.system;
+    return b.kind || "planet";
+  };
+  // a destination 'world' that condenses onto the depth-line; the focused one
+  // (rendered first → nearest the thumb) opens with its line + Fly, the rest
+  // stay luminous whispers until you reach for them.
+  interface WOpt { n: string; col: string; dist: string; type: string; line?: string; foc: boolean; attr: string; }
+  const worldRow = (o: WOpt): string => o.foc
+    ? `<button type="button" class="nv-world nv-foc" ${o.attr}>` +
+        `<span class="nv-bead" style="--c:${o.col}"></span>` +
+        `<span class="nv-disc" style="--c:${o.col}"></span>` +
+        `<span class="nv-body"><span class="nv-name">${o.n}</span>` +
+        `<span class="nv-meta">${o.type} · ${o.dist}</span>` +
+        (o.line ? `<span class="nv-line">${o.line}</span>` : "") + `</span>` +
+        `<span class="nv-fly">Fly <span aria-hidden="true">&#8599;</span></span></button>`
+    : `<button type="button" class="nv-world" ${o.attr}>` +
+        `<span class="nv-bead" style="--c:${o.col}"></span>` +
+        `<span class="nv-name">${o.n}</span><span class="nv-dist">${o.dist}</span></button>`;
+  const bodyOpt = (b: Body, foc: boolean): WOpt => ({ n: b.name, col: dotColorOf(b), dist: conDistance(b), type: typeOf(b), line: b.line, foc, attr: `data-n="${b.name}"` });
 
-  function wireRows() {
-    conList.querySelectorAll<HTMLButtonElement>(".at-dst[data-n], .at-dst[data-star]").forEach(btn =>
-      btn.addEventListener("click", () => {
-        if (btn.dataset["star"] !== undefined) { flyToStar(+btn.dataset["star"]!); closeConsole(); }   // a catalogue-star search hit
-        else {
-          focusBody(btn.dataset["n"]!, true);                          // a body — fly, but STAY in the menu so you can hop
-          if (conSearch.value) { conSearch.value = ""; cnav = contextView(); }   // from search → land in its system/group
-          renderConsole();
-        }
-      }));
-    conList.querySelectorAll<HTMLButtonElement>(".at-dst[data-cat], .at-dst[data-sys]").forEach(btn =>
-      btn.addEventListener("click", () => {
-        try { playClick(); } catch (_e) { /* off */ }
-        if (btn.dataset["cat"]) cnav = { kind: "cat", i: +btn.dataset["cat"]! };
-        else if (btn.dataset["sys"]) cnav = { kind: "sys", star: btn.dataset["sys"]!, from: cnav.kind === "cat" ? cnav.i : EXO_CAT };
-        renderConsole();
-      }));
+  function wireWorlds() {
+    conList.querySelectorAll<HTMLButtonElement>(".nv-world[data-n]").forEach(btn =>
+      btn.addEventListener("click", () => { focusBody(btn.dataset["n"]!, true); conSearch.value = ""; renderConsole(); }));
+    conList.querySelectorAll<HTMLButtonElement>(".nv-world[data-star]").forEach(btn =>
+      btn.addEventListener("click", () => { flyToStar(+btn.dataset["star"]!); conSearch.value = ""; renderConsole(); }));
   }
-  function setHead(title: string, back: null | (() => void)) {
-    conTitle.textContent = title;
-    if (back) { conBack.removeAttribute("hidden"); conBack.onclick = () => { try { playClick(); } catch (_e) { /* off */ } back(); }; }
-    else { conBack.setAttribute("hidden", ""); conBack.onclick = null; }
-  }
+  // SEARCH-LED: empty shows the nearest places to where you are; typing ranks
+  // the whole Atlas (and the 108k-star catalogue) by name then by distance.
+  // Results hang on the depth-line, the first one focused (open).
   function renderConsole() {
     const q = conSearch.value.trim().toLowerCase();
-    if (q) {                                   // search flattens across planets, systems AND the star catalogue
-      const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) =>
-        Math.hypot(a.pos.x - camKm.x, a.pos.y - camKm.y, a.pos.z - camKm.z) - Math.hypot(b.pos.x - camKm.x, b.pos.y - camKm.y, b.pos.z - camKm.z));
-      let html = hits.slice(0, 30).map(b => itemCard(b, b.system && b.system !== b.name ? b.system : undefined)).join("");
+    let rows: string[] = [];
+    let count: string;
+    if (!q) {
+      const near = bodies.filter(b => !b.adhoc && b !== focus && b.name !== "Sun")
+        .map(b => ({ b, d: d3(b) })).sort((a, b) => a.d - b.d).slice(0, 6);
+      rows = near.map((x, i) => worldRow(bodyOpt(x.b, i === 0)));
+      count = "AROUND YOU";
+    } else {
+      const hits = bodies.filter(b => !b.adhoc && b.name.toLowerCase().includes(q)).sort((a, b) => {
+        const as = a.name.toLowerCase().indexOf(q) === 0 ? 0 : 1, bs = b.name.toLowerCase().indexOf(q) === 0 ? 0 : 1;
+        return as - bs || d3(a) - d3(b);
+      }).slice(0, 6);
+      rows = hits.map((b, i) => worldRow(bodyOpt(b, i === 0)));
       // the 108k catalogue: every NAMED star is findable by name
       if (nameToCloud && starJson && starMeta && q.length >= 2) {
-        const names = starJson.names; let n = 0;
-        for (let ni = 0; ni < names.length && n < 50; ni++) {
+        const names = starJson.names;
+        for (let ni = 0; ni < names.length && rows.length < 7; ni++) {
           if (!names[ni]!.toLowerCase().includes(q)) continue;
-          const ci = nameToCloud[ni]!; if (ci < 0 || heroByCloudIdx?.has(ci)) continue;   // skip those already shown as bodies
+          const ci = nameToCloud[ni]!; if (ci < 0 || heroByCloudIdx?.has(ci)) continue;
           const distLy = starMeta.getUint16(ci * 16 + 6, true) / 10;
-          html += starCard(ci, names[ni]!, `${distLy.toFixed(0)} ly`);
-          n++;
+          rows.push(worldRow({ n: names[ni]!, col: "#cfe0ff", dist: `${distLy.toFixed(0)} ly`, type: "catalogue star", foc: rows.length === 0, attr: `data-star="${ci}"` }));
         }
       }
-      conList.innerHTML = html || `<div class="at-con-none">Nothing in the Atlas by that name — yet.</div>`;
-      setHead("Search", null); wireRows(); return;
+      const tot = (starJson?.names.length ?? 108000).toLocaleString();
+      count = rows.length ? `${rows.length} OF ${tot} SUNS` : "NOTHING BY THAT NAME — YET";
     }
-    if (cnav.kind === "root") {
-      // the COSMIC LADDER: destinations ordered by scale, you-are-here marked.
-      // Small groups bloom into cards inline; the crowded ones (the stars, the
-      // exoplanet systems) collapse to a single card you tap to explore.
-      let html = "";
-      CATS.forEach((c, i) => {
-        const members = bodies.filter(c.match);
-        if (!members.length) return;
-        if (c.systems || members.length > 9) {
-          html += browseCard(c.label, `${members.length} ${c.systems ? "systems" : "destinations"} · explore`, `data-cat="${i}"`);
-        } else {
-          if (c.sort === "dist") members.sort((a, b) => sysDist(a) - sysDist(b));
-          html += `<div class="at-ladder-h">${c.label}</div>` + members.map(b => itemCard(b)).join("");
-        }
-      });
-      conList.innerHTML = html;
-      setHead("Destinations", null); wireRows(); return;
-    }
-    if (cnav.kind === "cat") {
-      const c = CATS[cnav.i]!;
-      const back = () => { cnav = { kind: "root" }; renderConsole(); };
-      if (c.systems) {
-        const stars = bodies.filter(c.match).sort((a, b) => sysDist(a) - sysDist(b));
-        if (c.label === "TRAPPIST-1") {        // single system → straight to its planets
-          cnav = { kind: "sys", star: "TRAPPIST-1", from: cnav.i }; renderConsole(); return;
-        }
-        conList.innerHTML = stars.map(s => {
-          const np = bodies.filter(b => b.system === s.name && b !== s).length;
-          return browseCard(s.name, `${np} planet${np !== 1 ? "s" : ""} · ${conDistance(s)}`, `data-sys="${s.name}"`);
-        }).join("");
-        setHead(c.label, back); wireRows(); return;
-      }
-      const members = bodies.filter(c.match);
-      if (c.sort === "dist") members.sort((a, b) => sysDist(a) - sysDist(b));
-      conList.innerHTML = members.map(b => itemCard(b)).join("");
-      setHead(c.label, back); wireRows(); return;
-    }
-    // system view: the star, then its planets by orbit
-    const v = cnav;
-    if (v.kind !== "sys") return;
-    const star = bodies.find(b => b.name === v.star);
-    const planets = bodies.filter(b => b.system === v.star && b !== star);
-    const list = star ? [star, ...planets] : planets;
-    conList.innerHTML = list.map(b => itemCard(b, b === star ? "the star" : conDistance(b))).join("");
-    setHead(v.star, () => { cnav = { kind: "cat", i: v.from }; renderConsole(); });
-    wireRows();
+    conList.innerHTML = rows.length
+      ? `<span class="nv-spine" aria-hidden="true"></span>${rows.join("")}<div class="nv-count">${count}</div>`
+      : `<div class="nv-none">${count}</div>`;
+    wireWorlds();
   }
-  const buildConsole = (_f?: string) => renderConsole();
+  const buildConsole = () => renderConsole();
   function openConsole() {
-    sheet.classList.remove("open");      // one panel at a time
+    sheet.classList.remove("open");      // one instrument at a time
     conSearch.value = "";
-    cnav = contextView();                // open where you ARE, not always the top
     renderConsole();
     consoleEl.removeAttribute("hidden");
     requestAnimationFrame(() => consoleEl.classList.add("open"));
+    nav.setAttribute("aria-expanded", "true");
     if (matchMedia("(hover: hover)").matches) conSearch.focus();
   }
-  function closeConsole() { consoleEl.classList.remove("open"); }
+  function closeConsole() { consoleEl.classList.remove("open"); nav.setAttribute("aria-expanded", "false"); }
   nav.addEventListener("click", () => {
     if (consoleEl.classList.contains("open")) closeConsole(); else { openConsole(); try { playClick(); } catch (_e) { /* off */ } }
   });
   conClose.addEventListener("click", closeConsole);
-  conSearch.addEventListener("input", () => buildConsole(conSearch.value));
+  conSearch.addEventListener("input", buildConsole);
   canvas.addEventListener("pointerdown", closeConsole);
 
   // the shared context object passed to every frame hook (mutated in place

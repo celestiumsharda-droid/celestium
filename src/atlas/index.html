@@ -134,19 +134,21 @@
         <div class="at-sheet-prose"></div>
       </aside>
 
-      <!-- the navigation console — every destination, one tap away -->
-      <button class="at-nav" id="at-nav" type="button" aria-haspopup="true" aria-controls="at-console">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z"/></svg>
-        Navigate
+      <!-- THE BEACON — the Atlas's entire navigation, a single lens of light -->
+      <button class="at-nav" id="at-nav" type="button" aria-haspopup="true" aria-controls="at-console" aria-expanded="false" aria-label="Search the universe">
+        <span class="bk-glow" aria-hidden="true"></span>
+        <span class="bk-core" aria-hidden="true"></span>
+        <span class="bk-spec" aria-hidden="true"></span>
       </button>
-      <aside class="at-console" id="at-console" hidden aria-label="Navigation console">
-        <div class="at-con-head">
-          <button class="at-con-back" id="at-con-back" type="button" aria-label="Back" hidden>&#8249;</button>
-          <span class="at-con-title" id="at-con-title">Destinations</span>
+      <aside class="at-console" id="at-console" hidden aria-label="Navigate the universe">
+        <div class="at-con-list" id="at-con-list"></div>
+        <div class="nv-bar">
+          <span class="nv-bar-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="M16.4 16.4 21 21"/></svg>
+          </span>
+          <input class="at-con-search" id="at-con-search" type="text" placeholder="Where to?" autocomplete="off" spellcheck="false" aria-label="Search the universe">
           <button class="at-con-close" id="at-con-close" type="button" aria-label="Close">&#10005;</button>
         </div>
-        <input class="at-con-search" id="at-con-search" type="text" placeholder="Search the Atlas&hellip;" autocomplete="off" spellcheck="false" aria-label="Search destinations">
-        <div class="at-con-list" id="at-con-list"></div>
       </aside>
     </div>
 
