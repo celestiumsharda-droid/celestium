@@ -25,6 +25,45 @@ export function initLauncher(): void {
   initOrb(document.getElementById("lh-orb") as HTMLCanvasElement | null);
   initSlideshow();
   initTonight();
+  initChrome();
+}
+
+/* ---- top-right chrome: the now-playing music pill + the Updates panel ---- */
+function initChrome(): void {
+  const audio = document.getElementById("bg-audio") as HTMLAudioElement | null;
+  const pill = document.getElementById("music-pill");
+  const toggle = document.getElementById("mp-toggle");
+  const sub = document.getElementById("mp-sub");
+  if (audio && toggle && pill) {
+    audio.volume = 0.5;
+    const playIc = pill.querySelector<HTMLElement>(".mp-play-ic");
+    const pauseIc = pill.querySelector<HTMLElement>(".mp-pause-ic");
+    const sync = () => {
+      const playing = !audio.paused;
+      pill.classList.toggle("playing", playing);
+      if (playIc) playIc.hidden = playing;
+      if (pauseIc) pauseIc.hidden = !playing;
+      toggle.setAttribute("aria-label", playing ? "Pause music" : "Play music");
+      if (sub) sub.textContent = playing ? "now playing" : "ambient";
+    };
+    toggle.addEventListener("click", () => { if (audio.paused) audio.play().catch(() => { /* gesture needed */ }); else audio.pause(); });
+    audio.addEventListener("play", sync);
+    audio.addEventListener("pause", sync);
+    sync();
+  }
+
+  const ubtn = document.getElementById("updates-btn");
+  const panel = document.getElementById("updates-panel");
+  if (ubtn && panel) {
+    const setU = (v: boolean) => { panel.classList.toggle("open", v); ubtn.setAttribute("aria-expanded", String(v)); };
+    ubtn.addEventListener("click", () => setU(!panel.classList.contains("open")));
+    document.getElementById("up-close")?.addEventListener("click", () => setU(false));
+    addEventListener("keydown", e => { if (e.key === "Escape") setU(false); });
+    document.addEventListener("click", e => {
+      const t = e.target as Node;
+      if (panel.classList.contains("open") && !panel.contains(t) && !ubtn.contains(t)) setU(false);
+    });
+  }
 }
 
 /* ---- the orb: a sphere of stars that leans toward the pointer/touch ---- */

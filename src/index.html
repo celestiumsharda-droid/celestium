@@ -73,6 +73,32 @@
 <!-- ===== THE LAUNCHER — Celestium's home: image-rich live tiles, summoned by
      a clear-glass orb with a living particle universe inside ===== -->
 <div id="launcher" class="lnch">
+  <div class="lnch-top">
+    <div class="music-pill" id="music-pill">
+      <span class="mp-note" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="16.5" cy="16" r="2.6"/></svg></span>
+      <span class="mp-meta"><b>When the Mountain Wakes</b><i id="mp-sub">ambient</i></span>
+      <button class="mp-toggle" id="mp-toggle" type="button" aria-label="Play music">
+        <svg class="mp-play-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="mp-pause-ic" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></svg>
+      </button>
+      <span class="mp-wave" id="mp-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    </div>
+    <button class="updates-btn" id="updates-btn" type="button" aria-haspopup="true" aria-controls="updates-panel" aria-expanded="false" aria-label="Updates">
+      <span class="ub-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg><span class="ub-dot"></span></span>
+      <span class="ub-meta"><b>Updates</b><i>3 new</i></span>
+    </button>
+  </div>
+
+  <aside class="updates-panel" id="updates-panel" hidden aria-label="Updates">
+    <div class="up-head"><span class="up-title">Updates</span><button class="up-close" id="up-close" type="button" aria-label="Close">&#10005;</button></div>
+    <div class="up-list">
+      <a class="up-item" href="/atlas/"><span class="up-thumb" style="background-image:url(/img/first-exoplanet-720.webp)"></span><span class="up-body"><span class="up-kind">Atlas · 2h ago</span><b>New system added — Kepler&#8209;1649</b><i>A six-world system is now flyable in the Atlas.</i></span></a>
+      <a class="up-item" href="/discoveries/"><span class="up-thumb" style="background-image:url(/img/hotjupiter-720.webp)"></span><span class="up-body"><span class="up-kind">Discovery · 5h ago</span><b>Water vapour detected on K2&#8209;18b</b><i>JWST data suggests vapour in the atmosphere.</i></span></a>
+      <a class="up-item" href="/atlas/"><span class="up-thumb" style="background-image:url(/img/m87-720.webp)"></span><span class="up-body"><span class="up-kind">Atlas · 1d ago</span><b>Improved galaxy visualisation</b><i>Real-time nebula rendering added to the Atlas.</i></span></a>
+    </div>
+  </aside>
+  <audio id="bg-audio" src="/audio/when-the-mountain-wakes.mp3" loop preload="metadata"></audio>
+
   <div class="lnch-deck" id="lnch-deck" aria-hidden="true">
     <nav class="lnch-grid" aria-label="Celestium">
       <a class="tile size-l t-atlas" href="/atlas/" data-i="0">
