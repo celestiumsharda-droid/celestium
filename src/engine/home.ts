@@ -5,6 +5,7 @@ import { startClock, loadAPOD, startISS } from "./living-sky";
 import { initSound, playClick } from "./sound";
 import { cardVisual } from "./card-visual";
 import { playIntro } from "./intro";
+import { initLauncher } from "./launcher";
 import { attachSpotlight } from "./spotlight";
 import { STAGES } from "./cosmic-map/data";
 import type { CosmicMap } from "./cosmic-map";
@@ -16,6 +17,19 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
 /* ---------- view transitions + starfield ---------- */
 enableViewTransitions();
 mountStarfield($<HTMLCanvasElement>("sky"), { parallax: true });
+initLauncher();   // the home becomes a deck of living jewel tiles
+
+/* the live cinematic Atlas drifts behind the home — lazy, so the page paints
+   first; the starfield holds the frame until the engine warms in */
+(function cinematicBackground() {
+  const CINEMATIC_ENABLED = false;   // paused until the cinematic-camera pass composes each shot
+  const cv = document.getElementById("cine-bg") as HTMLCanvasElement | null;
+  if (!CINEMATIC_ENABLED || !cv || !document.body.classList.contains("lhome")) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const go = () => import("./cinematic-bg").then(m => m.mountCinematicBackground(cv).then(ok => { if (ok) cv.classList.add("on"); }));
+  const iw = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+  if (iw.requestIdleCallback) iw.requestIdleCallback(go, { timeout: 3500 }); else setTimeout(go, 1800);
+})();
 
 /* ---------- hero pointer-parallax (depth) ----------
    The orbit ring drifts toward the pointer and the wordmark counter-drifts,

@@ -29,11 +29,13 @@
 <link rel="preload" href="/fonts/spectral-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/styles/home.css">
+<link rel="stylesheet" href="/styles/launcher.css">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Celestium","alternateName":"Celestium — A pinnacle of science","url":"https://celestium.uk/","description":"A science publication built to be felt: a navigable cosmic timeline, a scale tool, and immersive discoveries read at the depth you choose.","inLanguage":"en","publisher":{"@type":"Organization","name":"Celestium","url":"https://celestium.uk/"}}</script>
 </head>
-<body>
+<body class="lhome">
 <a class="skip" href="#top">Skip to content</a>
 <canvas id="sky" aria-hidden="true"></canvas>
+<div class="cine-wrap" aria-hidden="true"><canvas id="cine-bg"></canvas></div>
 <div class="grain" aria-hidden="true"></div>
 <div id="prog" aria-hidden="true"></div>
 
@@ -66,6 +68,72 @@
   <a href="#sky-sec">Tonight</a>
   <a href="/about/">About</a>
   <a href="/join/">Join Us</a>
+</div>
+
+<!-- ===== THE LAUNCHER — Celestium's home: image-rich live tiles, summoned by
+     a clear-glass orb with a living particle universe inside ===== -->
+<div id="launcher" class="lnch">
+  <div class="lnch-deck" id="lnch-deck" aria-hidden="true">
+    <nav class="lnch-grid" aria-label="Celestium">
+      <a class="tile size-l t-atlas" href="/atlas/" data-i="0">
+        <span class="tile-slides" id="atlas-slides" aria-hidden="true">
+          <span class="slide on" style="background-image:url(/img/landing/blackhole.jpg)"></span>
+          <span class="slide" style="background-image:url(/img/landing/saturn.jpg)"></span>
+          <span class="slide" style="background-image:url(/img/landing/jupiter.jpg)"></span>
+          <span class="slide" style="background-image:url(/img/landing/betelgeuse.jpg)"></span>
+          <span class="slide" style="background-image:url(/img/landing/neptune.jpg)"></span>
+        </span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">The Atlas</span><span class="tile-title">Fly the known universe, to scale</span></span>
+        <span class="tile-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <a class="tile size-w t-disc" href="/discoveries/" data-i="1">
+        <span class="tile-bg" style="background-image:url(/img/m87-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">Discoveries</span><span class="tile-title">The story of how we know</span></span>
+        <span class="tile-go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+      </a>
+      <button class="tile size-tall t-tonight" id="tile-tonight" type="button" data-i="2" aria-label="Tonight's sky">
+        <span class="tile-bg dim" style="background-image:url(/img/aurora-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tn-head"><span class="tile-kicker">Tonight</span><span class="tn-sub">your sky right now</span></span>
+        <span class="tile-moon" id="tile-moon" aria-hidden="true"><span class="moon-disc"></span><span class="moon-dark"></span></span>
+        <span class="tn-moon-name" id="tile-moon-name">—</span>
+        <span class="tn-list">
+          <span class="tn-row"><b id="tile-clock-time">—</b><u id="tile-clock-date">local time</u></span>
+          <span class="tn-row"><b>Jupiter</b><u>visible now</u></span>
+          <span class="tn-row"><b>ISS pass</b><u id="tn-iss">tonight</u></span>
+        </span>
+        <span class="tn-cta">View full sky <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+      </button>
+      <a class="tile t-time" href="/timeline/" data-i="3">
+        <span class="tile-bg" style="background-image:url(/img/expanding-universe-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">Timeline</span><span class="tile-title">First light to far future</span></span>
+      </a>
+      <a class="tile t-star" href="/stardust/" data-i="4">
+        <span class="tile-bg" style="background-image:url(/img/cosmic-background-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">Stardust</span><span class="tile-title">The atoms that are you</span></span>
+      </a>
+      <a class="tile t-about" href="/about/" data-i="5">
+        <span class="tile-bg" style="background-image:url(/img/about-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">About</span><span class="tile-title">Why Celestium exists</span></span>
+      </a>
+      <a class="tile t-join" href="/join/" data-i="6">
+        <span class="tile-bg" style="background-image:url(/img/join-720.webp)"></span>
+        <span class="tile-scrim"></span>
+        <span class="tile-foot"><span class="tile-kicker">Join us</span><span class="tile-title">Walk with the cosmos</span></span>
+      </a>
+    </nav>
+  </div>
+  <button class="lnch-home" id="lnch-home" type="button" aria-expanded="false" aria-controls="lnch-deck" aria-label="Open Celestium">
+    <span class="lh-glow" aria-hidden="true"></span>
+    <canvas class="lh-orb" id="lh-orb" width="176" height="176" aria-hidden="true"></canvas>
+    <span class="lh-shell" aria-hidden="true"></span>
+    <span class="lh-label" id="lh-label">Home</span>
+  </button>
 </div>
 
 <main id="top">
