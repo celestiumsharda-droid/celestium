@@ -130,12 +130,16 @@ for (const p of packs) {
 // ---- 3b) MERGE: keep the existing systems the new packs DON'T cover ------
 // (so we never lose Proxima Centauri, Fomalhaut, TOI-700, … — only the 7 that
 //  the new packs replace are dropped from the old set.)
-const REPLACED = new Set(["51_Pegasi", "55_Cancri", "AU_Microscopii", "Beta_Pictoris", "HD_189733", "HR_8799", "Kepler-186", "Kepler-22"]);
-const oldTxt = readFileSync("C:/Users/devan/celestium/.exo-old.ts", "utf8");
-const arrStart = oldTxt.indexOf("] = [") + 4;                  // the "[" of "ExoSystem[] = [ ..."
-const arrStr = oldTxt.slice(arrStart, oldTxt.lastIndexOf("]") + 1);
-const oldSystems = JSON.parse(arrStr);
-const kept = oldSystems.filter(s => !REPLACED.has(s.pack)).map(s => ({ ...s, pbr: false }));
+// Keep the hand-authored (non-pack) systems already in exo.ts — Proxima,
+// Fomalhaut, TOI-700, … — but never duplicate a star the packs now cover.
+let kept = [];
+try {
+  const oldTxt = readFileSync(OUT, "utf8");
+  const arrStr = oldTxt.slice(oldTxt.indexOf("] = [") + 4, oldTxt.lastIndexOf("]") + 1);
+  kept = JSON.parse(arrStr).filter(s => s.pbr === false);
+} catch { /* first run — no prior exo.ts */ }
+const packStars = new Set(systems.map(s => s.star));
+kept = kept.filter(s => !packStars.has(s.star)).map(s => ({ ...s, pbr: false }));
 const merged = [...kept, ...systems];
 console.log(`merge: kept ${kept.length} existing + ${systems.length} new packs = ${merged.length} systems`);
 

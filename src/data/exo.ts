@@ -1,4 +1,4 @@
-/* CELESTIUM — EXOPLANET SYSTEMS (data). 46 real systems at their
+/* CELESTIUM — EXOPLANET SYSTEMS (data). 80 real systems at their
    true J2000 sky positions. Physical truth (radii, masses, orbits, periods,
    temperatures) from the per-system scientific model packs (NASA Exoplanet
    Archive pscomppars); sky position (RA/Dec) + distance + spectral type from the
@@ -7,108 +7,6 @@
 export interface ExoPlanet { key: string; name: string; rE: number; au: number; per: number; kind: string; massE: number | null; tempK: number | null; }
 export interface ExoSystem { pack: string; star: string; ra: number; dec: number; ly: number; tempK: number | null; spec: string; rSun: number; col: number; pulsar: boolean; kindStar: string; pbr?: boolean; planets: ExoPlanet[]; }
 const EXO_SYSTEMS: ExoSystem[] = [
- {
-  "pack": "Proxima_Centauri",
-  "star": "Proxima Cen",
-  "ra": 14.4956,
-  "dec": -62.676,
-  "ly": 4.247,
-  "tempK": 2900,
-  "spec": "M5.5 V",
-  "rSun": 0.141,
-  "col": 16748382,
-  "pulsar": false,
-  "kindStar": "M-type main-sequence star",
-  "planets": [
-   {
-    "key": "d",
-    "name": "Proxima Cen d",
-    "rE": 0.7,
-    "au": 0.0288,
-    "per": 5.12,
-    "kind": "temperate rocky planet",
-    "massE": 0.26,
-    "tempK": 282
-   },
-   {
-    "key": "b",
-    "name": "Proxima Cen b",
-    "rE": 1,
-    "au": 0.048,
-    "per": 11.19,
-    "kind": "cold rocky planet",
-    "massE": 1,
-    "tempK": 216
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "Kepler-62",
-  "star": "Kepler-62",
-  "ra": 18.879,
-  "dec": 45.349,
-  "ly": 980,
-  "tempK": 4925,
-  "spec": "K2 V",
-  "rSun": 0.639,
-  "col": 16767392,
-  "pulsar": false,
-  "kindStar": "K-type main-sequence star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "Kepler-62 b",
-    "rE": 1.31,
-    "au": 0.0553,
-    "per": 5.71,
-    "kind": "warm rocky planet",
-    "massE": 9,
-    "tempK": 750
-   },
-   {
-    "key": "c",
-    "name": "Kepler-62 c",
-    "rE": 0.54,
-    "au": 0.0929,
-    "per": 12.44,
-    "kind": "warm rocky planet",
-    "massE": 4,
-    "tempK": 578
-   },
-   {
-    "key": "d",
-    "name": "Kepler-62 d",
-    "rE": 1.95,
-    "au": 0.12,
-    "per": 18.16,
-    "kind": "sub-Neptune / volatile-rich mini-Neptune",
-    "massE": 14,
-    "tempK": 510
-   },
-   {
-    "key": "e",
-    "name": "Kepler-62 e",
-    "rE": 1.61,
-    "au": 0.427,
-    "per": 122.39,
-    "kind": "temperate rocky planet",
-    "massE": 36,
-    "tempK": 270
-   },
-   {
-    "key": "f",
-    "name": "Kepler-62 f",
-    "rE": 1.41,
-    "au": 0.718,
-    "per": 267.29,
-    "kind": "cold rocky planet",
-    "massE": 35,
-    "tempK": 208
-   }
-  ],
-  "pbr": false
- },
  {
   "pack": "Kepler-452",
   "star": "Kepler-452",
@@ -136,144 +34,6 @@ const EXO_SYSTEMS: ExoSystem[] = [
   "pbr": false
  },
  {
-  "pack": "TOI-700",
-  "star": "TOI-700",
-  "ra": 6.444,
-  "dec": -65.578,
-  "ly": 101,
-  "tempK": 3461,
-  "spec": "",
-  "rSun": 0.424,
-  "col": 16748382,
-  "pulsar": false,
-  "kindStar": "ultra-cool dwarf star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "TOI-700 b",
-    "rE": 1.04,
-    "au": 0.0677,
-    "per": 9.98,
-    "kind": "warm rocky planet",
-    "massE": null,
-    "tempK": 417
-   },
-   {
-    "key": "c",
-    "name": "TOI-700 c",
-    "rE": 2.65,
-    "au": 0.0929,
-    "per": 16.05,
-    "kind": "sub-Neptune / volatile-rich mini-Neptune",
-    "massE": null,
-    "tempK": 356
-   },
-   {
-    "key": "e",
-    "name": "TOI-700 e",
-    "rE": 0.95,
-    "au": 0.134,
-    "per": 27.81,
-    "kind": "rocky exoplanet",
-    "massE": null,
-    "tempK": null
-   },
-   {
-    "key": "d",
-    "name": "TOI-700 d",
-    "rE": 1.14,
-    "au": 0.1633,
-    "per": 37.42,
-    "kind": "temperate rocky planet",
-    "massE": null,
-    "tempK": 268.8
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "LHS_1140",
-  "star": "LHS 1140",
-  "ra": 0.73,
-  "dec": -15.271,
-  "ly": 48.9,
-  "tempK": 3216,
-  "spec": "",
-  "rSun": 0.214,
-  "col": 16748382,
-  "pulsar": false,
-  "kindStar": "ultra-cool dwarf star",
-  "planets": [
-   {
-    "key": "c",
-    "name": "LHS 1140 c",
-    "rE": 1.28,
-    "au": 0.0267,
-    "per": 3.78,
-    "kind": "warm rocky planet",
-    "massE": 1.81,
-    "tempK": 438
-   },
-   {
-    "key": "b",
-    "name": "LHS 1140 b",
-    "rE": 1.43,
-    "au": 0.0875,
-    "per": 24.74,
-    "kind": "temperate rocky planet",
-    "massE": 6.65,
-    "tempK": 230
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "Teegardens_Star",
-  "star": "Teegarden's Star",
-  "ra": 2.8917,
-  "dec": 16.88,
-  "ly": 12.5,
-  "tempK": 3034,
-  "spec": "",
-  "rSun": 0.12,
-  "col": 16748382,
-  "pulsar": false,
-  "kindStar": "ultra-cool dwarf star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "Teegarden's Star b",
-    "rE": 1.04,
-    "au": 0.0259,
-    "per": 4.91,
-    "kind": "temperate rocky planet",
-    "massE": 1.16,
-    "tempK": 277
-   },
-   {
-    "key": "c",
-    "name": "Teegarden's Star c",
-    "rE": 1.01,
-    "au": 0.0455,
-    "per": 11.42,
-    "kind": "cold rocky planet",
-    "massE": 1.05,
-    "tempK": 209
-   },
-   {
-    "key": "d",
-    "name": "Teegarden's Star d",
-    "rE": 0.95,
-    "au": 0.0791,
-    "per": 26.13,
-    "kind": "rocky exoplanet",
-    "massE": 0.82,
-    "tempK": 159
-   }
-  ],
-  "pbr": false
- },
- {
   "pack": "Fomalhaut",
   "star": "Fomalhaut",
   "ra": 22.9608,
@@ -295,42 +55,6 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "gas giant / directly imaged planet",
     "massE": 1000,
     "tempK": 290
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "PDS_70",
-  "star": "PDS 70",
-  "ra": 14.1373,
-  "dec": -41.403,
-  "ly": 370,
-  "tempK": 3972,
-  "spec": "",
-  "rSun": 0.6,
-  "col": 16767392,
-  "pulsar": false,
-  "kindStar": "M-type main-sequence star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "PDS 70 b",
-    "rE": 30.49,
-    "au": 20,
-    "per": 42175.44,
-    "kind": "gas giant",
-    "massE": 953.49,
-    "tempK": 1204
-   },
-   {
-    "key": "c",
-    "name": "PDS 70 c",
-    "rE": 22.87,
-    "au": 34,
-    "per": 93483.07,
-    "kind": "gas giant",
-    "massE": 635.66,
-    "tempK": 995
    }
   ],
   "pbr": false
@@ -377,58 +101,6 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "gas giant",
     "massE": 1255.38,
     "tempK": null
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "WASP-12",
-  "star": "WASP-12",
-  "ra": 6.5085,
-  "dec": 29.672,
-  "ly": 1410,
-  "tempK": 6250,
-  "spec": "",
-  "rSun": 1.618,
-  "col": 16774378,
-  "pulsar": false,
-  "kindStar": "G-type main-sequence star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "WASP-12 b",
-    "rE": 20.46,
-    "au": 0.0231,
-    "per": 1.09,
-    "kind": "gas giant",
-    "massE": 454.4969,
-    "tempK": 2523
-   }
-  ],
-  "pbr": false
- },
- {
-  "pack": "WASP-121",
-  "star": "WASP-121",
-  "ra": 7.1813,
-  "dec": -39.097,
-  "ly": 858,
-  "tempK": 6459,
-  "spec": "F6 V",
-  "rSun": 1.457,
-  "col": 16774378,
-  "pulsar": false,
-  "kindStar": "F-type main-sequence star",
-  "planets": [
-   {
-    "key": "b",
-    "name": "WASP-121 b",
-    "rE": 20.9,
-    "au": 0.0254,
-    "per": 1.27,
-    "kind": "gas giant",
-    "massE": 375.99289,
-    "tempK": 2358
    }
   ],
   "pbr": false
@@ -782,6 +454,42 @@ const EXO_SYSTEMS: ExoSystem[] = [
   ]
  },
  {
+  "pack": "GJ_1132",
+  "star": "GJ 1132",
+  "ra": 10.2473,
+  "dec": -47.1549,
+  "ly": 41.138,
+  "tempK": 3229,
+  "spec": "M4.5 V",
+  "rSun": 0.221,
+  "col": 16759165,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 1132 b",
+    "rE": 1.192,
+    "au": 0.0157,
+    "per": 1.6289,
+    "kind": "hot rocky transiting terrestrial planet",
+    "massE": 1.837,
+    "tempK": 584
+   },
+   {
+    "key": "c",
+    "name": "GJ 1132 c",
+    "rE": 1.52,
+    "au": 0.0476,
+    "per": 8.929,
+    "kind": "warm",
+    "massE": 2.91,
+    "tempK": 300
+   }
+  ]
+ },
+ {
   "pack": "GJ_1214",
   "star": "GJ 1214",
   "ra": 17.2554,
@@ -804,6 +512,150 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "super-earth",
     "massE": 8.41,
     "tempK": 567
+   }
+  ]
+ },
+ {
+  "pack": "GJ_180",
+  "star": "GJ 180",
+  "ra": 4.8973,
+  "dec": -17.7762,
+  "ly": 38.945,
+  "tempK": 3371,
+  "spec": "M3",
+  "rSun": 0.413,
+  "col": 16760197,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 180 b",
+    "rE": 2.43,
+    "au": 0.092,
+    "per": 17.133,
+    "kind": "volatile-rich sub-neptune",
+    "massE": 6.49,
+    "tempK": 344
+   },
+   {
+    "key": "c",
+    "name": "GJ 180 c",
+    "rE": 2.41,
+    "au": 0.129,
+    "per": 24.329,
+    "kind": "volatile-rich sub-neptune",
+    "massE": 6.4,
+    "tempK": 291
+   },
+   {
+    "key": "d",
+    "name": "GJ 180 d",
+    "rE": 2.66,
+    "au": 0.309,
+    "per": 106.3,
+    "kind": "cold volatile-rich mini-neptune",
+    "massE": 7.56,
+    "tempK": 188
+   }
+  ]
+ },
+ {
+  "pack": "GJ_3090",
+  "star": "GJ 3090",
+  "ra": 1.3626,
+  "dec": -46.7147,
+  "ly": 73.304,
+  "tempK": 3707,
+  "spec": "M2 V",
+  "rSun": 0.516,
+  "col": 16762520,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 3090 b",
+    "rE": 2.18,
+    "au": 0.0316,
+    "per": 2.8531,
+    "kind": "hot",
+    "massE": 4.52,
+    "tempK": 723
+   },
+   {
+    "key": "c",
+    "name": "GJ 3090 c",
+    "rE": 3.14,
+    "au": 0.0997,
+    "per": 15.9407,
+    "kind": "warm volatile-rich sub-neptune",
+    "massE": 10,
+    "tempK": 407
+   }
+  ]
+ },
+ {
+  "pack": "GJ_3323",
+  "star": "GJ 3323",
+  "ra": 5.0325,
+  "dec": -6.9485,
+  "ly": 17.53,
+  "tempK": 3159,
+  "spec": "M4",
+  "rSun": 0.119,
+  "col": 16758393,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 3323 b",
+    "rE": 1.23,
+    "au": 0.03282,
+    "per": 5.3636,
+    "kind": "warm rocky terrestrial planet",
+    "massE": 2.02,
+    "tempK": 290
+   },
+   {
+    "key": "c",
+    "name": "GJ 3323 c",
+    "rE": 1.32,
+    "au": 0.1264,
+    "per": 40.54,
+    "kind": "cold rocky",
+    "massE": 2.31,
+    "tempK": 148
+   }
+  ]
+ },
+ {
+  "pack": "GJ_3470",
+  "star": "GJ 3470",
+  "ra": 7.9849,
+  "dec": 15.3912,
+  "ly": 95.96,
+  "tempK": 3600,
+  "spec": "M1.5",
+  "rSun": 0.547,
+  "col": 16761746,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 3470 b",
+    "rE": 4.57,
+    "au": 0.0355,
+    "per": 3.3366,
+    "kind": "warm evaporating volatile-rich mini-neptune",
+    "massE": 13.9,
+    "tempK": 594
    }
   ]
  },
@@ -854,6 +706,134 @@ const EXO_SYSTEMS: ExoSystem[] = [
   ]
  },
  {
+  "pack": "GJ_367",
+  "star": "GJ 367",
+  "ra": 9.7414,
+  "dec": -45.779,
+  "ly": 30.7,
+  "tempK": 3522,
+  "spec": "M1.0 V",
+  "rSun": 0.458,
+  "col": 16761230,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 367 b",
+    "rE": 0.699,
+    "au": 0.00709,
+    "per": 0.3219,
+    "kind": "very hot rocky terrestrial planet",
+    "massE": 0.633,
+    "tempK": 1365
+   },
+   {
+    "key": "c",
+    "name": "GJ 367 c",
+    "rE": 1.86,
+    "au": 0.05,
+    "per": 11.5301,
+    "kind": "rocky super-earth",
+    "massE": 4.13,
+    "tempK": null
+   },
+   {
+    "key": "d",
+    "name": "GJ 367 d",
+    "rE": 2.33,
+    "au": 0.05,
+    "per": 34.369,
+    "kind": "rocky super-earth",
+    "massE": 6.03,
+    "tempK": null
+   }
+  ]
+ },
+ {
+  "pack": "GJ_3929",
+  "star": "GJ 3929",
+  "ra": 15.9718,
+  "dec": 35.4081,
+  "ly": 51.564,
+  "tempK": 3384,
+  "spec": "M3.5 V",
+  "rSun": 0.32,
+  "col": 16760198,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 3929 b",
+    "rE": 1.09,
+    "au": 0.0252,
+    "per": 2.6162,
+    "kind": "hot rocky terrestrial planet",
+    "massE": 1.75,
+    "tempK": 568
+   },
+   {
+    "key": "c",
+    "name": "GJ 3929 c",
+    "rE": 2.26,
+    "au": 0.081,
+    "per": 15.04,
+    "kind": "temperate",
+    "massE": 5.71,
+    "tempK": 317
+   }
+  ]
+ },
+ {
+  "pack": "GJ_433",
+  "star": "GJ 433",
+  "ra": 11.5908,
+  "dec": -32.5436,
+  "ly": 29.565,
+  "tempK": 3461,
+  "spec": "M2V",
+  "rSun": 0.5,
+  "col": 16760715,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 433 b",
+    "rE": 2.33,
+    "au": 0.062,
+    "per": 7.3705,
+    "kind": "hot",
+    "massE": 6.043,
+    "tempK": 474
+   },
+   {
+    "key": "d",
+    "name": "GJ 433 d",
+    "rE": 2.14,
+    "au": 0.178,
+    "per": 36.059,
+    "kind": "temperate low-density super-earth with possible volatile",
+    "massE": 5.223,
+    "tempK": 280
+   },
+   {
+    "key": "c",
+    "name": "GJ 433 c",
+    "rE": 6.27,
+    "au": 4.819,
+    "per": 5094.105,
+    "kind": "cool outer jovian gas giant",
+    "massE": 32.422,
+    "tempK": 54
+   }
+  ]
+ },
+ {
   "pack": "GJ_436",
   "star": "GJ 436",
   "ra": 11.7034,
@@ -876,6 +856,130 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "super-earth",
     "massE": 22.1,
     "tempK": 686
+   }
+  ]
+ },
+ {
+  "pack": "GJ_486",
+  "star": "GJ 486",
+  "ra": 12.7988,
+  "dec": 9.7494,
+  "ly": 26.335,
+  "tempK": 3317,
+  "spec": "M3.5 V",
+  "rSun": 0.324,
+  "col": 16759682,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 486 b",
+    "rE": 1.289,
+    "au": 0.01714,
+    "per": 1.4671,
+    "kind": "hot rocky transiting super-earth",
+    "massE": 2.77,
+    "tempK": 696
+   }
+  ]
+ },
+ {
+  "pack": "GJ_514",
+  "star": "GJ 514",
+  "ra": 13.5003,
+  "dec": 10.3725,
+  "ly": 24.846,
+  "tempK": 3728,
+  "spec": "M0.5-1.0 V",
+  "rSun": 0.5,
+  "col": 16762777,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 514 b",
+    "rE": 2.13,
+    "au": 0.422,
+    "per": 140.43,
+    "kind": "cold volatile",
+    "massE": 5.2,
+    "tempK": 202
+   }
+  ]
+ },
+ {
+  "pack": "GJ_581",
+  "star": "GJ 581",
+  "ra": 15.3238,
+  "dec": -7.7227,
+  "ly": 20.542,
+  "tempK": 3500,
+  "spec": "M3.0 V",
+  "rSun": 0.302,
+  "col": 16761229,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "e",
+    "name": "GJ 581 e",
+    "rE": 1.38,
+    "au": 0.02799,
+    "per": 3.1481,
+    "kind": "very hot rocky terrestrial planet",
+    "massE": 2.48,
+    "tempK": 554
+   },
+   {
+    "key": "b",
+    "name": "GJ 581 b",
+    "rE": 4.79,
+    "au": 0.0399,
+    "per": 5.3686,
+    "kind": "hot volatile-rich sub-neptune",
+    "massE": 20.5,
+    "tempK": 464
+   },
+   {
+    "key": "c",
+    "name": "GJ 581 c",
+    "rE": 2.5,
+    "au": 0.0718,
+    "per": 12.9211,
+    "kind": "warm volatile-rich sub-neptune",
+    "massE": 6.81,
+    "tempK": 346
+   }
+  ]
+ },
+ {
+  "pack": "GJ_625",
+  "star": "GJ 625",
+  "ra": 16.4237,
+  "dec": 54.3034,
+  "ly": 21.11,
+  "tempK": 3499,
+  "spec": "M2",
+  "rSun": 0.31,
+  "col": 16761229,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 625 b",
+    "rE": 1.49,
+    "au": 0.07836,
+    "per": 14.628,
+    "kind": "warm rocky terrestrial planet",
+    "massE": 2.82,
+    "tempK": 336
    }
   ]
  },
@@ -912,6 +1016,130 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "rocky terrestrial or super-earth candidate",
     "massE": 3.8,
     "tempK": null
+   }
+  ]
+ },
+ {
+  "pack": "GJ_674",
+  "star": "GJ 674",
+  "ra": 17.478,
+  "dec": -46.899,
+  "ly": 14.837,
+  "tempK": 3600,
+  "spec": "M2.5",
+  "rSun": 0.365,
+  "col": 16761746,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 674 b",
+    "rE": 3.33,
+    "au": 0.039,
+    "per": 4.6938,
+    "kind": "hot volatile-rich sub-neptune",
+    "massE": 11.09,
+    "tempK": 531
+   }
+  ]
+ },
+ {
+  "pack": "GJ_682",
+  "star": "GJ 682",
+  "ra": 17.6174,
+  "dec": -44.3233,
+  "ly": 16.33,
+  "tempK": 3028,
+  "spec": "M3.5 V",
+  "rSun": 0.298,
+  "col": 16757360,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 682 b",
+    "rE": 1.93,
+    "au": 0.08,
+    "per": 17.478,
+    "kind": "temperate low-density super-earth with possible volatile",
+    "massE": 4.4,
+    "tempK": 282
+   },
+   {
+    "key": "c",
+    "name": "GJ 682 c",
+    "rE": 2.89,
+    "au": 0.176,
+    "per": 57.32,
+    "kind": "cold volatile-rich mini-neptune",
+    "massE": 8.7,
+    "tempK": 190
+   }
+  ]
+ },
+ {
+  "pack": "GJ_832",
+  "star": "GJ 832",
+  "ra": 21.5594,
+  "dec": -49.0125,
+  "ly": 16.192,
+  "tempK": 3472,
+  "spec": "M2/3 V",
+  "rSun": 0.442,
+  "col": 16760971,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 832 b",
+    "rE": 13.8,
+    "au": 3.7,
+    "per": 3853,
+    "kind": "cool outer jovian gas giant",
+    "massE": 314.65,
+    "tempK": 58
+   }
+  ]
+ },
+ {
+  "pack": "GJ_849",
+  "star": "GJ 849",
+  "ra": 22.1615,
+  "dec": -4.6408,
+  "ly": 28.704,
+  "tempK": 3467,
+  "spec": "M3.5",
+  "rSun": 0.45,
+  "col": 16760971,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "GJ 849 b",
+    "rE": 13.9,
+    "au": 2.32,
+    "per": 1925.31,
+    "kind": "cool outer jovian gas giant",
+    "massE": 283.821,
+    "tempK": 74
+   },
+   {
+    "key": "c",
+    "name": "GJ 849 c",
+    "rE": 13.8,
+    "au": 4.95,
+    "per": 5990,
+    "kind": "cool outer jovian gas giant",
+    "massE": 314.65,
+    "tempK": 50
    }
   ]
  },
@@ -1104,6 +1332,42 @@ const EXO_SYSTEMS: ExoSystem[] = [
   ]
  },
  {
+  "pack": "HD_15337",
+  "star": "HD 15337",
+  "ra": 2.4579,
+  "dec": -27.6361,
+  "ly": 146.169,
+  "tempK": 5131,
+  "spec": "K1 V",
+  "rSun": 0.855,
+  "col": 16771026,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "HD 15337 b",
+    "rE": 1.77,
+    "au": 0.05245,
+    "per": 4.756,
+    "kind": "ultra-hot dense rocky super-earth",
+    "massE": 6.519,
+    "tempK": 1001
+   },
+   {
+    "key": "c",
+    "name": "HD 15337 c",
+    "rE": 2.526,
+    "au": 0.1235,
+    "per": 17.1805,
+    "kind": "hot volatile-rich sub-neptune",
+    "massE": 6.792,
+    "tempK": 656
+   }
+  ]
+ },
+ {
   "pack": "HD_189733",
   "star": "HD 189733",
   "ra": 20.0121,
@@ -1212,6 +1476,98 @@ const EXO_SYSTEMS: ExoSystem[] = [
   ]
  },
  {
+  "pack": "HD_260655",
+  "star": "HD 260655",
+  "ra": 6.6194,
+  "dec": 17.5663,
+  "ly": 32.634,
+  "tempK": 3803,
+  "spec": "M0 V",
+  "rSun": 0.439,
+  "col": 16763293,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "HD 260655 b",
+    "rE": 1.24,
+    "au": 0.02933,
+    "per": 2.7695,
+    "kind": "hot rocky terrestrial planet",
+    "massE": 2.14,
+    "tempK": 709
+   },
+   {
+    "key": "c",
+    "name": "HD 260655 c",
+    "rE": 1.533,
+    "au": 0.04749,
+    "per": 5.7059,
+    "kind": "hot",
+    "massE": 3.09,
+    "tempK": 557
+   }
+  ]
+ },
+ {
+  "pack": "HD_3167",
+  "star": "HD 3167",
+  "ra": 0.5827,
+  "dec": 4.3807,
+  "ly": 154.239,
+  "tempK": 5261,
+  "spec": "K0 V",
+  "rSun": 0.88,
+  "col": 16771543,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "HD 3167 b",
+    "rE": 1.67,
+    "au": 0.01796,
+    "per": 0.9596,
+    "kind": "ultra-hot dense rocky super-earth",
+    "massE": 4.97,
+    "tempK": 1774
+   },
+   {
+    "key": "d",
+    "name": "HD 3167 d",
+    "rE": 1.92,
+    "au": 0.0763,
+    "per": 8.4112,
+    "kind": "hot low-density super-earth with possible volatile envelope",
+    "massE": 4.33,
+    "tempK": 860
+   },
+   {
+    "key": "c",
+    "name": "HD 3167 c",
+    "rE": 3,
+    "au": 0.1776,
+    "per": 29.8454,
+    "kind": "warm",
+    "massE": 11.13,
+    "tempK": 564
+   },
+   {
+    "key": "e",
+    "name": "HD 3167 e",
+    "rE": 2.83,
+    "au": 0.3885,
+    "per": 96.63,
+    "kind": "warm volatile-rich sub-neptune",
+    "massE": 8.41,
+    "tempK": 375
+   }
+  ]
+ },
+ {
   "pack": "HD_40307",
   "star": "HD 40307",
   "ra": 5.9011,
@@ -1264,6 +1620,68 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "super-earth",
     "massE": 5.2,
     "tempK": 398
+   }
+  ]
+ },
+ {
+  "pack": "HD_73583",
+  "star": "HD 73583",
+  "ra": 8.6459,
+  "dec": -13.2565,
+  "ly": 102.956,
+  "tempK": 4511,
+  "spec": "K4 V",
+  "rSun": 0.65,
+  "col": 16767676,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "HD 73583 b",
+    "rE": 2.79,
+    "au": 0.0604,
+    "per": 6.398,
+    "kind": "hot volatile-rich sub-neptune",
+    "massE": 10.2,
+    "tempK": 714
+   },
+   {
+    "key": "c",
+    "name": "HD 73583 c",
+    "rE": 2.39,
+    "au": 0.1242,
+    "per": 18.8797,
+    "kind": "warm low-density super-earth with possible volatile envelope",
+    "massE": 9.7,
+    "tempK": 498
+   }
+  ]
+ },
+ {
+  "pack": "HD_97658",
+  "star": "HD 97658",
+  "ra": 11.2425,
+  "dec": 25.7106,
+  "ly": 70.325,
+  "tempK": 5212,
+  "spec": "K1 V",
+  "rSun": 0.728,
+  "col": 16771285,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "HD 97658 b",
+    "rE": 2.12,
+    "au": 0.0805,
+    "per": 9.4897,
+    "kind": "hot",
+    "massE": 8.3,
+    "tempK": 751
    }
   ]
  },
@@ -2100,6 +2518,1052 @@ const EXO_SYSTEMS: ExoSystem[] = [
     "kind": "hot rocky planet",
     "massE": 0.332,
     "tempK": 673
+   }
+  ]
+ },
+ {
+  "pack": "Kepler_47",
+  "star": "Kepler-47",
+  "ra": 19.6865,
+  "dec": 46.9204,
+  "ly": 3343.168,
+  "tempK": 5636,
+  "spec": "—",
+  "rSun": 0.936,
+  "col": 16773346,
+  "pulsar": false,
+  "kindStar": "Sun-like G-type star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Kepler-47 b",
+    "rE": 3.05,
+    "au": 0.2877,
+    "per": 49.4643,
+    "kind": "super-earth",
+    "massE": 2.07,
+    "tempK": 490
+   },
+   {
+    "key": "d",
+    "name": "Kepler-47 d",
+    "rE": 7.04,
+    "au": 0.6992,
+    "per": 187.366,
+    "kind": "super-earth",
+    "massE": 19.02,
+    "tempK": 314
+   },
+   {
+    "key": "c",
+    "name": "Kepler-47 c",
+    "rE": 4.65,
+    "au": 0.9638,
+    "per": 303.227,
+    "kind": "super-earth",
+    "massE": 3.17,
+    "tempK": 268
+   }
+  ]
+ },
+ {
+  "pack": "Kepler_51",
+  "star": "Kepler-51",
+  "ra": 19.7653,
+  "dec": 49.9376,
+  "ly": 2556.515,
+  "tempK": 6018,
+  "spec": "—",
+  "rSun": 0.94,
+  "col": 16774893,
+  "pulsar": false,
+  "kindStar": "yellow-white F-type star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Kepler-51 b",
+    "rE": 7.1,
+    "au": 0.2514,
+    "per": 45.154,
+    "kind": "super-puff low-density sub-neptune",
+    "massE": 2.1,
+    "tempK": 543
+   },
+   {
+    "key": "c",
+    "name": "Kepler-51 c",
+    "rE": 9,
+    "au": 0.384,
+    "per": 85.312,
+    "kind": "super-puff low-density sub-neptune",
+    "massE": 4,
+    "tempK": 439
+   },
+   {
+    "key": "d",
+    "name": "Kepler-51 d",
+    "rE": 9.7,
+    "au": 0.509,
+    "per": 130.194,
+    "kind": "super-puff low-density sub-neptune",
+    "massE": 7.6,
+    "tempK": 381
+   },
+   {
+    "key": "e",
+    "name": "Kepler-51 e",
+    "rE": 2.18,
+    "au": 0.05,
+    "per": 264.284,
+    "kind": "super-earth",
+    "massE": 5.4,
+    "tempK": null
+   }
+  ]
+ },
+ {
+  "pack": "Kepler_62",
+  "star": "Kepler-62",
+  "ra": 18.8808,
+  "dec": 45.3497,
+  "ly": 981.32,
+  "tempK": 4925,
+  "spec": "K2 V",
+  "rSun": 0.64,
+  "col": 16769995,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Kepler-62 b",
+    "rE": 1.31,
+    "au": 0.0553,
+    "per": 5.7149,
+    "kind": "hot rocky planet",
+    "massE": 9,
+    "tempK": 750
+   },
+   {
+    "key": "c",
+    "name": "Kepler-62 c",
+    "rE": 0.54,
+    "au": 0.0929,
+    "per": 12.4417,
+    "kind": "rocky terrestrial or super-earth candidate",
+    "massE": 4,
+    "tempK": 578
+   },
+   {
+    "key": "d",
+    "name": "Kepler-62 d",
+    "rE": 1.95,
+    "au": 0.12,
+    "per": 18.1641,
+    "kind": "super-earth",
+    "massE": 14,
+    "tempK": 510
+   },
+   {
+    "key": "e",
+    "name": "Kepler-62 e",
+    "rE": 1.61,
+    "au": 0.427,
+    "per": 122.3874,
+    "kind": "habitable-zone rocky",
+    "massE": 36,
+    "tempK": 270
+   },
+   {
+    "key": "f",
+    "name": "Kepler-62 f",
+    "rE": 1.41,
+    "au": 0.718,
+    "per": 267.291,
+    "kind": "cool habitable-zone rocky",
+    "massE": 35,
+    "tempK": 208
+   }
+  ]
+ },
+ {
+  "pack": "Kepler_69",
+  "star": "Kepler-69",
+  "ra": 19.5507,
+  "dec": 44.8689,
+  "ly": 2382.98,
+  "tempK": 5638,
+  "spec": "G4 V",
+  "rSun": 0.93,
+  "col": 16773346,
+  "pulsar": false,
+  "kindStar": "Sun-like G-type star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Kepler-69 b",
+    "rE": 2.24,
+    "au": 0.094,
+    "per": 13.7223,
+    "kind": "super-earth",
+    "massE": 5.65,
+    "tempK": 779
+   },
+   {
+    "key": "c",
+    "name": "Kepler-69 c",
+    "rE": 1.71,
+    "au": 0.64,
+    "per": 242.4613,
+    "kind": "warm super-earth",
+    "massE": 3.57,
+    "tempK": 299
+   }
+  ]
+ },
+ {
+  "pack": "KOI_351",
+  "star": "KOI-351",
+  "ra": 18.9622,
+  "dec": 49.3051,
+  "ly": 2766.635,
+  "tempK": 6080,
+  "spec": "—",
+  "rSun": 1.2,
+  "col": 16775151,
+  "pulsar": false,
+  "kindStar": "yellow-white F-type star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "KOI-351 b",
+    "rE": 1.31,
+    "au": 0.074,
+    "per": 7.0082,
+    "kind": "hot irradiated rocky super-earth candidate",
+    "massE": 2.27,
+    "tempK": 1062
+   },
+   {
+    "key": "c",
+    "name": "KOI-351 c",
+    "rE": 1.19,
+    "au": 0.089,
+    "per": 8.7194,
+    "kind": "hot irradiated rocky super-earth candidate",
+    "massE": 1.81,
+    "tempK": 987
+   },
+   {
+    "key": "i",
+    "name": "Kepler-90 i",
+    "rE": 1.32,
+    "au": 0.12014,
+    "per": 14.4491,
+    "kind": "hot irradiated rocky super-earth candidate",
+    "massE": 2.3,
+    "tempK": 709
+   },
+   {
+    "key": "d",
+    "name": "KOI-351 d",
+    "rE": 2.87,
+    "au": 0.32,
+    "per": 59.7367,
+    "kind": "super-earth",
+    "massE": 8.6,
+    "tempK": 520
+   },
+   {
+    "key": "e",
+    "name": "KOI-351 e",
+    "rE": 2.66,
+    "au": 0.42,
+    "per": 91.9391,
+    "kind": "super-earth",
+    "massE": 7.56,
+    "tempK": 450
+   },
+   {
+    "key": "f",
+    "name": "KOI-351 f",
+    "rE": 2.88,
+    "au": 0.48,
+    "per": 124.9144,
+    "kind": "super-earth",
+    "massE": 8.65,
+    "tempK": 407
+   },
+   {
+    "key": "g",
+    "name": "KOI-351 g",
+    "rE": 7.718,
+    "au": 0.71704,
+    "per": 210.7351,
+    "kind": "low-density gas-rich sub-saturn",
+    "massE": 15,
+    "tempK": 342
+   },
+   {
+    "key": "h",
+    "name": "KOI-351 h",
+    "rE": 11.252,
+    "au": 0.97062,
+    "per": 331.603,
+    "kind": "temperate transiting gas giant",
+    "massE": 203,
+    "tempK": 294
+   }
+  ]
+ },
+ {
+  "pack": "LHS_1140",
+  "star": "LHS 1140",
+  "ra": 0.7499,
+  "dec": -15.2741,
+  "ly": 48.878,
+  "tempK": 3096,
+  "spec": "M4.5 V",
+  "rSun": 0.216,
+  "col": 16757876,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "c",
+    "name": "LHS 1140 c",
+    "rE": 1.272,
+    "au": 0.027,
+    "per": 3.7779,
+    "kind": "warm rocky terrestrial planet",
+    "massE": 1.91,
+    "tempK": 422
+   },
+   {
+    "key": "b",
+    "name": "LHS 1140 b",
+    "rE": 1.73,
+    "au": 0.0946,
+    "per": 24.7372,
+    "kind": "cold rocky",
+    "massE": 5.6,
+    "tempK": 226
+   }
+  ]
+ },
+ {
+  "pack": "LP_890_9",
+  "star": "LP 890-9",
+  "ra": 4.2754,
+  "dec": -28.3158,
+  "ly": 105.772,
+  "tempK": 2850,
+  "spec": "M6 V",
+  "rSun": 0.156,
+  "col": 16755811,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "LP 890-9 b",
+    "rE": 1.32,
+    "au": 0.01875,
+    "per": 2.7299,
+    "kind": "warm inner rocky terrestrial planet",
+    "massE": 13.2,
+    "tempK": 396
+   },
+   {
+    "key": "c",
+    "name": "LP 890-9 c",
+    "rE": 1.367,
+    "au": 0.03984,
+    "per": 8.4575,
+    "kind": "temperate habitable-zone rocky terrestrial candidate",
+    "massE": 25.3,
+    "tempK": 272
+   }
+  ]
+ },
+ {
+  "pack": "L_98-59",
+  "star": "L 98-59",
+  "ra": 8.3022,
+  "dec": -68.3145,
+  "ly": 34.636,
+  "tempK": 3415,
+  "spec": "M3 V",
+  "rSun": 0.316,
+  "col": 16760456,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "L 98-59 b",
+    "rE": 0.837,
+    "au": 0.0223,
+    "per": 2.2531,
+    "kind": "hot volcanic compact rocky planet",
+    "massE": 0.46,
+    "tempK": 620
+   },
+   {
+    "key": "c",
+    "name": "L 98-59 c",
+    "rE": 1.329,
+    "au": 0.0309,
+    "per": 3.6907,
+    "kind": "hot rocky super-earth",
+    "massE": 2,
+    "tempK": 526
+   },
+   {
+    "key": "d",
+    "name": "L 98-59 d",
+    "rE": 1.627,
+    "au": 0.0494,
+    "per": 7.4507,
+    "kind": "sulfur-rich volatile molten super-earth with magma-ocean interior",
+    "massE": 1.64,
+    "tempK": 416
+   },
+   {
+    "key": "e",
+    "name": "L 98-59 e",
+    "rE": 1.49,
+    "au": 0.0712,
+    "per": 12.8278,
+    "kind": "cool non-transiting super-earth",
+    "massE": 2.82,
+    "tempK": 347
+   },
+   {
+    "key": "f",
+    "name": "L 98-59 f",
+    "rE": 1.48,
+    "au": 0.1052,
+    "per": 23.064,
+    "kind": "temperate habitable-zone super-earth",
+    "massE": 2.8,
+    "tempK": 285
+   }
+  ]
+ },
+ {
+  "pack": "PDS_70",
+  "star": "PDS 70",
+  "ra": 14.1361,
+  "dec": -41.398,
+  "ly": 368.765,
+  "tempK": 4109,
+  "spec": "K7",
+  "rSun": 1.26,
+  "col": 16765099,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "PDS 70 b",
+    "rE": 21.97,
+    "au": 20.8,
+    "per": 43500,
+    "kind": "young directly imaged accreting gas-giant protoplanet",
+    "massE": 1017.051,
+    "tempK": 1392
+   },
+   {
+    "key": "c",
+    "name": "PDS 70 c",
+    "rE": 22.194,
+    "au": 34.3,
+    "per": 10,
+    "kind": "young directly imaged accreting gas-giant protoplanet with circumplanetary disk evidence",
+    "massE": 2383.713,
+    "tempK": 1054
+   }
+  ]
+ },
+ {
+  "pack": "Proxima_Cen",
+  "star": "Proxima Cen",
+  "ra": 14.4929,
+  "dec": -62.6762,
+  "ly": 4.244,
+  "tempK": 2900,
+  "spec": "M5.5 V",
+  "rSun": 0.141,
+  "col": 16756327,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "d",
+    "name": "Proxima Cen d",
+    "rE": 0.692,
+    "au": 0.02881,
+    "per": 5.1234,
+    "kind": "close-in warm sub-earth rocky planet",
+    "massE": 0.26,
+    "tempK": 282
+   },
+   {
+    "key": "b",
+    "name": "Proxima Cen b",
+    "rE": 1.02,
+    "au": 0.04848,
+    "per": 11.1846,
+    "kind": "temperate habitable-zone rocky earth-mass planet candidate",
+    "massE": 1.055,
+    "tempK": 218
+   }
+  ]
+ },
+ {
+  "pack": "Ross_128",
+  "star": "Ross 128",
+  "ra": 11.7958,
+  "dec": 0.7993,
+  "ly": 11.006,
+  "tempK": 3192,
+  "spec": "M4",
+  "rSun": 0.197,
+  "col": 16758651,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Ross 128 b",
+    "rE": 1.11,
+    "au": 0.0496,
+    "per": 9.8658,
+    "kind": "temperate inner-edge habitable-zone rocky super-earth candidate",
+    "massE": 1.4,
+    "tempK": 301
+   }
+  ]
+ },
+ {
+  "pack": "Teegarden_s_Star",
+  "star": "Teegarden's Star",
+  "ra": 2.8846,
+  "dec": 16.8649,
+  "ly": 12.494,
+  "tempK": 3034,
+  "spec": "M7.0 V",
+  "rSun": 0.12,
+  "col": 16757360,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Teegarden's Star b",
+    "rE": 1.05,
+    "au": 0.0259,
+    "per": 4.9063,
+    "kind": "temperate habitable-zone rocky super-earth",
+    "massE": 1.16,
+    "tempK": 277
+   },
+   {
+    "key": "c",
+    "name": "Teegarden's Star c",
+    "rE": 1.02,
+    "au": 0.0455,
+    "per": 11.416,
+    "kind": "cool outer habitable-zone rocky super-earth",
+    "massE": 1.05,
+    "tempK": 209
+   },
+   {
+    "key": "d",
+    "name": "Teegarden's Star d",
+    "rE": 0.954,
+    "au": 0.0791,
+    "per": 26.13,
+    "kind": "cold outer rocky sub-earth",
+    "massE": 0.82,
+    "tempK": 159
+   }
+  ]
+ },
+ {
+  "pack": "TOI-178",
+  "star": "TOI-178",
+  "ra": 0.4868,
+  "dec": -30.4541,
+  "ly": 204.497,
+  "tempK": 4316,
+  "spec": "K",
+  "rSun": 0.662,
+  "col": 16766388,
+  "pulsar": false,
+  "kindStar": "orange K-type dwarf",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "TOI-178 b",
+    "rE": 1.2,
+    "au": 0.02607,
+    "per": 1.9146,
+    "kind": "very hot rocky super-earth",
+    "massE": 0.96,
+    "tempK": 1040
+   },
+   {
+    "key": "c",
+    "name": "TOI-178 c",
+    "rE": 1.754,
+    "au": 0.037,
+    "per": 3.2385,
+    "kind": "hot dense rocky super-earth",
+    "massE": 4.64,
+    "tempK": 873
+   },
+   {
+    "key": "d",
+    "name": "TOI-178 d",
+    "rE": 2.695,
+    "au": 0.0592,
+    "per": 6.5576,
+    "kind": "hot low-density volatile-rich sub-neptune",
+    "massE": 5.2,
+    "tempK": 690
+   },
+   {
+    "key": "e",
+    "name": "TOI-178 e",
+    "rE": 2.301,
+    "au": 0.0783,
+    "per": 9.9632,
+    "kind": "warm low-density volatile-rich sub-neptune",
+    "massE": 3.48,
+    "tempK": 600
+   },
+   {
+    "key": "f",
+    "name": "TOI-178 f",
+    "rE": 2.417,
+    "au": 0.1039,
+    "per": 15.2333,
+    "kind": "warm sub-neptune with moderate volatile envelope",
+    "massE": 5.63,
+    "tempK": 521
+   },
+   {
+    "key": "g",
+    "name": "TOI-178 g",
+    "rE": 2.939,
+    "au": 0.1275,
+    "per": 20.7166,
+    "kind": "cool-warm very low-density puffy sub-neptune",
+    "massE": 4.4,
+    "tempK": 470
+   }
+  ]
+ },
+ {
+  "pack": "TOI-700",
+  "star": "TOI-700",
+  "ra": 6.473,
+  "dec": -65.5786,
+  "ly": 101.521,
+  "tempK": 3459,
+  "spec": "M2.5 V",
+  "rSun": 0.421,
+  "col": 16760715,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "TOI-700 b",
+    "rE": 0.914,
+    "au": 0.0677,
+    "per": 9.9772,
+    "kind": "warm inner terrestrial planet",
+    "massE": 0.704,
+    "tempK": 417
+   },
+   {
+    "key": "c",
+    "name": "TOI-700 c",
+    "rE": 2.6,
+    "au": 0.0929,
+    "per": 16.0511,
+    "kind": "warm volatile-rich sub-neptune",
+    "massE": 7.27,
+    "tempK": 356
+   },
+   {
+    "key": "e",
+    "name": "TOI-700 e",
+    "rE": 0.953,
+    "au": 0.134,
+    "per": 27.8098,
+    "kind": "inner-edge habitable-zone rocky earth-size planet",
+    "massE": 0.818,
+    "tempK": 273
+   },
+   {
+    "key": "d",
+    "name": "TOI-700 d",
+    "rE": 1.073,
+    "au": 0.1633,
+    "per": 37.424,
+    "kind": "outer habitable-zone rocky earth-size planet",
+    "massE": 1.25,
+    "tempK": 269
+   }
+  ]
+ },
+ {
+  "pack": "TOI_270",
+  "star": "TOI-270",
+  "ra": 4.5611,
+  "dec": -51.9574,
+  "ly": 73.318,
+  "tempK": 3506,
+  "spec": "M3 V",
+  "rSun": 0.38,
+  "col": 16761229,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "TOI-270 b",
+    "rE": 1.28,
+    "au": 0.03197,
+    "per": 3.3599,
+    "kind": "warm rocky terrestrial planet",
+    "massE": 1.48,
+    "tempK": 600
+   },
+   {
+    "key": "c",
+    "name": "TOI-270 c",
+    "rE": 2.33,
+    "au": 0.04526,
+    "per": 5.6605,
+    "kind": "warm volatile-rich sub-neptune",
+    "massE": 6.2,
+    "tempK": 489
+   },
+   {
+    "key": "d",
+    "name": "TOI-270 d",
+    "rE": 2,
+    "au": 0.0721,
+    "per": 11.3819,
+    "kind": "cool-warm volatile-rich sub-neptune",
+    "massE": 4.2,
+    "tempK": 383
+   }
+  ]
+ },
+ {
+  "pack": "TRAPPIST-1",
+  "star": "TRAPPIST-1",
+  "ra": 23.1084,
+  "dec": -5.0435,
+  "ly": 40.541,
+  "tempK": 2566,
+  "spec": "M8.0 V",
+  "rSun": 0.119,
+  "col": 16753228,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "TRAPPIST-1 b",
+    "rE": 1.116,
+    "au": 0.05,
+    "per": 10,
+    "kind": "very hot irradiated rocky inner planet",
+    "massE": 1.374,
+    "tempK": 398
+   },
+   {
+    "key": "c",
+    "name": "TRAPPIST-1 c",
+    "rE": 1.097,
+    "au": 0.05,
+    "per": 10,
+    "kind": "hot rocky inner planet",
+    "massE": 1.308,
+    "tempK": 340
+   },
+   {
+    "key": "d",
+    "name": "TRAPPIST-1 d",
+    "rE": 0.788,
+    "au": 0.05,
+    "per": 10,
+    "kind": "warm temperate rocky planet",
+    "massE": 0.388,
+    "tempK": 286
+   },
+   {
+    "key": "e",
+    "name": "TRAPPIST-1 e",
+    "rE": 0.92,
+    "au": 0.05,
+    "per": 10,
+    "kind": "cool temperate rocky habitable-zone candidate",
+    "massE": 0.692,
+    "tempK": 250
+   },
+   {
+    "key": "f",
+    "name": "TRAPPIST-1 f",
+    "rE": 1.045,
+    "au": 0.05,
+    "per": 10,
+    "kind": "cold rocky",
+    "massE": 1.039,
+    "tempK": 218
+   },
+   {
+    "key": "g",
+    "name": "TRAPPIST-1 g",
+    "rE": 1.129,
+    "au": 0.05,
+    "per": 10,
+    "kind": "cold outer rocky",
+    "massE": 1.321,
+    "tempK": 197
+   },
+   {
+    "key": "h",
+    "name": "TRAPPIST-1 h",
+    "rE": 0.755,
+    "au": 0.05,
+    "per": 10,
+    "kind": "frigid outer rocky",
+    "massE": 0.326,
+    "tempK": 172
+   }
+  ]
+ },
+ {
+  "pack": "WASP_121",
+  "star": "WASP-121",
+  "ra": 7.1733,
+  "dec": -39.0973,
+  "ly": 880.29,
+  "tempK": 6628,
+  "spec": "F6 V",
+  "rSun": 1.461,
+  "col": 16776191,
+  "pulsar": false,
+  "kindStar": "yellow-white F-type star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "WASP-121 b",
+    "rE": 19.526,
+    "au": 0.02571,
+    "per": 1.2749,
+    "kind": "ultra-hot inflated hot jupiter with escaping atmosphere",
+    "massE": 371.859,
+    "tempK": 2409
+   }
+  ]
+ },
+ {
+  "pack": "WASP_12",
+  "star": "WASP-12",
+  "ra": 6.5091,
+  "dec": 29.6723,
+  "ly": 1393.49,
+  "tempK": 6265,
+  "spec": "—",
+  "rSun": 1.69,
+  "col": 16775924,
+  "pulsar": false,
+  "kindStar": "yellow-white F-type star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "WASP-12 b",
+    "rE": 22.026,
+    "au": 0.0234,
+    "per": 1.0914,
+    "kind": "ultra-hot inflated tidally distorted hot jupiter",
+    "massE": 467.21,
+    "tempK": 2601
+   }
+  ]
+ },
+ {
+  "pack": "WASP_47",
+  "star": "WASP-47",
+  "ra": 22.0802,
+  "dec": -12.0191,
+  "ly": 863.597,
+  "tempK": 5565,
+  "spec": "G9",
+  "rSun": 1.156,
+  "col": 16773088,
+  "pulsar": false,
+  "kindStar": "Sun-like G-type star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "e",
+    "name": "WASP-47 e",
+    "rE": 1.83,
+    "au": 0.01673,
+    "per": 0.7896,
+    "kind": "ultra-hot dense rocky super-earth",
+    "massE": 9,
+    "tempK": 1992
+   },
+   {
+    "key": "b",
+    "name": "WASP-47 b",
+    "rE": 12.86,
+    "au": 0.052,
+    "per": 4.1592,
+    "kind": "close-in hot jupiter gas giant",
+    "massE": 374,
+    "tempK": 1275
+   },
+   {
+    "key": "d",
+    "name": "WASP-47 d",
+    "rE": 3.65,
+    "au": 0.085,
+    "per": 9.0305,
+    "kind": "hot volatile-rich neptune",
+    "massE": 15.5,
+    "tempK": 885
+   },
+   {
+    "key": "c",
+    "name": "WASP-47 c",
+    "rE": 11.2,
+    "au": 1.393,
+    "per": 589.57,
+    "kind": "cool outer jovian gas giant",
+    "massE": 447,
+    "tempK": 247
+   }
+  ]
+ },
+ {
+  "pack": "Wolf_1061",
+  "star": "Wolf 1061",
+  "ra": 16.505,
+  "dec": -12.6677,
+  "ly": 14.044,
+  "tempK": 3342,
+  "spec": "M3.5",
+  "rSun": 0.307,
+  "col": 16759940,
+  "pulsar": false,
+  "kindStar": "red-dwarf star",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "Wolf 1061 b",
+    "rE": 1.21,
+    "au": 0.0375,
+    "per": 4.8869,
+    "kind": "hot inner rocky super-earth",
+    "massE": 1.91,
+    "tempK": 461
+   },
+   {
+    "key": "c",
+    "name": "Wolf 1061 c",
+    "rE": 1.66,
+    "au": 0.089,
+    "per": 17.8719,
+    "kind": "warm rocky super-earth near inner habitable zone",
+    "massE": 3.41,
+    "tempK": 299
+   },
+   {
+    "key": "d",
+    "name": "Wolf 1061 d",
+    "rE": 2.69,
+    "au": 0.47,
+    "per": 217.21,
+    "kind": "cold volatile-rich outer super-earth",
+    "massE": 7.7,
+    "tempK": 130
+   }
+  ]
+ },
+ {
+  "pack": "YZ_Cet",
+  "star": "YZ Cet",
+  "ra": 1.2089,
+  "dec": -16.9962,
+  "ly": 12.107,
+  "tempK": 3151,
+  "spec": "M4.5 V",
+  "rSun": 0.157,
+  "col": 16758392,
+  "pulsar": false,
+  "kindStar": "red-dwarf star (main sequence)",
+  "pbr": true,
+  "planets": [
+   {
+    "key": "b",
+    "name": "YZ Cet b",
+    "rE": 0.913,
+    "au": 0.01634,
+    "per": 2.0209,
+    "kind": "very hot inner rocky terrestrial planet",
+    "massE": 0.7,
+    "tempK": 471
+   },
+   {
+    "key": "c",
+    "name": "YZ Cet c",
+    "rE": 1.05,
+    "au": 0.02156,
+    "per": 3.0599,
+    "kind": "hot rocky terrestrial planet",
+    "massE": 1.14,
+    "tempK": 410
+   },
+   {
+    "key": "d",
+    "name": "YZ Cet d",
+    "rE": 1.03,
+    "au": 0.02851,
+    "per": 4.6563,
+    "kind": "warm close-in rocky terrestrial planet",
+    "massE": 1.09,
+    "tempK": 357
    }
   ]
  }
