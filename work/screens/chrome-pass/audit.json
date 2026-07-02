@@ -1,0 +1,1586 @@
+[
+  {
+    "vpName": "desktop",
+    "name": "home",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Celestium — A pinnacle of science",
+      "siteChrome": false,
+      "legacyNav": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 71.34375,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "legacyMenu": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 960,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0",
+        "text": "Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "cursorRule": "auto",
+      "ccActions": null,
+      "ccDock": null,
+      "launcherTop": {
+        "x": 888.859375,
+        "y": 24,
+        "w": 521.140625,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientWhen the Mountain Wakes Live logUpdates 3"
+      },
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "lnch-top",
+          "other": "sky",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-wrap",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "lnch-bg",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "grain",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "nav",
+          "area": 24673,
+          "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "A",
+          "area": 1809,
+          "text": "Discoveries"
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "sky",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "cine-wrap",
+          "area": 7956,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "atlas",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Atlas — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": {
+        "x": 1004.0015258789062,
+        "y": 81.99728393554688,
+        "w": 419.99688720703125,
+        "h": 327.9975891113281,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0.99951",
+        "text": "UpdatesCloseAtlas · 2hNew system addedKepler-1649 is now mapped.Discovery · 5hK2-18b water"
+      },
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 23490,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "atlas",
+          "area": 23490,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-intro",
+          "area": 23490,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-stars",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-neb",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-wrap",
+          "area": 23490,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "discoveries",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Discovery Series — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 23490,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "cat-hero",
+          "area": 15174,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "main",
+          "area": 27984,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "catalog",
+          "area": 27984,
+          "text": "/ Surprise me AllCosmologySpacetimeOriginsPlanetary ScienceQ"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "article",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The night we heard two black holes collide. — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 23490,
+          "text": "Illustration · Celestium Astrophysics · The Discovery Series"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "ahero-media is-photo",
+          "area": 23490,
+          "text": "Illustration · Celestium"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "timeline",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Timeline — Two clocks, one story | Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 23490,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "spiral",
+          "area": 23490,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "top",
+          "area": 27984,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "spiral",
+          "area": 27984,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "tl-track",
+          "area": 27984,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "tl-sticky",
+          "area": 27984,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "stardust",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "You Are Stardust — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 23490,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "live",
+          "area": 23490,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "top",
+          "area": 27984,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "live",
+          "area": 27984,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sd-track",
+          "area": 27984,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sd-sticky",
+          "area": 27984,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "about",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "How Celestium is made — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 23490,
+          "text": "About Celestium A pinnacle of science,built to be felt. Most"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "phero",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "join",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Join Celestium — follow, subscribe, contribute",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 989,
+        "y": 16,
+        "w": 435,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 486.796875,
+        "y": 884,
+        "w": 466.40625,
+        "h": 60,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 23490,
+          "text": "Be part of Celestium Join theexpedition. Celestium is a smal"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "phero",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 23490,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 27984,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 27984,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "desktop",
+    "name": "notfound",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Celestium — A pinnacle of science",
+      "siteChrome": false,
+      "legacyNav": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 71.34375,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "legacyMenu": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 960,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0",
+        "text": "Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "cursorRule": "auto",
+      "ccActions": null,
+      "ccDock": null,
+      "launcherTop": {
+        "x": 888.859375,
+        "y": 24,
+        "w": 521.140625,
+        "h": 54,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientWhen the Mountain Wakes Live logUpdates 3"
+      },
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "lnch-top",
+          "other": "sky",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-wrap",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "lnch-bg",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "grain",
+          "area": 28142,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "nav",
+          "area": 24673,
+          "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "A",
+          "area": 1809,
+          "text": "Discoveries"
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "intro show",
+          "area": 28142,
+          "text": "CELESTIUMThe universe, examined"
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "sky",
+          "area": 7956,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "home",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Celestium — A pinnacle of science",
+      "siteChrome": false,
+      "legacyNav": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 50.390625,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "legacyMenu": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0",
+        "text": "Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "cursorRule": "auto",
+      "ccActions": null,
+      "ccDock": null,
+      "launcherTop": {
+        "x": 225,
+        "y": 14,
+        "w": 153,
+        "h": 52,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientWhen the Mountain Wakes Live logUpdates 3"
+      },
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "lnch-top",
+          "other": "sky",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-wrap",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-bg",
+          "area": 3900,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "lnch-bg",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "grain",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "nav",
+          "area": 5568,
+          "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "sky",
+          "area": 2116,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "cine-wrap",
+          "area": 2116,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "atlas",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Atlas — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": {
+        "x": 10.000335693359375,
+        "y": 69.99934387207031,
+        "w": 369.99932861328125,
+        "h": 327.99945068359375,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0.999883",
+        "text": "UpdatesCloseAtlas · 2hNew system addedKepler-1649 is now mapped.Discovery · 5hK2-18b water"
+      },
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 9600,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "atlas",
+          "area": 9600,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-intro",
+          "area": 9600,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-stars",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-neb",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "at-land-wrap",
+          "area": 9600,
+          "text": "Celestium flight deck AtlasThe known universe, to scale. Beg"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "discoveries",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Discovery Series — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 9600,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "cat-hero",
+          "area": 9600,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "main",
+          "area": 14336,
+          "text": "The Discovery Series Landmark science,read at your altitude."
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "catalog",
+          "area": 14336,
+          "text": "/ Surprise me AllCosmologySpacetimeOriginsPlanetary ScienceQ"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "article",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The night we heard two black holes collide. — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 9600,
+          "text": "Illustration · Celestium Astrophysics · The Discovery Series"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "ahero-media is-photo",
+          "area": 9600,
+          "text": "Illustration · Celestium"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "timeline",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "The Timeline — Two clocks, one story | Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 9600,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "spiral",
+          "area": 9600,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "top",
+          "area": 14336,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "spiral",
+          "area": 14336,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "tl-track",
+          "area": 14336,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "tl-sticky",
+          "area": 14336,
+          "text": "The story of everything Two clocks,one story. 13.8 ByaThe Bi"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "stardust",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "You Are Stardust — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "top",
+          "area": 9600,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "live",
+          "area": 9600,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "top",
+          "area": 14336,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "live",
+          "area": 14336,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sd-track",
+          "area": 14336,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sd-sticky",
+          "area": 14336,
+          "text": "01 / 09You.Right now, reading this — a configuration of star"
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "about",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "How Celestium is made — Celestium",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 9600,
+          "text": "About Celestium A pinnacle of science,built to be felt. Most"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "phero",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "join",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Join Celestium — follow, subscribe, contribute",
+      "siteChrome": true,
+      "legacyNav": null,
+      "legacyMenu": null,
+      "cursorRule": "auto",
+      "ccActions": {
+        "x": 180,
+        "y": 12,
+        "w": 200,
+        "h": 48,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientMountain Wakes"
+      },
+      "ccDock": {
+        "x": 67,
+        "y": 778,
+        "w": 256,
+        "h": 56,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "HomeAtlasKnowTimeDustAboutJoin"
+      },
+      "launcherTop": null,
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "cc-actions",
+          "other": "sky",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "grain",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "main",
+          "area": 9600,
+          "text": "Be part of Celestium Join theexpedition. Celestium is a smal"
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "phero",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "PICTURE",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-actions",
+          "other": "IMG",
+          "area": 9600,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "sky",
+          "area": 14336,
+          "text": ""
+        },
+        {
+          "chrome": "cc-dock",
+          "other": "grain",
+          "area": 14336,
+          "text": ""
+        }
+      ]
+    }
+  },
+  {
+    "vpName": "mobile",
+    "name": "notfound",
+    "status": 200,
+    "messages": [],
+    "metrics": {
+      "title": "Celestium — A pinnacle of science",
+      "siteChrome": false,
+      "legacyNav": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 50.390625,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "legacyMenu": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "0",
+        "text": "Atlas Discoveries Timeline Tonight About Join Us"
+      },
+      "cursorRule": "auto",
+      "ccActions": null,
+      "ccDock": null,
+      "launcherTop": {
+        "x": 225,
+        "y": 14,
+        "w": 153,
+        "h": 52,
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "text": "ambientWhen the Mountain Wakes Live logUpdates 3"
+      },
+      "updatePanel": null,
+      "overlaps": [
+        {
+          "chrome": "lnch-top",
+          "other": "sky",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-wrap",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "cine-bg",
+          "area": 3900,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "lnch-bg",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "grain",
+          "area": 7956,
+          "text": ""
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "nav",
+          "area": 5568,
+          "text": "CELESTIUM Atlas Discoveries Timeline Tonight About Join Us"
+        },
+        {
+          "chrome": "lnch-top",
+          "other": "intro show",
+          "area": 7956,
+          "text": "CELESTIUMThe universe, examined"
+        },
+        {
+          "chrome": "lnch-home",
+          "other": "sky",
+          "area": 6580,
+          "text": ""
+        }
+      ]
+    }
+  }
+]

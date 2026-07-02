@@ -1,6 +1,6 @@
-import { initCursor } from "./cursor";
 import { mount as mountStarfield } from "./starfield";
 import { enableViewTransitions } from "./view-transitions";
+import { initSiteChrome } from "./site-chrome";
 import DISCOVERIES from "../data/discoveries";
 import RELATED_INDEX from "./related-index";
 import { expandFragments } from "./fragments";
@@ -9,7 +9,7 @@ import { initCommandPalette } from "./command-palette";
 import { initHighlightShare } from "./highlight-share";
 import { initInteractiveFigures } from "./interactive-figures";
 import { t } from "./i18n";
-import { initSound, playClick } from "./sound";
+import { playClick } from "./sound";
 import type { Discovery } from "./types";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -17,6 +17,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
 
 /* ---------- view transitions + starfield ---------- */
 enableViewTransitions();
+initSiteChrome();
 mountStarfield($<HTMLCanvasElement>("sky"), { parallax: false });
 
 /* ---------- scroll progress ---------- */
@@ -391,28 +392,6 @@ if (si >= 0) {
 }
 
 /* ---------- mobile menu ---------- */
-const bg = $<HTMLButtonElement>("burger");
-const mn = $("menu");
-bg.setAttribute("aria-expanded", "false");
-bg.setAttribute("aria-controls", "menu");
-bg.addEventListener("click", () => {
-  const o = mn.classList.toggle("open");
-  bg.classList.toggle("x", o);
-  bg.setAttribute("aria-expanded", o ? "true" : "false");
-  document.body.style.overflow = o ? "hidden" : "";
-});
-mn.querySelectorAll<HTMLAnchorElement>("a").forEach(a => a.addEventListener("click", () => {
-  mn.classList.remove("open");
-  bg.classList.remove("x");
-  bg.setAttribute("aria-expanded", "false");
-  document.body.style.overflow = "";
-}));
-
-/* ---------- ambient sound (opt-in) ---------- */
-initSound($("sound"), { pad: true });
-
 /* ---------- ⌘K command palette + highlight-to-share ---------- */
 initCommandPalette();
 initHighlightShare();
-
-initCursor();

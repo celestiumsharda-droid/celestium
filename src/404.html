@@ -61,6 +61,12 @@
 </main>
 <script type="module">
   import { mount } from "/engine/starfield.ts";
+  import { enableViewTransitions } from "/engine/view-transitions.ts";
+  import { initSiteChrome } from "/engine/site-chrome.ts";
+  import { initCommandPalette } from "/engine/command-palette.ts";
+  enableViewTransitions();
+  initSiteChrome();
+  initCommandPalette();
   mount(document.getElementById("sky"), { parallax: false });
 </script>
 </body>

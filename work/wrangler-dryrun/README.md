@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "celestium" generated at 2026-06-28T17:06:47.797Z.

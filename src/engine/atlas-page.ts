@@ -5,24 +5,14 @@
  * when motion is welcome the live Solar System takes the stage.
  */
 import { enableViewTransitions } from "./view-transitions";
-import { initSound } from "./sound";
-import { initCursor } from "./cursor";
+import { initSiteChrome } from "./site-chrome";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
 type IdleWindow = Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
 
 enableViewTransitions();
-
-const bg = $("burger"), mn = $("menu");
-bg.setAttribute("aria-expanded", "false"); bg.setAttribute("aria-controls", "menu");
-bg.addEventListener("click", () => {
-  const o = mn.classList.toggle("open"); bg.classList.toggle("x", o);
-  bg.setAttribute("aria-expanded", o ? "true" : "false"); document.body.style.overflow = o ? "hidden" : "";
-});
-mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => { mn.classList.remove("open"); bg.classList.remove("x"); document.body.style.overflow = ""; }));
-
-initSound($("sound"), { pad: true });
+initSiteChrome();
 const iw = window as IdleWindow;
 const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
@@ -105,8 +95,6 @@ if (gallery && matchMedia("(pointer: fine)").matches) {
     gallery.style.setProperty("--py", ((e.clientY / innerHeight - 0.5) * 2).toFixed(3));
   }, { passive: true });
 }
-
-initCursor();
 
 /* the launch-page starfield: ambient drift + the odd shooting star, with a
    "jump to lightspeed" warp that streaks every star out of frame on launch. */

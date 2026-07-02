@@ -1,4 +1,3 @@
-import { initCursor } from "./cursor";
 /**
  * CELESTIUM — "You Are Stardust" page entry.
  * Shared chrome + the lazy-mounted particle journey. The written chapters
@@ -6,13 +5,14 @@ import { initCursor } from "./cursor";
  * is welcome we light up the canvas and tuck the prose into the a11y tree.
  */
 import { enableViewTransitions } from "./view-transitions";
-import { initSound } from "./sound";
+import { initSiteChrome } from "./site-chrome";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
 type IdleWindow = Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
 
 enableViewTransitions();
+initSiteChrome();
 
 /* progress bar */
 const prog = $("prog");
@@ -21,22 +21,7 @@ addEventListener("scroll", () => {
   prog.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
 }, { passive: true });
 
-/* mobile menu */
-const bg = $("burger"), mn = $("menu");
-bg.setAttribute("aria-expanded", "false");
-bg.setAttribute("aria-controls", "menu");
-bg.addEventListener("click", () => {
-  const o = mn.classList.toggle("open");
-  bg.classList.toggle("x", o);
-  bg.setAttribute("aria-expanded", o ? "true" : "false");
-  document.body.style.overflow = o ? "hidden" : "";
-});
-mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
-  mn.classList.remove("open"); bg.classList.remove("x"); document.body.style.overflow = "";
-}));
-
-/* ambient sound + command palette (deferred) */
-initSound($("sound"), { pad: true });
+/* command palette (deferred) */
 const iw = window as IdleWindow;
 const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
@@ -134,5 +119,3 @@ function buildPersonalizer(handle: { setPerson: (p: ReturnType<typeof computePer
     if (tr) { const top = tr.getBoundingClientRect().top + scrollY; const span = tr.offsetHeight - innerHeight; scrollTo({ top: top + span * 0.98, behavior: "smooth" }); }
   });
 }
-
-initCursor();

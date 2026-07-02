@@ -21,6 +21,13 @@ const ORDER = [
   "double-helix", "crispr", "ancient-dna", "penicillin", "vaccination",
 ];
 
+const EXTRA_QUERY: Record<string, string> = {
+  "gravitational-waves": "gravity ligo spacetime ripple",
+  "black-hole-image": "m87 event horizon telescope singularity",
+  "cosmic-background": "cmb first light afterglow microwave",
+  "first-exoplanet": "planet alien world hot jupiter",
+};
+
 /** A random discovery URL — powers "Surprise me" everywhere. */
 export function randomDiscoveryHref(): string {
   const valid = ORDER.filter(s => DISCOVERIES[s]);
@@ -35,7 +42,8 @@ function buildItems(): Item[] {
     const d = DISCOVERIES[slug];
     if (!d) continue;
     const title = flat(d.title);
-    items.push({ title, sub: d.field, href: `/discoveries/${slug}/`, kind: "article", q: (title + " " + d.field + " " + flat(d.dek)).toLowerCase() });
+    const slugWords = slug.replace(/-/g, " ");
+    items.push({ title, sub: d.field, href: `/discoveries/${slug}/`, kind: "article", q: (title + " " + d.field + " " + flat(d.dek) + " " + slugWords + " " + (EXTRA_QUERY[slug] ?? "")).toLowerCase() });
   }
   const pages: Item[] = [
     { title: t("surprise"), sub: "Open a random discovery", href: "#random", kind: "page", q: "surprise me random shuffle lucky any discovery roll dice" },
@@ -57,6 +65,7 @@ const ICON_SEARCH =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>';
 
 export function initCommandPalette(): void {
+  if (document.querySelector(".cmdk")) return;
   const items = buildItems();
 
   // --- overlay DOM ---
@@ -162,8 +171,11 @@ export function initCommandPalette(): void {
     }
   });
 
-  // inject a search button into the nav (before the sound toggle)
-  const sound = document.getElementById("sound");
+  const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>(".cc-search-trigger"));
+  triggers.forEach(btn => btn.addEventListener("click", open));
+
+  // Legacy fallback: inject a search button into the old nav if a page still has it.
+  const sound = triggers.length ? null : document.getElementById("sound");
   if (sound && sound.parentElement) {
     const btn = document.createElement("button");
     btn.type = "button";

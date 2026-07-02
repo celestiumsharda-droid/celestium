@@ -1,11 +1,10 @@
-import { initCursor } from "./cursor";
 /**
  * CELESTIUM — the Timeline page ("Two clocks, one story" / Genesis).
  * Its own full-screen home for the particle journey: shared chrome, the
  * accessible list fallback, and the lazy-mounted Genesis experience.
  */
 import { enableViewTransitions } from "./view-transitions";
-import { initSound } from "./sound";
+import { initSiteChrome } from "./site-chrome";
 import TIMELINE from "../data/timeline";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
@@ -13,6 +12,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T =>
 type IdleWindow = Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
 
 enableViewTransitions();
+initSiteChrome();
 
 /* progress bar */
 const prog = $("prog");
@@ -42,22 +42,7 @@ if (rail) TIMELINE.forEach((e, i) => {
   rail.appendChild(r);
 });
 
-/* mobile menu */
-const bg = $("burger"), mn = $("menu");
-bg.setAttribute("aria-expanded", "false");
-bg.setAttribute("aria-controls", "menu");
-bg.addEventListener("click", () => {
-  const o = mn.classList.toggle("open");
-  bg.classList.toggle("x", o);
-  bg.setAttribute("aria-expanded", o ? "true" : "false");
-  document.body.style.overflow = o ? "hidden" : "";
-});
-mn.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
-  mn.classList.remove("open"); bg.classList.remove("x"); document.body.style.overflow = "";
-}));
-
-/* ambient sound + command palette (deferred) */
-initSound($("sound"), { pad: true });
+/* command palette (deferred) */
 const iw = window as IdleWindow;
 const loadPalette = () => { import("./command-palette").then(m => m.initCommandPalette()); };
 if (iw.requestIdleCallback) iw.requestIdleCallback(loadPalette, { timeout: 2000 }); else setTimeout(loadPalette, 1200);
@@ -80,5 +65,3 @@ if (section && track && canvas && !reduce) {
     })
     .catch(err => console.warn("Timeline unavailable; keeping the list.", err));
 }
-
-initCursor();

@@ -1,0 +1,12 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ args:["--use-angle=d3d11","--ignore-gpu-blocklist"] });
+const ctx = await b.newContext({ viewport:{width:412,height:900}, deviceScaleFactor:2, isMobile:true, hasTouch:true });
+const p = await ctx.newPage();
+await p.goto("http://localhost:4339/atlas/",{waitUntil:"networkidle"}); await p.waitForTimeout(700);
+await p.click("#at-intro-go").catch(()=>{}); await p.waitForSelector("#atlas.live",{timeout:20000}).catch(()=>{}); await p.waitForTimeout(4000);
+await p.click("#at-nav").catch(()=>{}); await p.waitForTimeout(500);
+await p.fill("#at-con-search","jup").catch(()=>{}); await p.waitForTimeout(900);
+const rings = await p.evaluate(()=>document.querySelectorAll(".ig-ring.on").length);
+await p.screenshot({path:"C:/Users/devan/celestium/.shots/ignite.png"});
+console.log("ignited rings on screen:", rings);
+await b.close();

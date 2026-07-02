@@ -1,0 +1,14 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ args:["--use-angle=d3d11","--ignore-gpu-blocklist"] });
+const ctx = await b.newContext({ viewport:{width:1440,height:900}, deviceScaleFactor:1.5 });
+const p = await ctx.newPage();
+const errs=[]; p.on("console",m=>{if(m.type()==="error")errs.push(m.text())}); p.on("pageerror",e=>errs.push("PE:"+e.message));
+await p.goto("http://localhost:4334/atlas/",{waitUntil:"networkidle"}); await p.waitForTimeout(700);
+await p.click("#at-intro-go"); await p.waitForSelector("#atlas.live",{timeout:20000}).catch(()=>{}); await p.waitForTimeout(7000);
+await p.evaluate(()=>window.__atlasFly&&window.__atlasFly("Carina Nebula"));
+await p.waitForTimeout(11000); await p.screenshot({path:"C:/Users/devan/celestium/.shots/carina-face.png"});
+await p.mouse.move(720,450); for(let i=0;i<14;i++){await p.mouse.wheel(0,-400);await p.waitForTimeout(120);} await p.waitForTimeout(3000);
+await p.screenshot({path:"C:/Users/devan/celestium/.shots/carina-inside.png"});
+const fps=await p.evaluate(()=>new Promise(r=>{let n=0,t=performance.now();(function f(){n++;performance.now()-t<2500?requestAnimationFrame(f):r(Math.round(n/((performance.now()-t)/1000)))})()}));
+console.log("inside FPS:",fps,"| errors:",errs.length?errs.slice(0,5):"none");
+await b.close();

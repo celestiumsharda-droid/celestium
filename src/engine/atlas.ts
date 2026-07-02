@@ -1709,138 +1709,128 @@ export function mountAtlas(opts: Opts): () => void {
      neighbourhood, while the camera-glued panorama fades out — the backdrop
      becoming the OBJECT. */
   const GAL_C = raDec(17.7611, -29.008, 26660 * LY);
+  // how "outside" the galaxy the camera is: 0 sitting in the core (fade the
+  // galaxy structure away so it can't white out from within), 1 well clear of it.
+  const galCoreFade = (c: { x: number; y: number; z: number }): number => {
+    const d = Math.hypot(c.x - GAL_C.x, c.y - GAL_C.y, c.z - GAL_C.z);
+    const t = Math.min(1, Math.max(0, (d - 3e15) / 1.47e17));
+    return t * t * (3 - 2 * t);
+  };
   const poleK = raDec(12.8567, 27.13, 1);
   const galaxy = new THREE.Group();
   galaxy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(poleK.x, poleK.y, poleK.z).normalize());
   scene.add(galaxy);
 
-  // ===== THE GALAXY — a procedural VOLUMETRIC medium (no particles) =====
-  // A camera-facing billboard whose fragment shader raymarches a continuous
-  // density field in galactic coordinates: a grand log-spiral of arms, dark
-  // dust lanes carved by noise, pink HII nurseries, and an analytic luminous
-  // bulge. The glow is a real integrated medium — not a sum of points — so it
-  // reads uniform and bright at every distance and resolves into the dusty
-  // spiral as you fly in. The march is bounded to the disk (cylinder ∩ slab),
-  // so it stays cheap; step count scales with the device.
-  let galVolMat: THREE.ShaderMaterial | null = null;
-  let galBillboard: THREE.Mesh | null = null;
-  const galRotInv = new THREE.Matrix3();
-  const RG = 55000 * LY, ZG = 2200 * LY;
+  // (The galaxy itself is the millions-of-stars field built just below — there is
+  //  no volumetric fog and no panorama texture; the star field is both the spiral
+  //  from outside and the Milky-Way band from within.)
+
+  // ===== THE GALAXY — a real stellar system built from millions of star-points =====
+  // Composition, the way a barred spiral actually is: a concentrated old GOLD
+  // BULGE, a central BAR, an exponential thin DISK threaded by two logarithmic
+  // spiral ARMS (young blue stars, pink HII nurseries, dark dust lanes carved on
+  // the inner arm edge) and a sparse old thick-disk / HALO. Centred on GAL_C and
+  // aligned to the true galactic plane, this ONE field is the spiral seen from
+  // OUTSIDE and the Milky-Way band seen from WITHIN — no texture, no fog. Built
+  // in idle chunks so the launch never stalls; offset by the floating origin.
   {
-    const MARCH = small ? 14 : 24;
-    const ne = (x: number) => x.toExponential();
-    const GAL_VOL_VERT = `#include <common>
+    const N = small ? 550000 : 2_200_000;
+    const RD = 50000 * LY;                       // bright-disk radius (Sun sits at ~0.53 RD, properly embedded)
+    const BARANG = 0.42, WIND = 2.42;            // bar tilt in-plane; arm winding (pitch ~ 22°)
+    const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), siz = new Float32Array(N);
+    const posA = new THREE.BufferAttribute(pos, 3), colA = new THREE.BufferAttribute(col, 3), sizA = new THREE.BufferAttribute(siz, 1);
+    const gg = new THREE.BufferGeometry();
+    gg.setAttribute("position", posA); gg.setAttribute("aColor", colA); gg.setAttribute("aSize", sizA);
+    gg.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 6e17);
+    gg.setDrawRange(0, 0);
+    const galStarMat = new THREE.ShaderMaterial({
+      uniforms: { uSize: { value: (small ? 1.15 : 1.5) * Math.min(2, devicePixelRatio || 1) }, uOpacity: { value: 0 } },
+      vertexShader: `#include <common>
 #include <logdepthbuf_pars_vertex>
-varying vec3 vWorld;
-void main(){
-  vWorld = (modelMatrix * vec4(position, 1.0)).xyz;   // camera is the scene origin (floating origin)
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+attribute vec3 aColor; attribute float aSize; varying vec3 vCol; uniform float uSize;
+void main(){ vCol = aColor; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = uSize * aSize;
 #include <logdepthbuf_vertex>
-}`;
-    const GAL_VOL_FRAG = `#include <common>
+}`,
+      fragmentShader: `#include <common>
 #include <logdepthbuf_pars_fragment>
-precision highp float;
-varying vec3 vWorld;
-uniform mat3 uRotInv;      // scene -> galactic
-uniform vec3 uCamGal;      // camera position in galactic coords
-uniform float uOpacity;
-#define RG ${ne(RG)}
-#define ZG ${ne(ZG)}
-#define RDISK ${ne(26000 * LY)}
-#define HZ ${ne(620 * LY)}
-#define NS ${ne(1 / (2200 * LY))}
-float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p);
-  float a = hash(i), b = hash(i + vec2(1,0)), c = hash(i + vec2(0,1)), d = hash(i + vec2(1,1));
-  vec2 u = f*f*(3.0 - 2.0*f); return mix(mix(a,b,u.x), mix(c,d,u.x), u.y); }
-float fbm(vec2 p){ float v = 0.0, a = 0.5; for(int i=0;i<2;i++){ v += a*vnoise(p); p = p*2.1 + 5.3; a *= 0.5; } return v; }
-// the medium at a galactic-space point — emission colour + scalar density
-float density(vec3 p, out vec3 col){
-  float r = length(p.xy);
-  float rn = r / RDISK;
-  float radial = smoothstep(0.015, 0.11, rn) * exp(-rn * 2.15) * (1.0 - smoothstep(1.45, 2.1, rn));
-  float vz = exp(-abs(p.z) / HZ);
-  float base = radial * vz;
-  if (base < 0.0016){ col = vec3(0.0); return 0.0; }       // skip the empty disk fast
-  float ang = atan(p.y, p.x);
-  float wind = log(max(rn, 0.02)) * 2.35;                  // log-spiral winding
-  float a2 = ang - wind;
-  float arm = pow(0.5 + 0.5*cos(2.0*a2), 2.4);             // two grand-design arms
-  float spur = pow(0.5 + 0.5*cos(4.0*a2 + 1.3), 3.0) * 0.45;
-  arm = max(arm, spur);
-  vec2 np = p.xy * NS;
-  float t1 = fbm(np), t2 = fbm(np*1.7 + 13.0);             // two noise fields → cloud + dust
-  arm *= 0.32 + 1.08 * t1;                                 // turbulent clouds, not a clean ribbon
-  float lane = pow(0.5 + 0.5*cos(2.0*a2 + 0.6), 3.0);
-  float dust = clamp(1.0 - (0.72*lane + 0.55*t2) * smoothstep(0.05, 0.45, rn), 0.05, 1.0);
-  float dens = base * (0.15 + 1.35*arm) * dust;
-  vec3 armCol = mix(vec3(0.60,0.69,0.99), vec3(0.97,0.98,1.0), clamp(arm, 0.0, 1.0));
-  float hii = smoothstep(0.62, 1.18, arm * (0.5 + t2));    // nurseries reuse the dust field — no 3rd noise
-  armCol = mix(armCol, vec3(1.0, 0.45, 0.6), hii * 0.85);       // pink HII nurseries
-  armCol = mix(armCol * vec3(1.0, 0.76, 0.52), armCol, dust);   // dust reddening
-  col = armCol;
-  return dens;
-}
-// ray ∩ (infinite cylinder radius RG) ∩ (slab |z|<ZG) → [t0, t1]
-bool bounds(vec3 o, vec3 d, out float t0, out float t1){
-  float a = dot(d.xy, d.xy);
-  float b = dot(o.xy, d.xy);
-  float c = dot(o.xy, o.xy) - RG*RG;
-  float disc = b*b - a*c;
-  if (disc < 0.0) return false;
-  float s = sqrt(disc);
-  float tc0 = (-b - s) / a, tc1 = (-b + s) / a;
-  float tz0 = (-ZG - o.z) / d.z, tz1 = (ZG - o.z) / d.z;
-  if (tz0 > tz1){ float tt = tz0; tz0 = tz1; tz1 = tt; }
-  t0 = max(max(tc0, tz0), 0.0);
-  t1 = min(tc1, tz1);
-  return t1 > t0;
-}
+varying vec3 vCol; uniform float uOpacity;
 void main(){
 #include <logdepthbuf_fragment>
-  vec3 d = normalize(uRotInv * normalize(vWorld));         // view ray in galactic coords
-  vec3 o = uCamGal;
-  vec3 acc = vec3(0.0); float trans = 1.0;
-  float t0, t1;
-  if (bounds(o, d, t0, t1)){
-    float dt = (t1 - t0) / float(${MARCH});
-    float t = t0 + dt * (0.25 + 0.5 * hash(gl_FragCoord.xy));   // dithered start hides step banding
-    for (int i = 0; i < ${MARCH}; i++){
-      vec3 p = o + d * t;
-      vec3 col; float dens = density(p, col);
-      if (dens > 0.0){
-        float em = dens * dt * 2.5e-15;                    // emission per unit length
-        acc += trans * col * em;
-        trans *= exp(-em * 1.7);                           // dust in front dims what's behind
-        if (trans < 0.04) break;                           // fully absorbed — stop marching
-      }
-      t += dt;
-    }
-  }
-  // analytic luminous bulge — closed-form Gaussian along the ray's closest approach
-  float tca = max(-dot(o, d), 0.0);
-  vec3 cp = o + d * tca;
-  float perp2 = dot(cp, cp);
-  float bs = ${ne(2600 * LY)};
-  float bulge = exp(-perp2 / (bs*bs)) * 0.95 + exp(-perp2 / (bs*bs*10.0)) * 0.22;
-  acc += vec3(1.0, 0.83, 0.57) * bulge * trans;
-  if (max(acc.r, max(acc.g, acc.b)) < 0.0025) discard;
-  gl_FragColor = vec4(acc * uOpacity, 1.0);
-}`;
-    galVolMat = new THREE.ShaderMaterial({
-      vertexShader: GAL_VOL_VERT, fragmentShader: GAL_VOL_FRAG,
-      uniforms: {
-        uRotInv: { value: galRotInv },
-        uCamGal: { value: new THREE.Vector3() },
-        uOpacity: { value: 0 },
-      },
+  float a = pow(smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5)), 1.6);   // soft round star
+  if (a < 0.01) discard;
+  gl_FragColor = vec4(vCol * a * uOpacity, 1.0);
+}`,
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     });
-    // scene → galactic rotation is constant (the galaxy frame never turns)
-    galRotInv.setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(galaxy.quaternion)).transpose();
-    galBillboard = new THREE.Mesh(new THREE.PlaneGeometry(RG * 2.7, RG * 2.7), galVolMat);
-    galBillboard.frustumCulled = false; galBillboard.renderOrder = -3;
-    scene.add(galBillboard);   // lives in the scene; positioned + billboarded each frame
+    const galStars = new THREE.Points(gg, galStarMat);
+    galStars.frustumCulled = false; galStars.renderOrder = -1;
+    scene.add(galStars);
+
+    // ---- per-star generation (galactic-local coords → world km) ----
+    const R = Math.random;
+    const nrm = (): number => R() + R() + R() + R() + R() + R() - 3.0;   // ≈ N(0,1)
+    const qx = galaxy.quaternion.x, qy = galaxy.quaternion.y, qz = galaxy.quaternion.z, qw = galaxy.quaternion.w;
+    const put = (i: number, lx: number, ly2: number, lz: number, cr: number, cg: number, cb: number, sz: number): void => {
+      // rotate local (lx,ly2,lz) into the world by the galaxy quaternion, then offset to GAL_C
+      const tx = 2 * (qy * lz - qz * ly2), ty = 2 * (qz * lx - qx * lz), tz = 2 * (qx * ly2 - qy * lx);
+      pos[i * 3] = lx + qw * tx + (qy * tz - qz * ty) + GAL_C.x;
+      pos[i * 3 + 1] = ly2 + qw * ty + (qz * tx - qx * tz) + GAL_C.y;
+      pos[i * 3 + 2] = lz + qw * tz + (qx * ty - qy * tx) + GAL_C.z;
+      col[i * 3] = cr; col[i * 3 + 1] = cg; col[i * 3 + 2] = cb; siz[i] = sz;
+    };
+    const genStar = (i: number): void => {
+      const u = R();
+      if (u < 0.10) {                              // BULGE: old gold, graded spheroid (dim per-star so the dense core stays GOLD, not clipped white)
+        const rr = Math.pow(R(), 1.65) * 5600 * LY, th = R() * 6.2832, cph = 2 * R() - 1, sph = Math.sqrt(1 - cph * cph), b = R();
+        put(i, rr * sph * Math.cos(th), rr * sph * Math.sin(th), rr * cph * 0.7, 0.47 + 0.12 * b, 0.34 + 0.1 * b, 0.17 + 0.07 * b, 0.4 + R() * 0.42);
+      } else if (u < 0.18) {                       // BAR
+        const bl = nrm() * 8500 * LY, bw = nrm() * 1700 * LY, ca = Math.cos(BARANG), sa = Math.sin(BARANG), b = R();
+        put(i, ca * bl - sa * bw, sa * bl + ca * bw, nrm() * 350 * LY, 0.6 + 0.12 * b, 0.44 + 0.1 * b, 0.22 + 0.08 * b, 0.42 + R() * 0.44);
+      } else if (u < 0.9) {                        // DISK + SPIRAL ARMS
+        let rn = -Math.log(1 - R()) * 0.26;        // exponential surface density (scale length ~13,000 ly)
+        if (rn < 0.05) rn = 0.05 + R() * 0.06;     // clear the very centre (the bulge owns it)
+        if (rn > 1.15) rn = 0.2 + R() * 0.95;
+        const r = rn * RD, wind = Math.log(rn) * WIND;
+        const inArm = R() < 0.78;
+        const th = inArm ? wind + Math.floor(R() * 2) * Math.PI + nrm() * (0.26 / (0.26 + rn)) : R() * 6.2832;
+        const a2 = th - wind;
+        const lane = Math.pow(0.5 + 0.5 * Math.cos(2 * a2 + 0.85), 6.0);   // dust lane on the inner arm edge
+        const dim = 1.0 - 0.82 * lane * Math.min(1, rn * 3.0);
+        const lx = r * Math.cos(th), ly2 = r * Math.sin(th), lz = nrm() * (240 + 900 * rn) * LY;
+        let cr: number, cg: number, cb: number, sz: number; const q2 = R();
+        if (inArm && q2 < 0.06) { cr = 1.0; cg = 0.43; cb = 0.56; sz = 0.95 + R() * 1.4; }                             // pink HII nursery
+        else if (inArm && q2 < 0.6) { const b = R(); cr = 0.42 + 0.2 * b; cg = 0.6 + 0.22 * b; cb = 1.0; sz = 0.5 + R() * 0.9; }   // young blue (bluer, brighter arms)
+        else { const b = R(); cr = 0.72 + 0.12 * b; cg = 0.66 + 0.12 * b; cb = 0.54 + 0.13 * b; sz = 0.38 + R() * 0.46; }          // warm field, dimmer
+        if (R() < 0.012) sz *= 2.2;                // the occasional bright, resolved sun
+        put(i, lx, ly2, lz, cr * dim, cg * dim, cb * dim, sz * (0.5 + 0.5 * dim));
+      } else {                                     // THICK DISK / HALO: sparse, old, faint
+        const rn = Math.pow(R(), 0.6) * 1.35, r = rn * RD, th = R() * 6.2832;
+        put(i, r * Math.cos(th), r * Math.sin(th), nrm() * 3200 * LY, 0.5, 0.38, 0.32, 0.3 + R() * 0.26);
+      }
+    };
+
+    // fill in idle chunks so the launch frame never stalls; the galaxy materialises
+    let filled = 0;
+    const CHUNK = 90000;
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback || ((f: () => void) => setTimeout(f, 0));
+    const fillChunk = (): void => {
+      const end = Math.min(N, filled + CHUNK);
+      for (; filled < end; filled++) genStar(filled);
+      posA.needsUpdate = colA.needsUpdate = sizA.needsUpdate = true;
+      gg.setDrawRange(0, filled);
+      if (filled < N) ric(fillChunk);
+    };
+    ric(fillChunk);
+
+    onFrame(({ camKm }) => {
+      const op = galCoreFade(camKm);              // the field IS the band from within; fade only inside the core
+      galStars.visible = filled > 0 && op > 0.003;
+      if (galStars.visible) {
+        galStars.position.set(-camKm.x, -camKm.y, -camKm.z);
+        galStarMat.uniforms["uOpacity"]!.value = op;
+      }
+    });
   }
 
   // Sagittarius A* — a REAL raymarched, gravitationally-lensed black hole.
@@ -1949,18 +1939,11 @@ void main(){
     orbitGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat));
   }
 
-  /* ---------- the sky: stars + the Milky Way, glued to the camera ---------- */
+  /* ---------- the sky: stars glued to the camera ---------- */
+  // (The Milky-Way band is no longer a texture: it emerges for real from the
+  //  millions-of-stars galaxy above, seen edge-on from inside the disk.)
   const skyGroup = new THREE.Group();
   scene.add(skyGroup);
-  const mw = new THREE.Mesh(
-    new THREE.SphereGeometry(8e11, 48, 24),
-    new THREE.MeshBasicMaterial({ map: T("stars_milky_way.jpg"), side: THREE.BackSide, depthWrite: false, transparent: true }),
-  );
-  (mw.material as THREE.MeshBasicMaterial).color.setScalar(0.42);   // a soft galactic backdrop; the REAL stars are the foreground
-  mw.rotation.x = 60.2 * D2R;        // the galactic plane really is tilted ~60° to the ecliptic
-  mw.rotation.y = 0.6;
-  mw.renderOrder = -2;               // band first, real stars on top
-  skyGroup.add(mw);
   // ---- the REAL sky: every catalogued star within 3,000 ly (HYG), at its true
   // 3D place. Not a backdrop painted on a dome but real suns in real positions —
   // so from Earth you see the true constellations, and from another star the sky
@@ -2169,7 +2152,6 @@ void main(){
   const _up0 = new THREE.Vector3(0, 0, 1);
   const NAKED_EYE = new Set(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]);
   const SPOT_TEX: Record<string, string> = { ...PLANET_TEX, Moon: "moon_4k.jpg" };
-  const mwMat = mw.material as THREE.MeshBasicMaterial;
 
   // ---- the spotlight: tap a star or planet and the rest of the sky dissolves to
   // black, leaving that one body glowing above the sea (and mirrored in it). A
@@ -2421,7 +2403,7 @@ void main(){
     fadeThen(() => {
       earthView = false;
       skyFocus = null; skyDim = 0; focusGrp.visible = false;
-      starUniforms.uLimit.value = STAR_LIMIT; mwMat.opacity = 1;
+      starUniforms.uLimit.value = STAR_LIMIT;
       oceanMesh.visible = false; lensGroup.visible = false;
       earth.mesh.visible = true;
       stageEl.classList.remove("in-sky");
@@ -2463,7 +2445,6 @@ void main(){
     // the spotlight: ease the sky to black around a tapped body, lift the orb into it
     skyDim += ((skyFocus ? 1 : 0) - skyDim) * Math.min(1, dt * 2.6);
     starUniforms.uLimit.value = STAR_LIMIT - skyDim * 15;       // cull the field as it dims
-    mwMat.opacity = 1 - 0.92 * skyDim;
     if (skyFocus || skyDim > 0.02) {
       focusGrp.visible = true;
       focusGrp.position.copy(skyFocus ? skyFocus.dir : focusGrp.position).normalize().multiplyScalar(FOCUS_D);
@@ -2756,26 +2737,6 @@ void main(){
     // another star), and drop the whole outer layer once you're truly away.
     if (oortMat) oortMat.opacity = 0.55 * Math.min(1, Math.max(0, (2.8e13 - camDist) / 1.3e13));
     outerGroup.visible = !earthView && distKm > 4e7 && camDist < 3e13;
-  });
-
-  // the galaxy emerges as you rise above the neighbourhood; the camera-glued
-  // panorama hands over to the real 3D structure; the core retreats up close
-  onFrame(({ camKm, camDist }) => {
-    const g01 = Math.min(1, Math.max(0, (camDist - 6e15) / 7.4e16));
-    const gFade = g01 * g01 * (3 - 2 * g01);
-    if (galBillboard && galVolMat) {
-      galBillboard.visible = gFade > 0.003;
-      if (galBillboard.visible) {
-        // park the billboard at the galaxy's floating-origin position, facing the camera
-        galBillboard.position.set(GAL_C.x - camKm.x, GAL_C.y - camKm.y, GAL_C.z - camKm.z);
-        galBillboard.lookAt(0, 0, 0);
-        (galVolMat.uniforms["uCamGal"]!.value as THREE.Vector3)
-          .set(camKm.x - GAL_C.x, camKm.y - GAL_C.y, camKm.z - GAL_C.z).applyMatrix3(galRotInv);
-        galVolMat.uniforms["uOpacity"]!.value = gFade;
-      }
-    }
-    (mw.material as THREE.MeshBasicMaterial).opacity = 1 - gFade;
-    mw.visible = gFade < 0.985;
   });
 
   // the lensed black hole: billboard the quad + feed it the view direction
@@ -3186,6 +3147,14 @@ void main(){
     focusBody("Sagittarius A*");
     const pl = new THREE.Vector3(poleK.x, poleK.y, poleK.z).normalize();
     tgtPitch = Math.asin(Math.max(-1, Math.min(1, pl.y))); tgtYaw = Math.atan2(pl.x, pl.z); tgtDist = 9e17; clampDist();
+  };
+  (window as unknown as { __atlasClean?: () => void }).__atlasClean = () => {   // QA: strip dots/glows/markers for clean renders
+    scene.traverse(o => { if ((o as THREE.Object3D).type === "Sprite") o.visible = false; });
+  };
+  (window as unknown as { __atlasBand?: () => void }).__atlasBand = () => {   // QA: stand near Earth, look toward the galactic centre (the band)
+    focusBody("Earth");
+    const L = Math.hypot(GAL_C.x, GAL_C.y, GAL_C.z), gx = GAL_C.x / L, gy = GAL_C.y / L, gz = GAL_C.z / L;
+    tgtPitch = Math.asin(Math.max(-1, Math.min(1, -gy))); tgtYaw = Math.atan2(-gx, -gz); tgtDist = 3e7; clampDist();
   };
 
   return () => {
