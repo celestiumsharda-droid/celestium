@@ -20,13 +20,21 @@ mountStarfield($<HTMLCanvasElement>("sky"), { parallax: true });
 initLauncher();   // the home becomes a deck of living jewel tiles
 
 /* the live cinematic Atlas drifts behind the home — lazy, so the page paints
-   first; the starfield holds the frame until the engine warms in */
+   first; the still hero holds the frame until the engine's first shot lands.
+   Desktop only: phones keep the still (battery, thermals, weak GPUs). */
 (function cinematicBackground() {
-  const CINEMATIC_ENABLED = false;   // paused until the cinematic-camera pass composes each shot
   const cv = document.getElementById("cine-bg") as HTMLCanvasElement | null;
-  if (!CINEMATIC_ENABLED || !cv || !document.body.classList.contains("lhome")) return;
+  if (!cv || !document.body.classList.contains("lhome")) return;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const go = () => import("./cinematic-bg").then(m => m.mountCinematicBackground(cv).then(ok => { if (ok) cv.classList.add("on"); }));
+  if (!matchMedia("(min-width: 821px)").matches) return;
+  if ((navigator.hardwareConcurrency || 8) < 4) return;
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  if (conn?.saveData) return;
+  const go = () => import("./cinematic-bg").then(m => m.mountCinematicBackground(cv).then(ok => {
+    if (!ok) return;
+    // hold the still until the engine has real frames, then hand over
+    setTimeout(() => { cv.classList.add("on"); document.body.classList.add("cine-live"); }, 900);
+  }));
   const iw = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
   if (iw.requestIdleCallback) iw.requestIdleCallback(go, { timeout: 3500 }); else setTimeout(go, 1800);
 })();

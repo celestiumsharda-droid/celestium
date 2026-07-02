@@ -2495,6 +2495,14 @@ void main(){
   let yaw = 0.6, pitch = 0.22;
   let tgtDist = distKm, tgtYaw = yaw, tgtPitch = pitch;
 
+  // ---- cinematic mode: the home background's documentary camera ----
+  // A cinematographer never centres the subject and never sits still: the
+  // orbit keeps its focus, then the camera rotates in its OWN space so the
+  // world settles on a third, while a slow orbital drift + dolly keep the
+  // shot breathing. All of it is driven from outside via __atlasCine.
+  let cineOn = false, cineOffX = 0, cineOffY = 0;
+  let cineDriftYaw = 0, cineDriftPitch = 0, cineDolly = 0;
+
   function focusBody(n: string, click = false) {
     const b = bodies.find(x => x.name === n);
     if (b) focusOn(b, click);
@@ -2731,7 +2739,7 @@ void main(){
     outerGroup.position.set(-camKm.x, -camKm.y, -camKm.z);
     const t01 = Math.min(1, Math.max(0, (distKm - 8e5) / 7e6));
     orbitMat.opacity = 0.16 * t01 * t01 * (3 - 2 * t01);
-    orbitGroup.visible = !earthView && orbitMat.opacity > 0.004 && distKm < 2e10;
+    orbitGroup.visible = !earthView && !cineOn && orbitMat.opacity > 0.004 && distKm < 2e10;
     // the belts + Oort belong to the Sun: fade the Oort shell out as you leave
     // the neighbourhood (so it never becomes a ball hanging at the Sun from
     // another star), and drop the whole outer layer once you're truly away.
@@ -2776,7 +2784,7 @@ void main(){
     sunLight.intensity = inForeign ? 0 : 2.6;
     // each system's orbit rings show only while you're inside it — the nearest
     // system's rings are placed + revealed, any previously-shown ones hidden
-    const want = inForeign && best ? best.orbits ?? null : null;
+    const want = inForeign && !cineOn && best ? best.orbits ?? null : null;   // a documentary shows worlds, not diagrams
     if (want !== shownOrbits) { if (shownOrbits) shownOrbits.visible = false; shownOrbits = want; }
     if (want && best) { want.position.set(best.pos.x - camKm.x, best.pos.y - camKm.y, best.pos.z - camKm.z); want.visible = true; }
 
@@ -2822,6 +2830,12 @@ void main(){
       if (dTxt !== lastDateTxt) { date.textContent = dTxt; lastDateTxt = dTxt; }
     }
 
+    // cinematic drift — a documentary camera is never parked
+    if (cineOn) {
+      tgtYaw += cineDriftYaw * dt;
+      tgtPitch = Math.min(1.2, Math.max(-1.2, tgtPitch + cineDriftPitch * dt));
+      if (cineDolly !== 0) { tgtDist *= Math.exp(cineDolly * dt); clampDist(); }
+    }
     // eased camera state
     yaw += (tgtYaw - yaw) * Math.min(1, dt * 7);
     pitch += (tgtPitch - pitch) * Math.min(1, dt * 7);
@@ -2857,6 +2871,13 @@ void main(){
       camera.position.set(0, 0, 0);
       camera.up.set(0, 1, 0);
       camera.lookAt(fx - camKm.x, fy - camKm.y, fz - camKm.z);
+      if (cineOn) {
+        // off-centre composition: rotate the camera in its own space so the
+        // subject rests on a third of the frame instead of dead centre
+        const halfV = (camera.fov * Math.PI / 180) / 2;
+        camera.rotateY(cineOffX * halfV * camera.aspect);
+        camera.rotateX(cineOffY * halfV);
+      }
     }
     // distance from the Sun (scene origin), computed once and shared with every
     // subsystem hook — replaces five separate Math.hypot(camKm) calls per frame
@@ -3155,6 +3176,34 @@ void main(){
     focusBody("Earth");
     const L = Math.hypot(GAL_C.x, GAL_C.y, GAL_C.z), gx = GAL_C.x / L, gy = GAL_C.y / L, gz = GAL_C.z / L;
     tgtPitch = Math.asin(Math.max(-1, Math.min(1, -gy))); tgtYaw = Math.atan2(-gx, -gz); tgtDist = 3e7; clampDist();
+  };
+  // ---- the cinematic director's control surface (the home background) ----
+  // One call per shot: fly to a world framed in body radii, compose it on a
+  // third, set the drift. Every field is optional — set what the shot needs.
+  interface CineCmd {
+    on?: boolean;                       // engage/release cinematic mode
+    name?: string; radii?: number;      // subject + framing distance (× body radius)
+    offX?: number; offY?: number;       // composition offset, −1..1 of half-frame
+    driftYaw?: number; driftPitch?: number; dolly?: number;   // motion per second
+    yaw?: number; pitch?: number;       // optional absolute view override
+  }
+  (window as unknown as { __atlasCine?: (c: CineCmd) => void }).__atlasCine = (c) => {
+    if (c.on !== undefined) cineOn = c.on;
+    if (c.offX !== undefined) cineOffX = c.offX;
+    if (c.offY !== undefined) cineOffY = c.offY;
+    if (c.driftYaw !== undefined) cineDriftYaw = c.driftYaw;
+    if (c.driftPitch !== undefined) cineDriftPitch = c.driftPitch;
+    if (c.dolly !== undefined) cineDolly = c.dolly;
+    if (c.name) {
+      const b = bodies.find(x => x.name === c.name);
+      if (b) {
+        focusBody(c.name);
+        tgtDist = Math.max(b.radius * (c.radii ?? 3.2), b.minD * 1.02);   // frame by size, not km
+        clampDist();
+      }
+    }
+    if (c.yaw !== undefined) tgtYaw = c.yaw;
+    if (c.pitch !== undefined) tgtPitch = c.pitch;
   };
 
   return () => {

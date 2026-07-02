@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ args:["--use-angle=d3d11","--ignore-gpu-blocklist"] });
+const ctx = await b.newContext({ viewport:{width:1600,height:1000}, deviceScaleFactor:1.25 });
+const p = await ctx.newPage();
+p.on("console", m => { if (m.type()==="error") console.log("[err]", m.text().slice(0,180)); });
+await p.goto("http://localhost:4360/tonight/",{waitUntil:"domcontentloaded"});
+await p.waitForTimeout(5000);
+await p.screenshot({path:"C:/Users/devan/celestium/.shots/tonight-page.png", fullPage:true});
+console.log("tonight captured", p.url());
+await b.close();

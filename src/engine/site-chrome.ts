@@ -1,4 +1,5 @@
 import { initLivingOrb } from "./living-orb";
+import { wireAudioWave } from "./audio-wave";
 
 const MUSIC_KEY = "celestium:music";
 
@@ -148,6 +149,7 @@ function initMusic(root: HTMLElement): void {
   audio.addEventListener("play", sync);
   audio.addEventListener("pause", sync);
   sync();
+  wireAudioWave(audio, Array.from(pill.querySelectorAll<HTMLElement>(".cc-player-wave i")), pill);
 
   if (localStorage.getItem(MUSIC_KEY) === "on") {
     const kick = () => { void play(); removeEventListener("pointerdown", kick); removeEventListener("keydown", kick); };
@@ -172,9 +174,7 @@ function initUpdates(root: HTMLElement): void {
 
 function initCore(root: HTMLElement): void {
   initLivingOrb(root.querySelector<HTMLCanvasElement>(".cc-core-orb"), {
-    count: 86,
-    connectionDistance: 30,
-    drift: 0.0046,
+    count: 190,
     parallax: 0.78,
   });
 }

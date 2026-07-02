@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tonight's Sky — Celestium</title>
+<meta name="description" content="Your sky, right now: the Moon's phase, which planets are up, when true darkness falls, the meteor showers in play and the Station overhead — computed live for where you stand.">
+<meta name="theme-color" content="#050609">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://celestium.uk/tonight/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Celestium">
+<meta property="og:title" content="Tonight's Sky — Celestium">
+<meta property="og:description" content="The Moon, the planets, true darkness, meteors and the Station — your sky, computed live.">
+<meta property="og:url" content="https://celestium.uk/tonight/">
+<meta property="og:image" content="https://celestium.uk/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tonight's Sky — Celestium">
+<meta name="twitter:description" content="Your sky, right now — computed live for where you stand.">
+<meta name="twitter:image" content="https://celestium.uk/og-cover.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23050609'/%3E%3Cg fill='none' stroke='%23f3f5fb' stroke-width='5'%3E%3Cellipse cx='50' cy='52' rx='34' ry='13'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(60 50 52)'/%3E%3Cellipse cx='50' cy='52' rx='34' ry='13' transform='rotate(120 50 52)'/%3E%3C/g%3E%3Ccircle cx='50' cy='52' r='7' fill='%23f3f5fb'/%3E%3Cpath d='M74 20 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z' fill='%23f2e6c4'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/fraunces-300_600-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/spectral-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/styles/tonight.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Tonight's Sky","url":"https://celestium.uk/tonight/","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"Celestium","url":"https://celestium.uk/"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div id="prog" aria-hidden="true"></div>
+
+<main id="main" class="tonight">
+
+  <!-- HERO — the living clock of your sky -->
+  <header class="tn-hero">
+    <p class="eyebrow"><span class="tn-beat" aria-hidden="true"></span>The sky is not a museum</p>
+    <h1>Tonight</h1>
+    <p class="tn-clockline"><span class="tn-clock mono" id="tn-clock">--:--:--</span></p>
+    <p class="tn-where" id="tn-where">reading your sky…</p>
+    <button class="tn-locate" id="tn-locate" type="button">Use my exact location</button>
+  </header>
+
+  <!-- THE GRID — everything happening above you, computed live -->
+  <section class="tn-grid" aria-label="Tonight's sky, computed for your location">
+
+    <!-- the Moon -->
+    <article class="tn-card tn-moon-card" id="card-moon">
+      <p class="tn-kicker">The Moon</p>
+      <div class="tn-moonwrap" aria-hidden="true">
+        <span class="tn-moon-disc"></span>
+        <span class="tn-moon-dark" id="tn-moon-dark"></span>
+      </div>
+      <h2 class="tn-big" id="tn-moon-name">—</h2>
+      <p class="tn-sub" id="tn-moon-illum">—</p>
+      <dl class="tn-rows">
+        <div><dt>Moonrise</dt><dd id="tn-moonrise">—</dd></div>
+        <div><dt>Moonset</dt><dd id="tn-moonset">—</dd></div>
+        <div><dt>In the sky now</dt><dd id="tn-moon-up">—</dd></div>
+      </dl>
+    </article>
+
+    <!-- the planets -->
+    <article class="tn-card tn-planets-card" id="card-planets">
+      <p class="tn-kicker">The planets, right now</p>
+      <div class="tn-planets" id="tn-planets"><!-- rows are computed --></div>
+      <p class="tn-foot">Altitude and compass bearing are for your horizon, this minute. The worlds marked <i class="tn-updot on" style="position:static;display:inline-block"></i> are above it now — walk outside and they are there.</p>
+    </article>
+
+    <!-- darkness -->
+    <article class="tn-card" id="card-sun">
+      <p class="tn-kicker">The fall of darkness</p>
+      <dl class="tn-rows tn-dusk">
+        <div><dt>Sunset</dt><dd id="tn-sunset">—</dd></div>
+        <div><dt>Civil dusk<span>streetlights on</span></dt><dd id="tn-civil">—</dd></div>
+        <div><dt>Nautical dusk<span>horizon fades</span></dt><dd id="tn-nautical">—</dd></div>
+        <div><dt>True darkness<span>the Milky Way, if your sky allows</span></dt><dd id="tn-astro">—</dd></div>
+        <div><dt>Sunrise</dt><dd id="tn-sunrise">—</dd></div>
+      </dl>
+    </article>
+
+    <!-- meteors -->
+    <article class="tn-card" id="card-meteors">
+      <p class="tn-kicker">Falling stars</p>
+      <h2 class="tn-big" id="tn-shower-name">—</h2>
+      <p class="tn-sub" id="tn-shower-state">—</p>
+      <dl class="tn-rows">
+        <div><dt>Radiant</dt><dd id="tn-shower-from">—</dd></div>
+        <div><dt>Peak rate</dt><dd id="tn-shower-zhr">—</dd></div>
+        <div><dt>Peak night</dt><dd id="tn-shower-peak">—</dd></div>
+      </dl>
+    </article>
+
+    <!-- the Station -->
+    <article class="tn-card" id="card-iss">
+      <p class="tn-kicker">The Space Station</p>
+      <h2 class="tn-big" id="tn-iss-where">Locating…</h2>
+      <p class="tn-sub" id="tn-iss-note">Seven people are living up there, falling around the Earth every 92 minutes.</p>
+      <dl class="tn-rows">
+        <div><dt>Ground track</dt><dd id="tn-iss-coords">—</dd></div>
+        <div><dt>Speed</dt><dd>27,600 km/h</dd></div>
+        <div><dt>Altitude</dt><dd id="tn-iss-alt">~420 km</dd></div>
+      </dl>
+    </article>
+
+    <!-- NASA's picture of the day -->
+    <article class="tn-card tn-apod" id="card-apod">
+      <p class="tn-kicker">While you were looking away</p>
+      <div class="tn-apod-body" id="tn-apod-body"><p class="tn-sub">Loading NASA's picture of the day…</p></div>
+    </article>
+
+  </section>
+
+  <!-- STAND UNDER IT -->
+  <section class="tn-cta">
+    <p>Numbers are a map. The sky is the territory.</p>
+    <a class="tn-go" href="/atlas/">Stand under tonight's sky in the Atlas <span aria-hidden="true">→</span></a>
+  </section>
+
+</main>
+
+<script type="module" src="/engine/tonight-page.ts"></script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+/* =====================================================================
+   CELESTIUM — TONIGHT (your sky, right now)
+   One calm surface of liquid-glass cards over the living starfield;
+   every number on it is computed for the visitor's own horizon.
+   ===================================================================== */
+@import "./tokens.css";
+
+body { line-height: 1.65; }
+
+.tonight { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: clamp(96px, 14vh, 150px) clamp(20px, 4vw, 44px) 90px; }
+
+/* ---------- hero ---------- */
+.tn-hero { text-align: left; margin-bottom: clamp(34px, 5vh, 56px); }
+.tn-hero .eyebrow { display: flex; align-items: center; gap: 10px; }
+.tn-beat { width: 7px; height: 7px; border-radius: 50%; background: #8fe3a8; box-shadow: 0 0 12px #8fe3a8; animation: tnBeat 2.4s ease-in-out infinite; }
+@keyframes tnBeat { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.tn-hero h1 {
+  font-family: var(--display); font-weight: 300; letter-spacing: -.02em;
+  font-size: clamp(3.2rem, 9vw, 6.4rem); line-height: .98; margin: 10px 0 6px;
+}
+.tn-clockline { margin: 4px 0 2px; }
+.tn-clock { font-size: clamp(1.1rem, 2.4vw, 1.5rem); color: var(--accent); letter-spacing: .14em; }
+.tn-where { color: var(--mut); font-size: .95rem; margin: 2px 0 14px; }
+.tn-locate {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: rgba(255,255,255,.05); border: 1px solid rgba(214,226,255,.24);
+  padding: 9px 16px; border-radius: 99px; cursor: pointer;
+  transition: background .3s, border-color .3s, transform .3s;
+}
+.tn-locate:hover { background: rgba(255,255,255,.11); border-color: rgba(255,255,255,.4); transform: translateY(-1px); }
+
+/* ---------- the grid ---------- */
+.tn-grid {
+  display: grid; gap: clamp(12px, 1.4vw, 18px);
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    "moon planets planets"
+    "moon sun     meteors"
+    "apod apod    iss";
+}
+.tn-moon-card { grid-area: moon; }
+.tn-planets-card { grid-area: planets; }
+#card-sun { grid-area: sun; }
+#card-meteors { grid-area: meteors; }
+#card-iss { grid-area: iss; }
+.tn-apod { grid-area: apod; }
+@media (max-width: 980px) {
+  .tn-grid { grid-template-columns: 1fr 1fr; grid-template-areas: "moon planets" "sun meteors" "iss apod"; }
+}
+@media (max-width: 660px) {
+  .tn-grid { grid-template-columns: 1fr; grid-template-areas: "moon" "planets" "sun" "meteors" "iss" "apod"; }
+}
+
+/* ---------- the card material (the site's liquid glass) ---------- */
+.tn-card {
+  position: relative; overflow: hidden; border-radius: 18px;
+  border: 1px solid rgba(214,226,255,.22);
+  background:
+    radial-gradient(240px 170px at var(--gx, 30%) var(--gy, -12%), var(--glass-hi), transparent 72%),
+    var(--glass-sheen-face),
+    rgba(8, 11, 20, .42);
+  -webkit-backdrop-filter: saturate(150%) blur(9px); backdrop-filter: saturate(150%) blur(9px);
+  box-shadow: var(--glass-bevel), 0 22px 54px -26px rgba(0,0,0,.85);
+  padding: clamp(18px, 2.2vw, 26px);
+}
+@supports (backdrop-filter: url(#lg-refract)) { .tn-card { backdrop-filter: url(#lg-refract) saturate(150%) blur(7px); } }
+
+.tn-kicker { font-family: var(--mono); font-size: 9px; letter-spacing: .28em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+.tn-big { font-family: var(--display); font-weight: 300; font-size: clamp(1.4rem, 2.6vw, 1.9rem); line-height: 1.1; margin: 0 0 4px; letter-spacing: -.01em; }
+.tn-sub { color: var(--mut); font-size: .92rem; margin: 0 0 6px; }
+.tn-foot { color: var(--dim); font-size: .8rem; margin: 14px 0 0; }
+
+.tn-rows { margin: 14px 0 0; display: flex; flex-direction: column; }
+.tn-rows > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 9px 0; border-top: 1px solid rgba(255,255,255,.08);
+}
+.tn-rows dt { color: var(--mut); font-size: .88rem; }
+.tn-rows dt span { display: block; color: var(--dim); font-size: .72rem; margin-top: 1px; }
+.tn-rows dd { margin: 0; font-family: var(--display); font-size: 1.02rem; color: var(--ink); white-space: nowrap; }
+
+/* ---------- the Moon ---------- */
+.tn-moon-card { display: flex; flex-direction: column; }
+.tn-moon-card .tn-rows { margin-top: auto; }
+.tn-moonwrap { position: relative; width: min(200px, 58%); aspect-ratio: 1; margin: auto auto 20px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 48px -10px rgba(220,230,255,.55); }
+.tn-moon-disc { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 38% 33%, #fff 2%, #e8edf7 26%, #b9c2d6 68%, #878fa2 100%); box-shadow: inset 0 0 22px -4px rgba(0,0,0,.5); }
+.tn-moon-dark { position: absolute; inset: -5%; border-radius: 50%; background: #05060c; transform: translateX(var(--mx, -58%)); box-shadow: inset 18px 0 24px -12px rgba(0,0,0,.9); transition: transform 1.2s var(--ease); }
+.tn-moon-card .tn-big, .tn-moon-card .tn-sub { text-align: center; }
+
+/* ---------- the planets ---------- */
+.tn-planets { display: flex; flex-direction: column; margin-top: 4px; }
+.tn-planet {
+  display: grid; grid-template-columns: 14px 1fr auto auto; align-items: baseline; gap: 12px;
+  padding: 10px 2px; border-top: 1px solid rgba(255,255,255,.08);
+}
+.tn-planet:first-child { border-top: 0; }
+.tn-planet.tele { opacity: .58; }
+.tn-pname { font-family: var(--display); font-size: 1.08rem; }
+.tn-planet.up .tn-pname { color: #fff; }
+.tn-pstate { color: var(--mut); font-size: .86rem; text-align: right; }
+.tn-pstate b { color: var(--accent); font-weight: 600; }
+.tn-pdist { color: var(--dim); font-size: 9px; letter-spacing: .06em; }
+.tn-updot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.14); align-self: center; }
+.tn-updot.on { background: #8fe3a8; box-shadow: 0 0 10px #8fe3a8; }
+
+/* ---------- APOD ---------- */
+.tn-apod-body { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 20px; align-items: start; }
+@media (max-width: 660px) { .tn-apod-body { grid-template-columns: 1fr; } }
+.tn-apod-img { display: block; aspect-ratio: 16/10; border-radius: 12px; background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,.14); transition: transform .5s var(--ease); }
+.tn-apod-img:hover { transform: scale(1.02); }
+
+/* ---------- stand under it ---------- */
+.tn-cta { text-align: center; margin-top: clamp(44px, 7vh, 72px); }
+.tn-cta p { color: var(--mut); font-family: var(--display); font-size: clamp(1.15rem, 2.4vw, 1.6rem); margin: 0 0 16px; }
+.tn-go {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink); text-decoration: none;
+  border: 1px solid rgba(214,226,255,.3); border-radius: 99px; padding: 15px 26px;
+  background: rgba(255,255,255,.05);
+  transition: background .3s, border-color .3s, transform .3s, box-shadow .3s;
+}
+.tn-go:hover { background: rgba(255,255,255,.11); border-color: rgba(255,255,255,.44); transform: translateY(-2px); box-shadow: 0 0 44px -18px rgba(165,190,255,.8); }
